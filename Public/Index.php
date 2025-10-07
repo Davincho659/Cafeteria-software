@@ -2,7 +2,7 @@
 
 require "../App/Core/init.php";
 
-$controller = isset($_GET["pageName"]) ? $_GET["pageName"] : "Home";
+$controller = isset($_GET["pg"]) ? $_GET["pg"] : "Home";
 $controller = strtolower($controller);
 
 if (file_exists("../App/Controllers/" . $controller . "Controller.php")) {
