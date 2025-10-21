@@ -18,3 +18,11 @@ function loadView($view) {
 function esc($str) {
     return htmlspecialchars($str);
 }
+
+function loadJs($script) {
+    if(file_exists("../Public/Assets/js/{$script}.js")) {
+        return "<script src='/../Public/Assets/js/{$script}.js'></script>";
+    } else {
+        echo "Script no encontrado";
+    }
+}

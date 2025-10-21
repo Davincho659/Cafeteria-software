@@ -2,7 +2,7 @@
     border-radius: 15px;
     border: none;
     color: #fff;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.249);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.308);
   }
 
   .card-productos {
@@ -12,7 +12,8 @@
       flex-direction: column;
       justify-content: center; 
       align-items: center;   
-      text-align: center;      
+      text-align: center;  
+          
   }
 
 
@@ -69,3 +70,31 @@
       align-items: center;   
       text-align: center;  
   }
+/* Fondo de pantalla 
+  body {
+  background-image: url("");
+  background-size: cover;     
+  background-position: center;  
+  background-repeat: no-repeat; 
+  background-attachment: fixed;  
+}
+
+.glass-header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 70px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 40px;
+
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);         
+  -webkit-backdrop-filter: blur(10px);  
+
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  z-index: 1000;
+}
+*/
