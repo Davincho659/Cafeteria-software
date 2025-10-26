@@ -1,16 +1,29 @@
 <?php
 
 require __DIR__ . '/../vendor/autoload.php';
-require "../App/Core/Init.php";
+require __DIR__ . '/../App/Core/Init.php';
 
-$controller = isset($_GET["pg"]) ? $_GET["pg"] : "home";
-$action = isset($_GET["action"]) ? $_GET["action"] : "index";
+$pg = isset($_GET["pg"]) ? $_GET["pg"] : "home";
+$action = isset($_GET["action"]) ? $_GET["action"] : null;
 
 
-$controllerClass = ucfirst(strtolower($controller)) . "Controller";
+
+$controllerClass = ucfirst(strtolower($pg)) . "Controller";
 
 
 $controllerFile = __DIR__ . "/../App/Controllers/" . $controllerClass . ".php";
+
+if ($action === null) {
+    // Buscar la vista directamente
+    $viewFile = "../App/views/". strtolower($pg) . ".view.php";
+    
+    if (file_exists($viewFile)) {
+        require_once $viewFile;
+    } else {
+        require_once "../App/views/home.view.php";;
+    }
+    exit; // Terminar aquí, no ejecutar más código
+}
 
 
 if (file_exists($controllerFile)) {
@@ -18,31 +31,16 @@ if (file_exists($controllerFile)) {
     require_once $controllerFile;
     
     if (class_exists($controllerClass)) {
+        $controllerInstance = new $controllerClass();
         
-        $controller2 = new $controllerClass();
-
-        if (method_exists($controller2, $action)) {
-
-            $controller2->$action();
-            
-        } else {
-            // Método no existe
-            http_response_code(404);
-            echo "Acción '$action' no encontrada";
+        if (method_exists($controllerInstance, $action)) {
+            $controllerInstance->$action();
         }
-        
     } else {
-        // Clase no existe
-        http_response_code(500);
         echo "Error: Clase $controllerClass no encontrada";
     }
-    
 } else {
-    // Archivo no existe - Cargar página 404
-    http_response_code(404);
     require_once __DIR__ . "/../App/Controllers/HomeController.php";
-    $controller = new HomeController();
-    $controller->error404();
 }
 
 

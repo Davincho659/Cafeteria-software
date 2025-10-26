@@ -1,9 +1,11 @@
 <?php
-
 require_once __DIR__ . '/../Models/Products.php';
 require_once __DIR__ . '/../Models/Categories.php';
 
-require "../App/Views/sales.view.php";
+
+
+
+
 class SalesController {
     private $productModel;
     private $categoriesModel;
@@ -13,23 +15,46 @@ class SalesController {
         $this->categoriesModel = new Categories();
     }
 
-    public function index() {
-        require "../App/Views/sales.view.php";
-    }
-
     public function getCategories() {
+        header('Content-Type: application/json; charset=utf-8');
         try {
-            $categorias= $this->categoriesModel->getAllCategories();
-            header('Content-Type: application/json');
+            $categorias= $this->categoriesModel->getAll();
             echo json_encode([
                 'success' => true,
                 'data' => $categorias
             ]);
-            exit;
         } catch (Exception $e) {
-            // Manejo de errores
-            http_response_code(500);
-            echo "Error al obtener categorías: " . $e->getMessage();
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
         }
+    }
+
+    public function GetProducts() {
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            $idCategory = $_GET['idCategory'] ?? null;
+            if ($idCategory == null) {
+                $productos = $this->productModel->getAll();
+                echo json_encode([
+                    'success' => true,
+                    'data' => $productos
+                ]);
+            } else {
+                $productos = $this->productModel->getByCategory($idCategory);
+                echo json_encode([
+                    'success' => true,
+                    'data' => $productos
+                ]);
+            }
+            
+        } catch (Exeption $e) {
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+        
     }
 }
