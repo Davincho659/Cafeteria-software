@@ -2,10 +2,6 @@
 require_once __DIR__ . '/../Models/Products.php';
 require_once __DIR__ . '/../Models/Categories.php';
 
-
-
-
-
 class SalesController {
     private $productModel;
     private $categoriesModel;

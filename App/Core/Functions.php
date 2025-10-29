@@ -43,6 +43,7 @@ function saveUploadedImage(array $file, string $destFolder, ?string $oldFilename
         return ['success' => false, 'error' => 'upload_error'];
     }
 
+
     if ($file['size'] > $maxSize) {
         return ['success' => false, 'error' => 'size_exceeded'];
     }
@@ -88,4 +89,19 @@ function saveUploadedImage(array $file, string $destFolder, ?string $oldFilename
     }
 
     return ['success' => true, 'filename' => $filename];
+}
+
+function getProductImagePath($product, $category = null) {
+    // Si producto tiene imagen propia
+    if (!empty($product['image'])) {
+        return 'assets/img/' . $product['image']; // si guardas 'products/xxx.jpg' en BD
+    }
+
+    // Si recibieron la categoría o podemos obtenerla por $product['category_id']
+    if ($category && !empty($category['image'])) {
+        return 'assets/img/' . $category['image']; // ej. 'categories/yyy.jpg'
+    }
+
+    // fallback default
+    return 'assets/img/products/default.jpg';
 }

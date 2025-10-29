@@ -6,16 +6,16 @@
         <div class="col-md-5">
             <div class="card mt-2">
                 <div class="card-body">
-                    <form id="productoForm" class="p-2">
+                    <form id="productoForm" class="p-2" method="post" enctype="multipart/form-data" action="?pg=admin&action=createProduct">
                         <h5 class="mb-4 text-center text-primary fw-bold">
                             🛒 Registro de Producto
                         </h5>
                         <!-- Categoría -->
                         <div class="mb-3">
                             <label for="categoria" class="form-label fw-semibold">Categoría</label>
-                            <select id="categoria" class="form-select" required>
+                            <select id="categoria" name="categoria" class="form-select" required>
                             <option value="">Seleccione...</option>
-                            <option value="venta">Fritos</option>
+                            <option value="1">Fritos</option>
                             <option value="insumo">Insumo (Inventario)</option>
                             </select>
                         </div>
@@ -25,7 +25,7 @@
                             <label for="nombre" class="form-label fw-semibold">Nombre del Producto</label>
                             <input 
                             type="text" 
-                            id="nombre" 
+                            id="nombre" name="nombre" 
                             class="form-control" 
                             placeholder="Nombre del producto" 
                             required
@@ -35,7 +35,7 @@
                         <!-- Tipo de producto -->
                         <div class="mb-3">
                             <label for="tipo" class="form-label fw-semibold">Tipo de Producto</label>
-                            <select id="tipo" class="form-select" required>
+                            <select id="tipo" name="tipo" class="form-select" required>
                             <option value="">Seleccione...</option>
                             <option value="venta">Producto de Venta</option>
                             <option value="insumo">Insumo</option>
@@ -44,13 +44,14 @@
 
                         <!-- Imagen del producto -->
                         <div class="mb-3">
-                            <label for="imagen" class="form-label fw-semibold">Imagen del Producto</label>
-                            <input 
-                            type="file" 
-                            id="imagen" 
-                            class="form-control" 
-                            accept="image/*"
-                            >
+                            <label class="form-label fw-semibold">Imagen del Producto</label>
+                            <div id="imageUpload" class="dropzone">
+                                <div class="dz-message" data-dz-message>
+                                    <i class="fas fa-cloud-upload-alt fa-3x"></i>
+                                    <p>Arrastra una imagen aquí o haz clic para seleccionar</p>
+                                </div>
+                            </div>
+                            <input type="hidden" name="imagen" id="imagen_guardada">
                         </div>
 
                         <!-- Precios -->

@@ -16,10 +16,11 @@ class Categories {
     }
 
     public function create($idCategoria,$nombre) {
-        $query = "INSERT INTO categorias (idCategoria,nombre) VALUES ? ?";
+        // if idCategoria is auto-increment, caller can pass null
+        $query = "INSERT INTO categorias (nombre) VALUES (?)";
         $stmt = $this->db->prepare($query);
-        $stmt->execute(null,[$nombre]);
-        return $stmt->fetch();
+        $stmt->execute([$nombre]);
+        return $this->db->lastInsertId();
     }
     
 }
