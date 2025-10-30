@@ -42,16 +42,9 @@
                             </select>
                         </div>
 
-                        <!-- Imagen del producto -->
                         <div class="mb-3">
                             <label class="form-label fw-semibold">Imagen del Producto</label>
-                            <div id="imageUpload" class="dropzone">
-                                <div class="dz-message" data-dz-message>
-                                    <i class="fas fa-cloud-upload-alt fa-3x"></i>
-                                    <p>Arrastra una imagen aquí o haz clic para seleccionar</p>
-                                </div>
-                            </div>
-                            <input type="hidden" name="imagen" id="imagen_guardada">
+                            <input type="file" name="imagen" class="form-control" accept="image/*">
                         </div>
 
                         <!-- Precios -->
@@ -118,4 +111,62 @@
 
 <?php require loadView('Layouts/Footer'); ?>
 <script src="assets/js/admin/productos.js"></script>
+
+<!-- Modal de Edición -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editModalLabel">Editar Producto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editForm" method="post" enctype="multipart/form-data" action="?pg=admin&action=updateProduct">
+                <div class="modal-body">
+                    <input type="hidden" id="edit_id" name="idProducto">
+                    <div class="mb-3">
+                        <label for="edit_categoria" class="form-label">Categoría</label>
+                        <select id="edit_categoria" name="categoria" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_nombre" class="form-label">Nombre</label>
+                        <input type="text" id="edit_nombre" name="nombre" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_tipo" class="form-label">Tipo</label>
+                        <select id="edit_tipo" name="tipo" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                            <option value="venta">Producto de Venta</option>
+                            <option value="insumo">Insumo</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Imagen Actual</label>
+                        <div id="current_image_container" class="mb-2">
+                            <img id="current_image" src="" alt="Imagen actual" style="max-width: 200px; max-height: 200px; object-fit:cover">
+                        </div>
+                        <label class="form-label">Subir nueva imagen (opcional)</label>
+                        <input type="file" name="imagen" class="form-control" accept="image/*">
+                        <input type="hidden" name="imagen_actual" id="imagen_actual">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="edit_precioCompra" class="form-label">Precio de Compra</label>
+                            <input type="number" step="0.01" id="edit_precioCompra" name="precioCompra" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_precioVenta" class="form-label">Precio de Venta</label>
+                            <input type="number" step="0.01" id="edit_precioVenta" name="precioVenta" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 

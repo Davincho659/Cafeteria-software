@@ -23,9 +23,11 @@ document.getElementById("nuevaVenta").addEventListener("click", () => {
   content.appendChild(nuevaVenta);
 }); */
 
+
 // Cache de datos
 let categoriasCache = [];
 let productosCache = [];
+
 
 document.addEventListener("DOMContentLoaded", () => {
   startSistem();
@@ -138,18 +140,23 @@ function showProducts(products) {
     button.style.width = "200px";
     button.style.height = "300px";
     
+    
+    
     button.innerHTML = `
-                <img src="${imgPath}" class="card-img-top cards-img" >
+                <div class="producto-img-container">
+                    <img src="${imgPath}" alt="${product.nombre}" class="producto-img" onerror="this.src='/placeholder.svg?height=140&width=220'">  
+                </div>
                 <div class="d-flex flex-column align-items-left">
                     <div class="producto-nombre"><b>${product.nombre}</b></div>
                     <div class="producto-categoria">${product.categoria} </div>
-                    <p class="producto-precio"><b>$ ${new Intl.NumberFormat('es-CO').format(product.precioVenta)}</b></p>
-                    <button class="btn cantidad-display" id="${product.idProducto}" onclick="changeQuantity(${product.idProducto})" style="cursor: pointer;">${product.cantidad}</button>
+          <p class="producto-precio"><b>$ ${new Intl.NumberFormat('es-CO').format(product.precioVenta)}</b></p>
+          <span class="btn cantidad-display" id="prod-qty-${product.idProducto}" onclick="event.stopPropagation(); changeQuantity(${product.idProducto})" role="button">${product.cantidad}</span>
                 </div>`
   
     button.addEventListener("click", () => {
       addToCart(product);
     });
+    
     container.appendChild(button);
   });
 }
@@ -162,15 +169,47 @@ const cart = {
 };
 
 function addToCart(product) {
-    const exist = cart.products.find(p => p.idProducto === product.idProducto);
-    if (exist) {
-        exist.cantidad += 1;
-        exist.precioTotal = exist.cantidad * parseFloat(exist.precioVenta || 0);
-    } else {
-        product.precioTotal = parseFloat(product.precioVenta || 0);
-        cart.products.push(product);
+  let productId = parseInt(product.idProducto);
+  // Usar copia para evitar mutaciones cruzadas con productosCache
+  const exist = cart.products.find(p => parseInt(p.idProducto) === productId);
+  if (exist) {
+    exist.cantidad = parseInt(exist.cantidad || 0) + 1;
+    exist.precioTotal = exist.cantidad * parseFloat(exist.precioVenta || 0);
+  } else {
+    const productCopy = {
+      idProducto: product.idProducto,
+      nombre: product.nombre,
+      categoria: product.categoria,
+      imagen: product.imagen,
+      categoria_imagen: product.categoria_imagen,
+      precioVenta: parseFloat(product.precioVenta || 0),
+      cantidad: 1,
+      precioTotal: parseFloat(product.precioVenta || 0)
+    };
+    cart.products.push(productCopy);
+  }
+
+  // Actualizar sólo la tarjeta afectada en el DOM (sin recargar todo)
+  const cantidadBtn = document.getElementById(`prod-qty-${productId}`);
+  if (cantidadBtn) {
+    const updatedProduct = cart.products.find(p => parseInt(p.idProducto) === productId);
+    // actualizar el número mostrado en el botón de cantidad
+    cantidadBtn.textContent = updatedProduct ? updatedProduct.cantidad : 1;
+
+    const productCard = cantidadBtn.closest('.producto-card');
+    if (productCard) {
+      productCard.classList.add('disabled');
+    const imgContainer = productCard.querySelector('.producto-img-container');
+      if (imgContainer && !imgContainer.querySelector('.added-overlay')) {
+        const overlay = document.createElement('div');
+        overlay.className = 'added-overlay';
+        overlay.innerHTML = '<i class="fas fa-check"></i>';
+        imgContainer.appendChild(overlay);
+      }
     }
-    updateCart();
+  }
+
+  updateCart();
 }
 
 function updateCart() {
@@ -222,7 +261,7 @@ function showCartProducts() {
                               <div class="product-actions">
                                   <div class="quantity-control">
                                       <button onclick="decreaseQty(${product.idProducto})">−</button>
-                                      <input type="text" id="${product.idProducto}" value="${product.cantidad}" readonly>
+                                      <input type="text" id="cart-qty-${product.idProducto}" value="${product.cantidad}" readonly>
                                       <button onclick="increaseQty(${product.idProducto})">+</button>
                                   </div>
                                   <button class="remove-btn" onclick="dropProduct(${product.idProducto})">
@@ -243,12 +282,22 @@ function showCartProducts() {
 }
 
 function dropProduct(idProducto) {
-    
     cart.products = cart.products.filter(product => {
         return parseInt(product.idProducto) !== parseInt(idProducto);
     });
-    console.log("Productos restantes en el carrito:", cart.products);
-    updateCart();
+
+    // Reactivar el producto en la lista
+  const cantidadBtn = document.getElementById(`prod-qty-${idProducto}`);
+    if (cantidadBtn) {
+        const productCard = cantidadBtn.closest('.producto-card');
+        if (productCard) {
+            productCard.classList.remove('disabled');
+            const overlay = productCard.querySelector('.added-overlay');
+            if (overlay) overlay.remove();
+        }
+    }
+
+  updateCart();
 }
 
 function increaseQty(idProducto) {
@@ -364,8 +413,7 @@ function confirmQuantity() {
       }
       
       updateCart();
-
     }
-  closeCalculator();
+    closeCalculator();
   }
 }

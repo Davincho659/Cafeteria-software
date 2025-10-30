@@ -1,10 +1,3 @@
-.cards-img {
-  width: 100%;
-  height: 100px;
-  min-height: 100px;
-  margin-top: 0px;
-}
-
 .categorias {
   width: 280px;
   background: white;
@@ -81,6 +74,70 @@
   color: #495057;
 }
 
+.producto-img-container {
+  width: 100%;
+  height: 133px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+/* Estilos para productos añadidos */
+.producto-card.disabled {
+  opacity: 0.8;
+  background-color: #f8f9fa;
+}
+
+.added-overlay {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #28a745;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  animation: fadeIn 0.3s ease-in-out;
+  z-index: 10;
+}
+
+.added-overlay i {
+  font-size: 16px;
+  color: white !important;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.producto-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .productosContainer {
   display: flex;
   flex-wrap: wrap;
@@ -90,19 +147,17 @@
 
 .producto-card {
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(101, 101, 101, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
+  width: 220px;
+  height: 300px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.128);
+  transition: all 0.3s ease;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 12px;
   background-color: white;
   padding: 2px;
   padding-bottom: 4px;
-  border-color: #7e7e7ea5;
-}
-
-.producto-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: none;
+  position: relative;
 }
 
 .cart-product {
@@ -269,9 +324,14 @@
   font-size: 16px;
   font-weight: 600;
   color: #2c3e50;
-  background: #ecf0f1;
+  background: #e1e4e5;
   padding: 6px;
   border-radius: 6px;
+}
+
+.cantidad-display:hover {
+  background: #a3a3a3;
+  cursor: pointer;
 }
 
 .btn-agregar {
@@ -300,7 +360,7 @@
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
+  z-index: 2000;
   justify-content: center;
   align-items: center;
 }

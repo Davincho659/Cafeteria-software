@@ -93,13 +93,19 @@ function saveUploadedImage(array $file, string $destFolder, ?string $oldFilename
 
 function getProductImagePath($product, $category = null) {
     // Si producto tiene imagen propia
+    if (!empty($product['imagen'])) {
+        return 'assets/img/' . $product['imagen']; // si guardas 'products/xxx.jpg' en BD
+    }
     if (!empty($product['image'])) {
-        return 'assets/img/' . $product['image']; // si guardas 'products/xxx.jpg' en BD
+        return 'assets/img/' . $product['image'];
     }
 
     // Si recibieron la categoría o podemos obtenerla por $product['category_id']
+    if ($category && !empty($category['imagen'])) {
+        return 'assets/img/' . $category['imagen']; // ej. 'categories/yyy.jpg'
+    }
     if ($category && !empty($category['image'])) {
-        return 'assets/img/' . $category['image']; // ej. 'categories/yyy.jpg'
+        return 'assets/img/' . $category['image'];
     }
 
     // fallback default

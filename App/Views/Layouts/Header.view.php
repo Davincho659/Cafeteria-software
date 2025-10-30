@@ -6,9 +6,10 @@
     <title><?=esc(APP_NAME)?></title>
     <link rel="stylesheet" href="assets/css/bootstrap.css">
     <link rel="stylesheet" href="assets/css/all.min.css">
-    <!-- Dropzone CSS y JS -->
-<link href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" rel="stylesheet" type="text/css" />
-<script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
+    <!-- Dropzone (CDN) -->
+    <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" />
+    <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
+    
 </head>
     <thead>
         
