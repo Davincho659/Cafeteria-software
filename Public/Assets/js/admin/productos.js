@@ -10,7 +10,7 @@ function setupFormHandlers() {
     // Configurar formulario de crear producto
     setupCreateForm();
     // Configurar formulario de editar producto
-    setupEditForm();
+    setupEditFormHandler();
 }
 
 function setupCreateForm() {
@@ -34,7 +34,7 @@ function setupCreateForm() {
         })
         .then(data => {
             if (data.success) {
-                showMessage('success', 'Producto creado exitosamente');
+                alert('Producto creado exitosamente');
                 form.reset();
                 loadProducts();
             } else {
@@ -42,7 +42,7 @@ function setupCreateForm() {
             }
         })
         .catch(error => {
-            showMessage('error', error.message);
+            alert('Error: ' + error.message);
             console.error('Error:', error);
         })
         .finally(() => {
@@ -71,11 +71,6 @@ function setupCreateForm() {
             }
         });
     }
-
-    // Cargar datos iniciales para admin
-    loadCategories();
-    loadProducts();
-    setupEditFormHandler();
 };
 
 function loadCategories() {
@@ -97,7 +92,8 @@ function loadCategories() {
                     });
                 });
             }
-        });
+        })
+        .catch(err => console.error('Error cargando categorías:', err));
 }
 
 function loadProducts() {
@@ -105,7 +101,8 @@ function loadProducts() {
         .then(res => res.json())
         .then(data => {
             if (data.success) showProducts(data.data);
-        });
+        })
+        .catch(err => console.error('Error cargando productos:', err));
 }
 
 function showProducts(products) {
@@ -156,29 +153,51 @@ function setupEditFormHandler() {
     if (!form) return;
     form.addEventListener('submit', function(e) {
         e.preventDefault();
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        
         const fd = new FormData(form);
         fetch('index.php?pg=admin&action=updateProduct', {
             method: 'POST',
             body: fd
-        }).then(res => res.json()).then(data => {
+        })
+        .then(res => res.json())
+        .then(data => {
             if (data.success) {
+                alert('Producto actualizado exitosamente');
                 const modal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
                 if (modal) modal.hide();
                 loadProducts();
             } else {
-                alert('Error al actualizar: ' + (data.error || 'desconocido'));
+                throw new Error(data.error || 'Error desconocido');
             }
-        }).catch(err => console.error(err));
+        })
+        .catch(err => {
+            console.error('Error:', err);
+            alert('Error al actualizar: ' + err.message);
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+        });
     });
 }
 
 function deleteProduct(id) {
     if (!confirm('¿Eliminar producto?')) return;
-    fetch('index.php?pg=admin&action=deleteProduct', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-    }).then(res => res.json()).then(data => {
-        if (data.success) loadProducts(); else alert('Error: ' + (data.error || 'no se pudo'));
+    fetch(`index.php?pg=admin&action=deleteProduct&id=${id}`, {
+        method: 'POST'
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert('Producto eliminado exitosamente');
+            loadProducts();
+        } else {
+            throw new Error(data.error || 'Error al eliminar');
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        alert('Error: ' + err.message);
     });
 }

@@ -75,10 +75,10 @@ class AdminController {
         header('Content-Type: application/json; charset=utf-8');
         try {
             $categoriesModel = new Categories();
-            $categorias = $categoriesModel->getAll();
+            $categories = $categoriesModel->getAll();
             echo json_encode([
                 'success' => true,
-                'data' => $categorias
+                'data' => $categories
             ]);
         } catch (Exception $e) {
             echo json_encode([
@@ -87,27 +87,28 @@ class AdminController {
             ]);
         }
     }
+    /* public function uploadImage() {
+            header('Content-Type: application/json');
+            
+            if (!isset($_FILES['imagen']) || $_FILES['imagen']['error'] !== UPLOAD_ERR_OK) {
+                echo json_encode(['success' => false, 'error' => 'No se recibió la imagen']);
+                return;
+            }
 
-	public function uploadImage() {
-    header('Content-Type: application/json');
-    
-    if (!isset($_FILES['imagen']) || $_FILES['imagen']['error'] !== UPLOAD_ERR_OK) {
-        echo json_encode(['success' => false, 'error' => 'No se recibió la imagen']);
-        return;
-    }
-
-    $dest = __DIR__ . '/../../Public/Assets/img/products';
-    $res = saveUploadedImage($_FILES['imagen'], $dest);
-    
-    if ($res['success']) {
-        echo json_encode([
-            'success' => true,
-            'path' => 'products/' . $res['filename']
-        ]);
-    } else {
-        echo json_encode(['success' => false, 'error' => 'Error al guardar la imagen']);
-    }
-}
+            $dest = __DIR__ . '/../../Public/Assets/img/products';
+            $res = saveUploadedImage($_FILES['imagen'], $dest);
+            
+            if ($res['success']) {
+                echo json_encode([
+                    'success' => true,
+                    'path' => 'products/' . $res['filename']
+                ]);
+            } else {
+                echo json_encode(['success' => false, 'error' => 'Error al guardar la imagen']);
+            }
+        }
+     */
+	
 
     // Obtener un producto por ID (JSON)
     public function getProduct() {
@@ -230,9 +231,9 @@ class AdminController {
             return;
         }
 
-        $data = json_decode(file_get_contents('php://input'), true);
-        $id = $data['id'] ?? null;
+        $id = $_GET['id'] ?? null;
         if (!$id) {
+            header('Content-Type: application/json; charset=utf-8');
             echo json_encode(['success' => false, 'error' => 'ID no proporcionado']);
             return;
         }
@@ -248,6 +249,7 @@ class AdminController {
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode(['success' => $success]);
         } catch (Exception $e) {
+            header('Content-Type: application/json; charset=utf-8');
             echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         }
     }

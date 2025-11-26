@@ -14,10 +14,10 @@ class SalesController {
     public function getCategories() {
         header('Content-Type: application/json; charset=utf-8');
         try {
-            $categorias= $this->categoriesModel->getAll();
+            $categories= $this->categoriesModel->getAll();
             echo json_encode([
                 'success' => true,
-                'data' => $categorias
+                'data' => $categories
             ]);
         } catch (Exception $e) {
             echo json_encode([
@@ -32,16 +32,16 @@ class SalesController {
         try {
             $idCategory = $_GET['idCategory'] ?? null;
             if ($idCategory == null) {
-                $productos = $this->productModel->getAll();
+                $products = $this->productModel->getAll();
                 echo json_encode([
                     'success' => true,
-                    'data' => $productos
+                    'data' => $products
                 ]);
             } else {
-                $productos = $this->productModel->getByCategory($idCategory);
+                $products = $this->productModel->getByCategory($idCategory);
                 echo json_encode([
                     'success' => true,
-                    'data' => $productos
+                    'data' => $products
                 ]);
             }
             

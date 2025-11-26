@@ -464,3 +464,48 @@
 .calc-action-btn.cancelar:hover {
   background: #7f8c8d;
 }
+
+
+
+.tab-container .nav {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.tab-container .nav-item {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.tab-container .nav-link {
+  padding: 13px 9px 13px 15px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 4px solid transparent;
+  transition: all 0.3s;
+  white-space: nowrap;
+}
+
+.tab-container .nav-link:hover {
+  color: #212529;
+  border-bottom-color: #dee2e6;
+  background: #f8f9fa;
+}
+
+.tab-container .nav-link.active {
+  color: #0d6efd;
+  border-bottom-color: #0d6efd;
+  background: #ffffff;
+}
+
+#addTabItem {
+  padding-bottom: 20px;
+}

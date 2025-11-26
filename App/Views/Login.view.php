@@ -1,27 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
 
-<?php require loadView('Layouts/header'); ?>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?=esc(APP_NAME)?></title>
+    <link rel="stylesheet" href="assets/css/Login.css">
+    <title>Login por roles</title>
+</head>
 
-<div class="container-fluid border col-lg-4 col-md-6 mt-5 p-5 shadow-lg">
-    <form method="POST">
-        <center>
-            <h4><i class="fa-solid fa-user fa-2xl"></i></h4>
-            <h3>Iniciar Sesión</h3>
-        </center>
-        <br>
-        
-        <div class="mb-3">
-            <label for="exampleInputEmail1" class="form-label">Usuario</label>
-            <input type="text" class="form-control" id="exampleInputEmail1" aria-describedby="emailHelp">
-        </div>
-        <div class="mb-3">
-            <label for="exampleInputPassword1" class="form-label">Pin</label>
-            <input type="password" class="form-control" id="pin" autofocus>
-        </div>
-        <div class="row" >
-            <button type="submit" class="btn btn-primary" style=" min-width:100px;font-size:18px;">Entrar</button>
-        </div>
-    </form>
-</div>
+<body>
+    <div class="wrapper">
+        <div class="title">Inicia sesion</div>
+            <?php if (!empty($error)) : ?>
+            <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
+        <?php endif; ?>
+        <form action="index.php?pg=login&action=login" method="POST">
+            <div class="field">
+                <input type="text" required name="username">
+                <label>Nombre de usuario</label>
+            </div>
+            <div class="field">
+                <input type="password" required name="pin" >
+                <label>Pin</label>
+            </div>
+            <div class="content">
+                <div class="pass-link"><a href="#">Olvido su Pin?</a></div>
+            </div>
+            <div class="field">
+                <input type="submit" value="Ingresar">
+            </div>
+            <div class="signup-link"><a href="Registrarse.php">Registrarse Ahora</a></div>
+        </form>
+    </div>
+</body>
 
-
-<?php require loadView('Layouts/Footer'); ?>
+</html>
