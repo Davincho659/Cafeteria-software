@@ -8,6 +8,7 @@
 // Cache de datos
 let categoriasCache = [];
 let productosCache = [];
+let mesasCache = [];
 
 // Gestión de múltiples carritos (estado mínimo)
 let currentCartId = 'venta1';
@@ -118,7 +119,7 @@ function showProducts(products) {
 
     const button = document.createElement("button");
     button.className = "m-2 producto-card p-2";
-    button.style.width = "200px";
+    button.style.width = "190px";
     button.style.height = "300px";
 
     button.innerHTML = `
@@ -394,7 +395,7 @@ function addTabs() {
       <div id="productos-carrito-${id}" style="overflow-y: scroll; height: 600px;"></div>
       <div id="total-carrito-${id}"><h4>Total: $<span id="total-${id}">0.00</span></h4></div>
       <button id="btn-procesar-venta-${id}" class="btn btn-primary btn-lg w-100 mb-2">Procesar Venta <i class="fa-solid fa-cash-register"></i></button>
-      <button id="btn-agregar-mesa-${id}" class="btn btn-secondary btn-lg">Agregar Mesa <i class="fa-solid fa-utensils"></i></button>
+      <button id="btn-agregar-mesa-${id}" class="btn btn-secondary btn-lg" onclick="event.stopPropagation(); loadTables()" role="button">Agregar Mesa <i class="fa-solid fa-utensils"></i></button>
     </div>`;
   content.appendChild(pane);
 
@@ -449,4 +450,53 @@ function dropTab(tabId) {
   
   containerTab.remove();
   pane.remove();
+}
+
+function loadTables() {
+  let url = "index.php?pg=sales&action=gettables"
+
+  fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+          mesasCache = data.data;
+          AddToTable(data.data);
+        } else {
+        console.log('No se pudieron cargar las mesas');
+      }
+    })
+    .catch(error => {
+      console.error('Error al cargar las mesas:', error);
+    });
+}
+
+function AddToTable(mesas) {
+  const cartId = currentCartId
+
+  document.getElementById("tableOverlay").classList.add('active');
+  const container = document.getElementById("tableContainer");
+  
+  mesas.forEach((mesa) => {
+    const button = document.createElement("button");
+    if (mesa.estado == "libre") {
+      button.className = "m-2 table-card p-2";
+      button.innerHTML = `<h4 >mesa #${mesa.numero}</h4>
+                        <img src="assets/img/mesa.jpg"  class ="table-img">
+                        `;
+      button.addEventListener("click", () => addTabs());
+      container.appendChild(button)
+    } else {
+      button.className = "m-2 table-card p-2";
+      button.innerHTML = `<h4 style="color:red;">mesa #${mesa.numero}</h4>
+                        <img src="assets/img/mesa.jpg"  class ="table-img">
+                        `;
+      container.appendChild(button)
+    }
+  })
+}
+
+function closeTable(event) {
+  if (!event || event.target.id === 'tableOverlay') {
+    document.getElementById('tableOverlay').classList.remove('active');
+  }
 }
