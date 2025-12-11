@@ -7,9 +7,10 @@
     <link rel="stylesheet" href="assets/css/bootstrap.css">
     <link rel="stylesheet" href="assets/css/all.min.css">
     <link rel="stylesheet" href="assets/css/theme-safe.css">
-    <!-- Dropzone (CDN) -->
+    <link rel="stylesheet" href="assets/css/sweetalert2.min.css">
+    <!-- Dropzone (CDN) 
     <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" />
-    <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
+    <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>-->
     
 </head>
 <body class="use-theme">
@@ -84,6 +85,14 @@
                 ?>
                 <a href="index.php?pg=<?php echo $backPage; ?>"><button class="btn btn-secondary ms-2"><i class="fa-solid fa-chevron-left"></i></button></a>
                 <a class="btn btn-primary ms-5 " href="index.php?pg=mesas">Ver mesas <i class="fa-solid fa-utensils"></i></a>
+            </nav>
+        <?php elseif($_GET['pg'] == 'mesas'): ?>
+            <nav class="navbar navbar-expand-lg bg-body-tertiary" style="min-width:350px;">
+                <?php
+                    
+                    $backPage = 'sales';
+                ?>
+                <a href="index.php?pg=<?php echo $backPage; ?>"><button class="btn btn-secondary ms-2"><i class="fa-solid fa-chevron-left"></i></button></a>
             </nav>
         <?php elseif($_GET['pg'] == 'admin'): ?>
             <nav class="navbar navbar-expand-lg bg-body-tertiary" style="min-width:350px;">

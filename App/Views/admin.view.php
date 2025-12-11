@@ -15,8 +15,6 @@
                             <label for="categoria" class="form-label fw-semibold">Categoría</label>
                             <select id="categoria" name="categoria" class="form-select" required>
                             <option value="">Seleccione...</option>
-                            <option value="1">Fritos</option>
-                            <option value="insumo">Insumo (Inventario)</option>
                             </select>
                         </div>
 
@@ -36,9 +34,7 @@
                         <div class="mb-3">
                             <label for="tipo" class="form-label fw-semibold">Tipo de Producto</label>
                             <select id="tipo" name="tipo" class="form-select" required>
-                            <option value="">Seleccione...</option>
-                            <option value="venta">Producto de Venta</option>
-                            <option value="insumo">Insumo</option>
+                            <option value="">Seleccione.</option>
                             </select>
                         </div>
 

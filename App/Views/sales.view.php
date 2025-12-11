@@ -1,7 +1,7 @@
 <?php require loadView('Layouts/header'); ?>
 <link rel="stylesheet" href="assets/css/sales.css">
 
-<div class="d-flex inline-block tab-container">
+<div class="d-flex inline-block tab-container" data-user-id="<?= $_SESSION['user_id']  ?>">
     <ul class="nav nav-tabs" id="ventasTabs">
         <li class="nav-item">
             <a class="nav-link active" data-bs-toggle="tab" href="#venta1">Venta 1</a>
@@ -19,10 +19,6 @@
         <div class="col-auto border-end overflow-auto mt-3" id="categorias">
             <h2>Categorías</h2>
             <nav class="categorias-nav" id="categoriasNav">
-                <button class="categoria-item active" id="0" >
-                    <img src="assets/img/categories/default.png" class="categoria-icon" style="width:30px;height:30px;object-fit:cover;border-radius:4px;margin-right:6px">
-                    <span class="categoria-nombre">Todos los Productos</span>
-                </button>
                 <!-- Las categorías se cargan dinámicamente aquí -->
             </nav>
         </div>
@@ -82,6 +78,41 @@
                 </div>
             </div>
         </div>
+        <!-- Pop-up estático de confirmación de venta (igual comportamiento que calculadora/mesas) -->
+        <div id="saleConfirmationOverlay" class="table-overlay" onclick="closeSaleConfirmation(event)">
+            <div class="table-popup" onclick="event.stopPropagation()">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <h2 style="margin:0">Confirmar Venta</h2>
+                    <i onclick="closeSaleConfirmation()" class="fa-solid fa-circle-xmark fa-xl" style="color: #ff0000; margin-left: 8px; cursor:pointer"></i>
+                </div>
+                <div class="sale-confirmation-content" style="margin-top:12px;">
+                    <div id="saleProdList" style="max-height:300px;overflow-y:auto;padding-right:6px;">
+                        <!-- Productos se inyectan desde JS -->
+                    </div>
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin:12px 0 8px 0;">
+                        <div style="font-size:16px;font-weight:700">Total</div>
+                        <div id="saleTotalValue" style="font-size:18px;font-weight:800;color:#2b8a3e">$ 0.00</div>
+                    </div>
+
+                    <div style="margin-top:6px;margin-bottom:8px;font-weight:600">Método de pago</div>
+                    <div style="display:flex;gap:8px;margin-bottom:8px;">
+                        <button id="salePaymentEfectivo" type="button" class="btn btn-outline-primary payment-btn" onclick="selectPaymentMethod(this,'efectivo')">Efectivo</button>
+                        <button id="salePaymentTransfer" type="button" class="btn btn-outline-primary payment-btn" onclick="selectPaymentMethod(this,'transferencia')">Transferencia</button>
+                    </div>
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">
+                        <div>
+                            <button id="salePrintBtn" type="button" class="btn btn-light" onclick="printInvoice()">Imprimir factura</button>
+                        </div>
+                        <div style="display:flex;gap:8px;">
+                            <button type="button" class="btn btn-secondary" onclick="closeSaleConfirmation()">Cancelar</button>
+                            <button type="button" id="saleConfirmBtn" class="btn btn-success" onclick="confirmSalePayment()">Confirmar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="col-auto border-start bg-light ps-1" style="min-width: 320px;" >
             <!-- Carritos por pestaña -->
             <div id="ventasContent" class="tab-content">
@@ -92,11 +123,11 @@
                         <div id="total-carrito-venta1">
                             <h4>Total: $<span id="total-venta1">0.00</span></h4>
                         </div>
-                        <button id="btn-procesar-venta-venta1" class="btn btn-primary btn-lg w-100 mb-2">
+                        <button id="btn-procesar-venta-venta1" class="btn btn-primary btn-lg w-100 mb-2" onclick="saleConfirmationModal('venta1', <?= $_SESSION['user_id'] ?>)" role="button">
                             Procesar Venta <i class="fa-solid fa-cash-register"></i>
                         </button>
-                        <button id="btn-agregar-mesa-venta1" class="btn btn-secondary btn-lg" onclick="event.stopPropagation(); loadTables()" role="button">
-                            Agregar Mesa <i class="fa-solid fa-utensils"></i>
+                        <button id="btn-agregar-mesa-venta1" class="btn btn-secondary btn-lg w-100" onclick="openTableSelectionModal(event)" role="button">
+                            Agregar a Mesa <i class="fa-solid fa-utensils"></i>
                         </button>
                     </div>
                 </div>

@@ -1,23 +1,35 @@
 
-/* Sales.js - versión reescrita (base para pestañas con carritos separados)
-   - Base para manejar múltiples pestañas (ventas) con su propio carrito en memoria
+/* Sales.js - versión mejorada (carritos con persistencia de mesas en BD)
+   - Maneja múltiples pestañas (ventas) con su propio carrito en memoria
    - Mantiene la lista de productos y categorías compartida
    - Cada pestaña tiene su propio contenedor de carrito con ids únicos (ventaN)
+   - Sistema de mesas con sincronización en BD (ocupada/libre)
 */
+
+// Obtener userId desde el HTML
+function getSessionUserId() {
+  return document.querySelector('[data-user-id]')?.getAttribute('data-user-id') || 1;
+}
 
 // Cache de datos
 let categoriasCache = [];
 let productosCache = [];
 let mesasCache = [];
 
-// Gestión de múltiples carritos (estado mínimo)
+// Gestión de múltiples carritos
 let currentCartId = 'venta1';
 let carts = {
-  'venta1': { products: [], total: 0 }
+  'venta1': { type: 'sale', products: [], total: 0 }
 };
 
+// Cache de mesas con estado sincronizado a BD
+let tables = {};
+
+// Flag para evitar transferencias simultáneas
+let isTransferring = false;
+
 document.addEventListener("DOMContentLoaded", () => {
-  startSistem();
+  startSystem();
   // vincular botón para crear nuevas pestañas
   const nuevaBtn = document.getElementById('nuevaVenta');
   if (nuevaBtn) nuevaBtn.addEventListener('click', addTabs);
@@ -26,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (initialTab) initialTab.addEventListener('click', () => switchToCart('venta1'));
 });
 
-function startSistem() {
+function startSystem() {
   loadCategories();
   loadProducts();
 }
@@ -49,12 +61,28 @@ function loadCategories() {
 
 function showCategories(categories) {
   const container = document.getElementById("categoriasNav");
+  if (!container) return;
 
+  // Crear botón "Todos los Productos" al inicio (una sola vez)
+  const allButton = document.createElement("button");
+  allButton.className = "categoria-item active";
+  allButton.setAttribute("id", "cat-all");
+  allButton.innerHTML = `
+    <img src="assets/img/categories/default.png" class="categoria-icon" style="width:30px;height:30px;object-fit:cover;border-radius:4px;margin-right:6px">
+    <span class="categoria-nombre">Todos</span>`;
+  allButton.addEventListener("click", function () {
+    container.querySelectorAll(".categoria-item").forEach((btn) => btn.classList.remove("active"));
+    allButton.classList.add("active");
+    loadProducts(null);
+  });
+  container.appendChild(allButton);
+
+  // Crear botones de categorías
   categories.forEach(category => {
     const catImg = category.imagen ? `assets/img/${category.imagen}` : 'assets/img/categories/default.png';
     const button = document.createElement("button");
     button.className = "categoria-item";
-    button.setAttribute("id", category.idCategoria)
+    button.setAttribute("id", `cat-${category.idCategoria}`);
 
     button.innerHTML = `
       <img src="${catImg}" class="categoria-icon" style="width:30px;height:30px;object-fit:cover;border-radius:4px;margin-right:6px">
@@ -66,25 +94,12 @@ function showCategories(categories) {
       loadProducts(category.idCategoria);
     });
 
-   
-
-    const allButton = container.querySelector(".categoria-item.active");
-      allButton.addEventListener("click", function () {
-        container.querySelectorAll(".categoria-item").forEach((btn) => {
-          btn.classList.remove("active");
-        });
-
-      allButton.classList.add("active");
-      loadProducts(null);
-    });
-
-
     container.appendChild(button);
   });
 }
 
 function loadProducts(idCategoria = null) {
-  let url = "index.php?pg=sales&action=getproducts";
+  let url = "index.php?pg=sales&action=getProducts";
   if (idCategoria) url += `&idCategory=${idCategoria}`;
 
   fetch(url)
@@ -119,7 +134,7 @@ function showProducts(products) {
 
     const button = document.createElement("button");
     button.className = "m-2 producto-card p-2";
-    button.style.width = "190px";
+    button.style.width = "200px";
     button.style.height = "300px";
 
     button.innerHTML = `
@@ -394,12 +409,12 @@ function addTabs() {
       <center><h3>Ventas: <div class="badge bg-primary rounded-circle" id="ventasCount-${id}">0</div></h3></center>
       <div id="productos-carrito-${id}" style="overflow-y: scroll; height: 600px;"></div>
       <div id="total-carrito-${id}"><h4>Total: $<span id="total-${id}">0.00</span></h4></div>
-      <button id="btn-procesar-venta-${id}" class="btn btn-primary btn-lg w-100 mb-2">Procesar Venta <i class="fa-solid fa-cash-register"></i></button>
-      <button id="btn-agregar-mesa-${id}" class="btn btn-secondary btn-lg" onclick="event.stopPropagation(); loadTables()" role="button">Agregar Mesa <i class="fa-solid fa-utensils"></i></button>
+      <button id="btn-procesar-venta-${id}" class="btn btn-primary btn-lg w-100 mb-2" onclick="saleConfirmationModal('${id}', getSessionUserId())">Procesar Venta <i class="fa-solid fa-cash-register"></i></button>
+      <button id="btn-agregar-mesa-${id}" class="btn btn-secondary btn-lg w-100" onclick="openTableSelectionModal(event)" role="button">Agregar Mesa <i class="fa-solid fa-utensils"></i></button>
     </div>`;
   content.appendChild(pane);
 
-  carts[id] = { products: [], total: 0 };
+  carts[id] = { type: 'sale', products: [], total: 0 };
   a.click();
 }
 
@@ -453,15 +468,26 @@ function dropTab(tabId) {
 }
 
 function loadTables() {
-  let url = "index.php?pg=sales&action=gettables"
-
-  fetch(url)
+  fetch('index.php?pg=sales&action=getTables')
     .then(response => response.json())
     .then(data => {
       if (data.success) {
-          mesasCache = data.data;
-          AddToTable(data.data);
-        } else {
+        mesasCache = data.data;
+        // Inicializar cache de mesas
+        mesasCache.forEach(mesa => {
+          if (!tables[mesa.idMesa]) {
+            tables[mesa.idMesa] = {
+              idMesa: mesa.idMesa,
+              numero: mesa.numero,
+              estado: mesa.estado,
+              cartId: null,
+              productCount: 0
+            };
+          }
+        });
+        // Mostrar mesas en modal
+        showTableSelectionPopup(mesasCache);
+      } else {
         console.log('No se pudieron cargar las mesas');
       }
     })
@@ -470,33 +496,397 @@ function loadTables() {
     });
 }
 
-function AddToTable(mesas) {
-  const cartId = currentCartId
-
-  document.getElementById("tableOverlay").classList.add('active');
+function showTableSelectionPopup(mesas) {
   const container = document.getElementById("tableContainer");
-  
+  if (!container) return;
+
+  container.innerHTML = '';
+
   mesas.forEach((mesa) => {
     const button = document.createElement("button");
-    if (mesa.estado == "libre") {
-      button.className = "m-2 table-card p-2";
-      button.innerHTML = `<h4 >mesa #${mesa.numero}</h4>
-                        <img src="assets/img/mesa.jpg"  class ="table-img">
-                        `;
-      button.addEventListener("click", () => addTabs());
-      container.appendChild(button)
+    button.className = "m-2 table-card p-2";
+    
+    if (mesa.estado === "libre") {
+      button.innerHTML = `
+        <h4>Mesa #${mesa.numero}</h4>
+        <img src="assets/img/mesa.jpg" class="table-img" onerror="this.src='assets/img/categories/default.png'">
+        <small style="color: green; font-weight: bold;">Disponible</small>`;
+      button.style.cursor = 'pointer';
+      button.addEventListener("click", () => transferToTable(mesa.idMesa, mesa.numero));
     } else {
-      button.className = "m-2 table-card p-2";
-      button.innerHTML = `<h4 style="color:red;">mesa #${mesa.numero}</h4>
-                        <img src="assets/img/mesa.jpg"  class ="table-img">
-                        `;
-      container.appendChild(button)
+      button.innerHTML = `
+        <h4 style="color:red;">Mesa #${mesa.numero}</h4>
+        <img src="assets/img/mesa.jpg" class="table-img" onerror="this.src='assets/img/categories/default.png'">
+        <small style="color: red; font-weight: bold;">Ocupada</small>`;
+      button.style.cursor = 'not-allowed';
+      button.style.opacity = '0.5';
     }
-  })
+
+    container.appendChild(button);
+  });
+
+  document.getElementById("tableOverlay").classList.add('active');
 }
 
+function openTableSelectionModal(event) {
+  event.stopPropagation();
+  
+  const cartObj = getCart();
+  if (!cartObj.products || cartObj.products.length === 0) {
+    Swal.fire({
+      title: '¿Estás seguro?',
+      text: "Esta acción no se puede deshacer",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, continuar',
+      cancelButtonText: 'Cancelar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Aquí ejecutas la acción (submit, fetch, delete, etc.)
+      }
+    });
+    return;
+  }
+
+  loadTables();
+}
+
+function transferToTable(tableId, tableNumber) {
+  if (isTransferring) return;
+  isTransferring = true;
+
+  try {
+    const sourceCartId = currentCartId;
+    const sourceCart = getCart(sourceCartId);
+
+    if (!sourceCart.products || sourceCart.products.length === 0) {
+      alert('El carrito está vacío.');
+      isTransferring = false;
+      return;
+    }
+
+    if (sourceCart.type === 'table') {
+      alert('No puedes transferir desde una mesa a otra mesa.');
+      isTransferring = false;
+      return;
+    }
+
+    const tableCartId = `mesa${tableId}`;
+    const tableProducts = sourceCart.products.map(p => ({ ...p }));
+    const tableTotal = sourceCart.total;
+
+    carts[tableCartId] = {
+      type: 'table',
+      tableId: tableId,
+      tableNumber: tableNumber,
+      tableName: `Mesa ${tableNumber}`,
+      products: tableProducts,
+      total: tableTotal
+    };
+
+    // Actualizar cache de mesas
+    if (tables[tableId]) {
+      tables[tableId].estado = 'ocupada';
+      tables[tableId].cartId = tableCartId;
+      tables[tableId].productCount = tableProducts.length;
+    }
+
+    // Persistir estado en BD
+    sendTableStateToServer(tableId, 'ocupada');
+
+    // Crear tab de mesa
+    createTableTab(tableId, tableNumber, tableCartId);
+
+    // Vaciar carrito de venta original
+    sourceCart.products = [];
+    sourceCart.total = 0;
+
+    updateCart();
+    closeTable();
+
+    console.log(`✓ Productos trasferidos a Mesa ${tableNumber}`);
+
+    setTimeout(() => {
+      switchToCart(tableCartId);
+    }, 200);
+
+  } catch (error) {
+    console.error('Error al transferir a mesa:', error);
+    alert('Error al transferir a la mesa. Intenta de nuevo.');
+  } finally {
+    isTransferring = false;
+  }
+}
+
+function createTableTab(tableId, tableNumber, tableCartId) {
+  const tabs = document.getElementById('ventasTabs');
+  const content = document.getElementById('ventasContent');
+  if (!tabs || !content) return;
+
+  const li = document.createElement('li');
+  li.className = 'nav-item';
+  const a = document.createElement('a');
+  a.className = 'nav-link';
+  a.setAttribute('data-bs-toggle', 'tab');
+  a.setAttribute('href', `#${tableCartId}`);
+  a.setAttribute('data-table-id', tableId);
+  a.innerHTML = `Mesa ${tableNumber} <i onclick="releaseTableTab('${tableCartId}', ${tableId}); event.stopPropagation();" class="fa-solid fa-circle-xmark fa-xl" style="color: #ff0000; margin-left: 8px;"></i>`;
+  a.addEventListener('click', () => switchToCart(tableCartId));
+  li.appendChild(a);
+
+  const addTabItem = document.getElementById('addTabItem');
+  if (addTabItem) tabs.insertBefore(li, addTabItem);
+  else tabs.appendChild(li);
+
+  const pane = document.createElement('div');
+  pane.className = 'tab-pane fade';
+  pane.id = tableCartId;
+  pane.setAttribute('data-table-id', tableId);
+  pane.innerHTML = `
+    <div id="carrito-${tableCartId}">
+      <center>
+        <h3>
+          Mesa ${tableNumber}: 
+          <div class="badge bg-warning rounded-circle" id="ventasCount-${tableCartId}">0</div>
+        </h3>
+      </center>
+      <div id="productos-carrito-${tableCartId}" style="overflow-y: scroll; height: 600px;"></div>
+      <div id="total-carrito-${tableCartId}"><h4>Total: $<span id="total-${tableCartId}">0.00</span></h4></div>
+      <button id="btn-procesar-venta-${tableCartId}" class="btn btn-primary btn-lg w-100 mb-2" onclick="saleConfirmationModal('${tableCartId}', getSessionUserId())">
+        Facturar Mesa <i class="fa-solid fa-receipt"></i>
+      </button>
+      <button id="btn-agregar-productos-${tableCartId}" class="btn btn-success btn-lg w-100" onclick="event.stopPropagation(); switchToCart('${tableCartId}')">
+        Agregar Más <i class="fa-solid fa-plus"></i>
+      </button>
+    </div>`;
+  content.appendChild(pane);
+
+  a.click();
+}
+
+function releaseTableTab(tableCartId, tableId) {
+  const tab = document.querySelector(`#ventasTabs a[href="#${tableCartId}"]`);
+  const containerTab = tab.parentElement;
+  const pane = document.getElementById(tableCartId);
+
+  if (!tab || !containerTab || !pane) return;
+
+  if (tab.classList.contains('active')) {
+    let nextTab = containerTab.previousElementSibling;
+    if (!nextTab || nextTab.id === 'addTabItem') {
+      nextTab = containerTab.nextElementSibling;
+      if (nextTab && nextTab.id === 'addTabItem') nextTab = null;
+    }
+    
+    if (nextTab) {
+      const nextTabLink = nextTab.querySelector('a');
+      if (nextTabLink) {
+        const nextTabId = nextTabLink.getAttribute('href').substring(1);
+        currentCartId = nextTabId;
+        const tab_instance = new bootstrap.Tab(nextTabLink);
+        tab_instance.show();
+      }
+    }
+  }
+
+  // Liberar mesa en BD
+  fetch("index.php?pg=sales&action=releaseTable", {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idMesa: tableId })
+  }).catch(e => console.error('Error al liberar mesa:', e));
+
+  // Actualizar cache
+  if (tables[tableId]) {
+    tables[tableId].estado = 'libre';
+    tables[tableId].cartId = null;
+    tables[tableId].productCount = 0;
+  }
+
+  updateMesasListUI(tableId);
+
+  delete carts[tableCartId];
+  containerTab.remove();
+  pane.remove();
+
+  console.log(`✓ Mesa ${tableId} liberada`);
+}
+
+// ============================================================================
+// FUNCIONES DE PERSISTENCIA EN BD (SINCRONIZACIÓN DE MESAS)
+// ============================================================================
+
+function updateTableDashboardItem(tableId, productCount) {
+  if (tables[tableId]) {
+    tables[tableId].productCount = productCount;
+  }
+}
+
+function sendTableStateToServer(tableId, estado) {
+  fetch("index.php?pg=sales&action=updateTableState", {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ idMesa: tableId, estado: estado })
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (!tables[tableId]) tables[tableId] = { idMesa: tableId, numero: data.data.numero || tableId, estado: data.data.estado, cartId: tables[tableId] ? tables[tableId].cartId : null, productCount: tables[tableId] ? tables[tableId].productCount : 0 };
+        else tables[tableId].estado = data.data.estado;
+        updateMesasListUI(tableId);
+      } else {
+        console.error('No se pudo actualizar estado en servidor:', data.error);
+      }
+    })
+    .catch(err => console.error('Error comunicando estado de mesa:', err));
+}
+
+function updateMesasListUI(changedTableId) {
+  try {
+    const entries = document.querySelectorAll(`[data-mesa-id="${changedTableId}"]`);
+    if (!entries || entries.length === 0) return;
+    const estado = tables[changedTableId] ? tables[changedTableId].estado : null;
+    entries.forEach(el => {
+      const title = el.querySelector('.mesa-title') || el.querySelector('h4');
+      if (estado === 'ocupada') {
+        if (title) title.style.color = 'red';
+        el.classList.add('mesa-ocupada');
+      } else {
+        if (title) title.style.color = '';
+        el.classList.remove('mesa-ocupada');
+      }
+    });
+  } catch (e) {
+    console.warn('updateMesasListUI fallo:', e);
+  }
+}
 function closeTable(event) {
   if (!event || event.target.id === 'tableOverlay') {
     document.getElementById('tableOverlay').classList.remove('active');
   }
+}
+
+// Mostrar el pop-up de confirmación que está definido en la vista
+function saleConfirmationModal(cartId, userId = null) {
+  // Mantener compatibilidad si se llama sin parámetros
+  if (!cartId || currentCartId !== cartId) cartId = currentCartId;
+  const cartObj = getCart(cartId);
+  if (!cartObj || !cartObj.products || cartObj.products.length === 0) {
+    alert('El carrito está vacío');
+    return;
+  }
+
+  const overlay = document.getElementById('saleConfirmationOverlay');
+
+  // Rellenar productos
+  const prodList = document.getElementById('saleProdList');
+  prodList.innerHTML = '';
+  cartObj.products.forEach(p => {
+    const row = document.createElement('div');
+    row.style.display = 'flex';
+    row.style.justifyContent = 'space-between';
+    row.style.padding = '6px 0';
+    row.innerHTML = `<div style="font-size:14px">${p.nombre} <small style=\"color:#666;margin-left:6px\">x${p.cantidad}</small></div><div style=\"font-weight:600\">$ ${new Intl.NumberFormat('es-CO').format(p.precioTotal)}</div>`;
+    prodList.appendChild(row);
+  });
+
+  // Rellenar total
+  const totalEl = document.getElementById('saleTotalValue');
+  if (totalEl) totalEl.textContent = `$ ${new Intl.NumberFormat('es-CO').format(cartObj.total)}`;
+
+  // Valor por defecto método de pago
+  overlay.dataset.paymentMethod = 'efectivo';
+  overlay.dataset.cartId = cartId;
+  overlay.dataset.userId = userId;
+
+  // Marcar botón efectivo como activo visualmente si existe
+  const btnE = document.getElementById('salePaymentEfectivo');
+  const btnT = document.getElementById('salePaymentTransfer');
+  if (btnE && btnT) {
+    btnE.classList.add('active');
+    btnT.classList.remove('active');
+  }
+
+  // Mostrar overlay (coincide con patrón de la calculadora y mesas)
+  overlay.classList.add('active');
+}
+
+function selectPaymentMethod(btn, method) {
+  const overlay = document.getElementById('saleConfirmationOverlay');
+  if (!overlay) return;
+  // desactivar todas
+  overlay.querySelectorAll('.payment-btn').forEach(b => b.classList.remove('active'));
+  // activar la pulsada
+  if (btn && btn.classList) btn.classList.add('active');
+  overlay.dataset.paymentMethod = method;
+}
+
+function closeSaleConfirmation(event) {
+  const el = document.getElementById('saleConfirmationOverlay');
+  if (!el) return;
+  if (!event || event.target.id === 'saleConfirmationOverlay') {
+    el.classList.remove('active');
+  }
+}
+
+function printInvoice(ventaId = 12) {
+  window.open("factura.php?pg=bill&id=" + ventaId, "_blank", "width=500,height=900");
+}
+
+function confirmSalePayment() {
+  const overlay = document.getElementById('saleConfirmationOverlay');
+  if (!overlay) return;
+  const metodo = overlay.dataset && overlay.dataset.paymentMethod ? overlay.dataset.paymentMethod : 'efectivo';
+  const cartId = overlay.dataset.cartId || currentCartId;
+  const userId = overlay.dataset.userId || getSessionUserId();
+  saleProcess(cartId, userId, metodo);
+  overlay.classList.remove('active');
+}
+
+function saleProcess(cartId, userId, paymentMethod = 'efectivo') {
+  if (!cartId || currentCartId !== cartId) cartId = currentCartId;
+  
+  const cartObj = getCart(cartId);
+  
+  // Validar carrito
+  if (!cartObj.products || cartObj.products.length === 0) {
+    alert('El carrito está vacío');
+    return;
+  }
+  const payload = {
+    cartId: cartId,
+    tipo: cartObj.type,
+    tableId: cartObj.tableId || null,
+    tableNumber: cartObj.tableNumber || null,
+    metodoPago: paymentMethod,
+    idUsuario: userId, 
+    total: cartObj.total,
+    productos: cartObj.products.map(p => ({
+      idProducto: p.idProducto,
+      cantidad: p.cantidad,
+      precioUnitario: p.precioVenta,
+      precioTotal: p.precioTotal
+    }))
+  };
+  fetch('index.php?pg=sales&action=CreateSale', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      Swal.fire({
+        icon: 'success',
+        title: '¡Éxito!',
+        text: 'Registro creado correctamente'
+      });
+      cartObj.products = [];
+      cartObj.total = 0;
+      updateCart();
+    } else {
+      alert('Error: ' + data.error);
+    }
+  })
+  .catch(err => console.error('Error al procesar venta:', err));
+
 }

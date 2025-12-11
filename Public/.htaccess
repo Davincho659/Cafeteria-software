@@ -1,4 +1,9 @@
 RewriteEngine On
+
+# Si la URL es vacía (entra al home), redirigir al login
+RewriteRule ^$ Public/index.php?pg=login [L]
+
+# Resto de reglas
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^(.*)$ index.php [L]
