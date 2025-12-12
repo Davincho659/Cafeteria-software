@@ -74,7 +74,7 @@ $detalles = $salesModel->getSaleDetails($idVenta);
     <h2>Cafetería Bello Horizonte</h2>
     <center><img src="assets/img/logo.jpg" alt="Logo" class="cafe-logo me-2" style="width:50px;height:auto;">
     <h3>Factura #<?php echo $idVenta; ?></h3>
-    <p>Fecha de creación: <b><?php echo date('d-m-Y H:i', strtotime($venta['fechaVenta'])); ?></b></p></center>
+    <p>Fecha de creación: <b><?php echo date('d-m-Y h:i A', strtotime($venta['fechaVenta'])); ?></b></p></center>
 
     <table class="table factura-table">
         <thead>

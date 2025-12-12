@@ -99,7 +99,8 @@ class SalesController {
             
             echo json_encode([
                 'success' => true,
-                'message' => 'Venta creada exitosamente'
+                'message' => 'Venta creada exitosamente',
+                'saleId' => $sale
             ]);
         } catch (Exeption $e) {
             echo json_encode([
@@ -137,4 +138,39 @@ class SalesController {
             echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         }
     }
+
+    function seeTodayBills() {
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            $sales = $this->salesModel->getSalesByDate(date('Y-m-d'));
+            echo json_encode([
+                'success' => true,
+                'data' => $sales
+            ]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    /* public function dayBills() {
+        // Recolectar filtros desde GET/POST (preferir GET para AJAX)
+        $filters = [];
+        $filters['idventa'] = $_REQUEST['idventa'] ?? null;
+        $filters['preciodesde'] = $_REQUEST['preciodesde'] ?? null;
+        $filters['preciohasta'] = $_REQUEST['preciohasta'] ?? null;
+        $filters['fechadesde'] = $_REQUEST['fechadesde'] ?? null;
+        $filters['fechahasta'] = $_REQUEST['fechahasta'] ?? null;
+        $filters['metodopago'] = $_REQUEST['metodopago'] ?? null;
+
+        // Obtener resultados filtrados
+        try {
+            $resultados = $this->salesModel->getFilteredSales($filters);
+        } catch (Exception $e) {
+            $resultados = [];
+        }
+
+        // Hacer disponible la variable a la vista
+        // La vista dayBills.view.php ya respeta ?ajax=1 para no incluir header
+        require_once __DIR__ . '/../Views/dayBills.view.php';
+    } */
 }

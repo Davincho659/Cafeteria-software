@@ -64,18 +64,14 @@
 }
 
 .producto-nombre {
-  font-size: 19px;
+   font-size: 19px;
   max-width: 180px;
   width: 100%;
   word-break: break-word;
   word-wrap: break-word;
   overflow-wrap: break-word;
   white-space: normal;
-  line-height: 1.2;
-  display: block;
 }
-
-
 
 .producto-categoria {
   font-size: 17px;
@@ -531,6 +527,7 @@
   top: 0;
   left: 0;
   width: 100%;
+  min-width: 500px;
   height: 100%;
   background: rgba(0, 0, 0, 0.45);
   z-index: 3000;
@@ -549,6 +546,7 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   width: auto;
   height: 450px;
+  width: 400px;
 }
 .table-card {
   overflow: hidden;

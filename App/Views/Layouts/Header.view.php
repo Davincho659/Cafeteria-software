@@ -85,7 +85,84 @@
                 ?>
                 <a href="index.php?pg=<?php echo $backPage; ?>"><button class="btn btn-secondary ms-2"><i class="fa-solid fa-chevron-left"></i></button></a>
                 <a class="btn btn-primary ms-5 " href="index.php?pg=mesas">Ver mesas <i class="fa-solid fa-utensils"></i></a>
+                <a id="openDayBillsBtn" class="btn btn-success ms-3" href="index.php?pg=reports&action=dayBills" >Ver facturas<i class="fa-solid fa-plus"></i></a>
             </nav>
+            <!-- Facturas del dia -->
+            <div class="container-fluid" style="min-width:350px;">
+                <div id="dayBillsOverlay" class="table-overlay" onclick="closeDayBillsOverlay(event)">
+                    <div class="table-popup" onclick="event.stopPropagation();" style="max-width:1000px; width:95%; height:90%; position:relative; padding:8px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <h2 style="margin:0">Facturas</h2>
+                            <i onclick="closeDayBillsOverlay()" class="fa-solid fa-circle-xmark fa-xl" style="color: #ff0000; cursor:pointer"></i>
+                        </div>
+                        <div id="dayBillsContent" style="flex:1; height:95%; overflow:auto; background:#fff; border-radius:6px; padding:12px;">
+                            <div id="dayBillsLoading" style="display:flex;align-items:center;justify-content:center;height:100%;">
+                                Cargando...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <script>
+                (function(){
+                    function qs(id){ return document.getElementById(id); }
+                    document.addEventListener('DOMContentLoaded', function(){
+                        var btn = qs('openDayBillsBtn');
+                        var overlay = qs('dayBillsOverlay');
+                        var content = qs('dayBillsContent');
+                        var loading = qs('dayBillsLoading');
+
+                        if(!btn || !overlay || !content) return;
+
+                        btn.addEventListener('click', function(e){
+                            e.preventDefault();
+                            var src = btn.getAttribute('data-src') || btn.getAttribute('href') || 'index.php?pg=dayBills';
+                            // pedir versión para inyección (sin header/footer)
+                            if (src.indexOf('ajax=1') === -1) {
+                                src = src + (src.indexOf('?') === -1 ? '?' : '&') + 'ajax=1';
+                            }
+
+                            overlay.classList.add('active');
+                            // mostrar loader
+                            if(loading) loading.style.display = 'flex';
+                            content.scrollTop = 0;
+
+                            fetch(src, { credentials: 'same-origin' })
+                                .then(function(res){
+                                    if(!res.ok) throw new Error('Error cargando datos');
+                                    return res.text();
+                                })
+                                .then(function(html){
+                                    if(loading) loading.style.display = 'none';
+                                    content.innerHTML = html;
+                                })
+                                .catch(function(err){
+                                    if(loading) loading.style.display = 'none';
+                                    content.innerHTML = '<div class="text-center text-danger">Error cargando facturas. Intente de nuevo.</div>';
+                                    console.error(err);
+                                });
+
+                            document.addEventListener('keydown', escHandler);
+                        });
+
+                        window.closeDayBillsOverlay = function(event){
+                            if(!overlay) return;
+                            if(!event || (event && event.target && event.target.id === 'dayBillsOverlay')){
+                                overlay.classList.remove('active');
+                                // limpiar contenido para liberar memoria y evitar duplicados
+                                try{ content.innerHTML = '<div id="dayBillsLoading" style="display:flex;align-items:center;justify-content:center;height:100%;">Cargando...</div>'; }catch(e){}
+                                document.removeEventListener('keydown', escHandler);
+                            }
+                        };
+
+                        function escHandler(e){
+                            if(e.key === 'Escape' || e.key === 'Esc'){
+                                closeDayBillsOverlay();
+                            }
+                        }
+                    });
+                })();
+                </script>
         <?php elseif($_GET['pg'] == 'mesas'): ?>
             <nav class="navbar navbar-expand-lg bg-body-tertiary" style="min-width:350px;">
                 <?php
@@ -110,8 +187,7 @@
 </body>
 </html>
 
-<!-- AQUÍ COMIENZA EL CONTENIDO PRINCIPAL -->
-<div class="container-fluid" style="min-width:350px;">
+
 
     
         

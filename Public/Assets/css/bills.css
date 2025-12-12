@@ -1,0 +1,89 @@
+.report-container {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    margin-bottom: 30px;
+}
+
+/* Títulos */
+.report-container h4 {
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* ============================
+   FORMULARIO DE FILTROS
+   ============================ */
+#filtrosReporte .form-label {
+    font-weight: 600;
+    color: #444;
+}
+
+#filtrosReporte input,
+#filtrosReporte select {
+    border-radius: 8px;
+    border: 1px solid #c9ccd1 !important;
+}
+
+#filtrosReporte input:focus,
+#filtrosReporte select:focus {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.25);
+}
+
+/* Botones */
+#filtrosReporte .btn-primary {
+    padding: 8px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+#filtrosReporte .btn-secondary {
+    padding: 8px 22px;
+    border-radius: 8px;
+}
+
+/* ============================
+   TABLA DE RESULTADOS
+   ============================ */
+.table {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table thead {
+    background: #0d6efd;
+    color: white;
+    font-weight: 600;
+}
+
+.table tbody tr:hover {
+    background: #f4f7ff;
+    transition: 0.2s;
+}
+
+/* Botón de acción */
+.table .btn-info {
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Mensaje sin resultados */
+.table td.text-muted {
+    font-size: 15px;
+    padding: 25px 0;
+}
+
+/* ============================
+   SOMBRA SUAVE PARA SECCIONES
+   ============================ */
+.card-section {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+    margin-top: 20px;
+}

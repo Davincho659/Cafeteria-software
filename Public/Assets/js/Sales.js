@@ -778,18 +778,6 @@ function saleConfirmationModal(cartId, userId = null) {
 
   const overlay = document.getElementById('saleConfirmationOverlay');
 
-  // Rellenar productos
-  const prodList = document.getElementById('saleProdList');
-  prodList.innerHTML = '';
-  cartObj.products.forEach(p => {
-    const row = document.createElement('div');
-    row.style.display = 'flex';
-    row.style.justifyContent = 'space-between';
-    row.style.padding = '6px 0';
-    row.innerHTML = `<div style="font-size:14px">${p.nombre} <small style=\"color:#666;margin-left:6px\">x${p.cantidad}</small></div><div style=\"font-weight:600\">$ ${new Intl.NumberFormat('es-CO').format(p.precioTotal)}</div>`;
-    prodList.appendChild(row);
-  });
-
   // Rellenar total
   const totalEl = document.getElementById('saleTotalValue');
   if (totalEl) totalEl.textContent = `$ ${new Intl.NumberFormat('es-CO').format(cartObj.total)}`;
@@ -829,9 +817,7 @@ function closeSaleConfirmation(event) {
   }
 }
 
-function printInvoice(ventaId = 12) {
-  window.open("factura.php?pg=bill&id=" + ventaId, "_blank", "width=500,height=900");
-}
+
 
 function confirmSalePayment() {
   const overlay = document.getElementById('saleConfirmationOverlay');
@@ -847,6 +833,7 @@ function saleProcess(cartId, userId, paymentMethod = 'efectivo') {
   if (!cartId || currentCartId !== cartId) cartId = currentCartId;
   
   const cartObj = getCart(cartId);
+  let facturaWindow = null;
   
   // Validar carrito
   if (!cartObj.products || cartObj.products.length === 0) {
@@ -878,13 +865,29 @@ function saleProcess(cartId, userId, paymentMethod = 'efectivo') {
       Swal.fire({
         icon: 'success',
         title: '¡Éxito!',
-        text: 'Registro creado correctamente'
+        text: 'Registro creado correctamente',
+        timer: 1500,
+        showConfirmButton: false
       });
+      openInvoice(data.saleId);
       cartObj.products = [];
       cartObj.total = 0;
       updateCart();
+      document.addEventListener("click", function () {
+        if (facturaWindow && !facturaWindow.closed) {
+                facturaWindow.close();
+                facturaWindow = null;
+            }
+      });
     } else {
       alert('Error: ' + data.error);
+    }
+    function openInvoice(id) {
+      facturaWindow = window.open(
+        "factura.php?pg=bill&id=" + id,
+        "_blank",
+        "width=350,height=900"
+      );
     }
   })
   .catch(err => console.error('Error al procesar venta:', err));

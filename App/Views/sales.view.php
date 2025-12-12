@@ -85,29 +85,23 @@
                     <h2 style="margin:0">Confirmar Venta</h2>
                     <i onclick="closeSaleConfirmation()" class="fa-solid fa-circle-xmark fa-xl" style="color: #ff0000; margin-left: 8px; cursor:pointer"></i>
                 </div>
-                <div class="sale-confirmation-content" style="margin-top:12px;">
-                    <div id="saleProdList" style="max-height:300px;overflow-y:auto;padding-right:6px;">
-                        <!-- Productos se inyectan desde JS -->
-                    </div>
+                <div class="sale-confirmation-content" style="margin-top:12px; display: flex;flex-direction: column;height: 90%;">
 
                     <div style="display:flex;justify-content:space-between;align-items:center;margin:12px 0 8px 0;">
-                        <div style="font-size:16px;font-weight:700">Total</div>
-                        <div id="saleTotalValue" style="font-size:18px;font-weight:800;color:#2b8a3e">$ 0.00</div>
+                        <h2 style="font-size:25px;font-weight:700">Total</h2>
+                        <div id="saleTotalValue" style="font-size:25px;font-weight:800;color:#2b8a3e">$ 0.00</div>
                     </div>
 
-                    <div style="margin-top:6px;margin-bottom:8px;font-weight:600">Método de pago</div>
-                    <div style="display:flex;gap:8px;margin-bottom:8px;">
+                    <center><h5 style="margin-top:10px;margin-bottom:15px;font-weight:600">Método de pago</h5></center>
+                    <div style="display:flex;gap:8px;margin-bottom:50px;">
                         <button id="salePaymentEfectivo" type="button" class="btn btn-outline-primary payment-btn" onclick="selectPaymentMethod(this,'efectivo')">Efectivo</button>
                         <button id="salePaymentTransfer" type="button" class="btn btn-outline-primary payment-btn" onclick="selectPaymentMethod(this,'transferencia')">Transferencia</button>
                     </div>
 
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">
-                        <div>
-                            <button id="salePrintBtn" type="button" class="btn btn-light" onclick="printInvoice()">Imprimir factura</button>
-                        </div>
-                        <div style="display:flex;gap:8px;">
-                            <button type="button" class="btn btn-secondary" onclick="closeSaleConfirmation()">Cancelar</button>
-                            <button type="button" id="saleConfirmBtn" class="btn btn-success" onclick="confirmSalePayment()">Confirmar</button>
+                    <div style="display: flex;justify-content: space-between;align-items: center;margin-top: auto;padding-top: 12px;">
+                        <div style="display:flex;gap:80px;">
+                            <button type="button" class="btn btn-secondary btn-lg" onclick="closeSaleConfirmation()">Cancelar</button>
+                            <button type="button" id="saleConfirmBtn" class="btn btn-success btn-lg" onclick="confirmSalePayment()">Confirmar</button>
                         </div>
                     </div>
                 </div>

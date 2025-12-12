@@ -36,4 +36,17 @@ class Sales {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function filter($filter) {
+        $sql = "SELECT * FROM ventas";
+        $result = $sql . $filter;
+        $stmt = $this->db->query($result);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getAll() {
+        $sql = "SELECT * FROM ventas";
+        $strm= $this->db->query($sql);
+        return $strm->fetchAll(PDO::FETCH_ASSOC);
+    }
+
 }
