@@ -37,14 +37,14 @@ class Sales {
     }
 
     public function filter($filter) {
-        $sql = "SELECT * FROM ventas";
+        $sql = "SELECT * FROM ventas WHERE  date(fechaVenta) = CURDATE()";
         $result = $sql . $filter;
         $stmt = $this->db->query($result);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getAll() {
-        $sql = "SELECT * FROM ventas";
+        $sql = "SELECT * FROM ventas WHERE date(fechaVenta) = CURDATE()";
         $strm= $this->db->query($sql);
         return $strm->fetchAll(PDO::FETCH_ASSOC);
     }

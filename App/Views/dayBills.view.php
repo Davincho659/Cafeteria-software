@@ -1,4 +1,9 @@
-<?php require loadView('Layouts/header'); ?>
+<?php 
+if (!isset($_GET['ajax']) || $_GET['ajax'] != '1') {
+    require loadView('Layouts/header'); 
+}
+?>
+
 <?php 
 if (!isset($_POST['idVenta'])) {
     $_POST['idVenta'] = '';
@@ -27,7 +32,7 @@ if (!isset($_POST['metodoPago'])) {
         <!-- ID Venta -->
         <div class="col-12 mb-3">
             <label class="form-label">ID Venta</label>
-            <input type="number" name="idventa" class="form-control"
+            <input type="number" name="idVenta" class="form-control"
                 value="<?php echo isset($_POST['idVenta']) ? $_POST['idVenta'] : ''; ?>">
         </div>
 
@@ -106,7 +111,7 @@ if (!isset($_POST['metodoPago'])) {
     <!-- ============================================================= -->
 
     <div class="col-12 mt-4">
-        <h4 class="card-title">Resultados del reporte </h4>
+        <h4 class="card-title">Resultados del reporte (<?php echo count($resultados); ?> registros)</h4>
 
         <table class="table table-striped table-bordered">
             <thead class="table-dark">
@@ -148,4 +153,3 @@ if (!isset($_POST['metodoPago'])) {
     </div>
 </div>
 
-<?php require loadView('Layouts/Footer'); ?>

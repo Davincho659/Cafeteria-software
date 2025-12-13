@@ -1,7 +1,7 @@
 <?php require loadView('Layouts/header'); ?>
 <link rel="stylesheet" href="assets/css/sales.css">
 
-<div class="d-flex inline-block tab-container" data-user-id="<?= $_SESSION['user_id']  ?>">
+<div class="d-flex inline-block tab-container" data-user-id="<?= $_SESSION['user_id']  ?>" >
     <ul class="nav nav-tabs" id="ventasTabs">
         <li class="nav-item">
             <a class="nav-link active" data-bs-toggle="tab" href="#venta1">Venta 1</a>
@@ -14,18 +14,27 @@
 </div>
 
 
-<div class="container-fluid px-2">
-  <div class="row d-flex" style="min-height: calc(100vh - 120px);">
-        <div class="col-auto border-end overflow-auto mt-3" id="categorias">
+<div class="container-fluid app-root">
+  <div class="row d-flex h-100" >
+        <div class="col-auto border-end mt-3"
+     id="categorias"
+     style="
+        height: 90vh;
+        overflow-y: auto;
+        max-width: 280px;
+     ">
             <h2>Categorías</h2>
             <nav class="categorias-nav" id="categoriasNav">
                 <!-- Las categorías se cargan dinámicamente aquí -->
             </nav>
         </div>
-        <div class="col" style="min-height: calc(100vh - 140px); overflow-y: auto;" id="productos">
+        <div class="col mt-3"
+     id="productos"
+     style="
+        height: 100%;">
             <div class="input-group mb-3 mt-3">
                 <h4 id="prueba">Productos</h4>
-                <input type="text" class="form-control ms-4"  placeholder="Buscar" id="search" >
+                <input type="text" class="form-control ms-4"  placeholder="Buscar" id="search" style="max-width: 700px;">
                 <button class="btn btn-outline-secondary" type="submit" id="button-addon2">
                 <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-magnifying-glass"></i></span></button>
             </div>
@@ -107,22 +116,40 @@
                 </div>
             </div>
         </div>
-        <div class="col-auto border-start bg-light ps-1" style="min-width: 320px;" >
+        <div class="col-auto border-start bg-light ps-1" 
+            style=" top: 20; right: 0; min-width: 510px; height: 98vh; display: flex; flex-direction: column; z-index: 100;">
+            
             <!-- Carritos por pestaña -->
-            <div id="ventasContent" class="tab-content">
-                <div class="tab-pane fade show active" id="venta1">
-                    <div id="carrito-venta1">
-                        <center><h3>Ventas: <div class="badge bg-primary rounded-circle" id="ventasCount-venta1">0</div></h3></center>
-                        <div id="productos-carrito-venta1" style="overflow-y: scroll; height: 650px;"></div>
-                        <div id="total-carrito-venta1">
-                            <h4>Total: $<span id="total-venta1">0.00</span></h4>
+            <div id="ventasContent" class="tab-content" style="display: flex; flex-direction: column; height: 100%;">
+                <div class="tab-pane fade show active" id="venta1" style="display: flex; flex-direction: column; height: 100%;">
+                    <div id="carrito-venta1" style="display: flex; flex-direction: column; height: 100%;">
+                        
+                        <!-- Header fijo -->
+                        <center style="flex-shrink: 0; padding: 1rem 0;">
+                            <h3>Ventas: <div class="badge bg-primary rounded-circle" id="ventasCount-venta1">0</div></h3>
+                        </center>
+                        
+                        <!-- Lista de productos con scroll interno -->
+                        <div id="productos-carrito-venta1" style="
+        height: calc(85vh - 220px);
+        overflow-y: auto;
+        overflow-x: hidden;
+     "></div>
+                        
+                        <!-- Total y botones fijos abajo -->
+                        <div style="flex-shrink: 0; padding: 1rem 0;">
+                            <div id="total-carrito-venta1">
+                                <h4>Total: $<span id="total-venta1">0.00</span></h4>
+                            </div>
+                            <button id="btn-procesar-venta-venta1" class="btn btn-primary btn-lg w-100 mb-2" 
+                                    onclick="saleConfirmationModal('venta1', <?= $_SESSION['user_id'] ?>)" role="button">
+                                Procesar Venta <i class="fa-solid fa-cash-register"></i>
+                            </button>
+                            <button id="btn-agregar-mesa-venta1" class="btn btn-secondary btn-lg w-100" 
+                                    onclick="openTableSelectionModal(event)" role="button">
+                                Agregar a Mesa <i class="fa-solid fa-utensils"></i>
+                            </button>
                         </div>
-                        <button id="btn-procesar-venta-venta1" class="btn btn-primary btn-lg w-100 mb-2" onclick="saleConfirmationModal('venta1', <?= $_SESSION['user_id'] ?>)" role="button">
-                            Procesar Venta <i class="fa-solid fa-cash-register"></i>
-                        </button>
-                        <button id="btn-agregar-mesa-venta1" class="btn btn-secondary btn-lg w-100" onclick="openTableSelectionModal(event)" role="button">
-                            Agregar a Mesa <i class="fa-solid fa-utensils"></i>
-                        </button>
                     </div>
                 </div>
             </div>

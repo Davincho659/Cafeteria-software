@@ -35,6 +35,8 @@
                             <label for="tipo" class="form-label fw-semibold">Tipo de Producto</label>
                             <select id="tipo" name="tipo" class="form-select" required>
                             <option value="">Seleccione.</option>
+                            <option value="venta">Producto de Venta</option>
+                            <option value="insumo">Insumo</option>
                             </select>
                         </div>
 

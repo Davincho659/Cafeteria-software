@@ -531,22 +531,7 @@ function showTableSelectionPopup(mesas) {
 function openTableSelectionModal(event) {
   event.stopPropagation();
   
-  const cartObj = getCart();
-  if (!cartObj.products || cartObj.products.length === 0) {
-    Swal.fire({
-      title: '¿Estás seguro?',
-      text: "Esta acción no se puede deshacer",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, continuar',
-      cancelButtonText: 'Cancelar'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        // Aquí ejecutas la acción (submit, fetch, delete, etc.)
-      }
-    });
-    return;
-  }
+  
 
   loadTables();
 }

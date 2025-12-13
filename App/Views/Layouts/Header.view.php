@@ -75,7 +75,7 @@
                 </div>
             </nav>
         <?php elseif($_GET['pg'] == 'sales'): ?>
-            <nav class="navbar navbar-expand-lg bg-body-tertiary" style="min-width:350px;">
+            <nav class="navbar navbar-expand-lg bg-body-tertiary" style="min-width:350px; ">
                 <?php
                     
                     $backPage = 'home';
