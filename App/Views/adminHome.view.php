@@ -50,7 +50,7 @@
                 </div>
 
                 <div class="col-md-3">
-                    <a href="index.php?pg=admin" class="text-decoration-none text-dark">
+                    <a href="index.php?pg=product" class="text-decoration-none text-dark">
                     <div class="menu-card card-facturas p-5">
                         <br>
                         <i class="fa-solid fa-user fa-2xl" style="color: #ffffff;"></i><br>

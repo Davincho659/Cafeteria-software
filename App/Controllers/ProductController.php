@@ -4,7 +4,7 @@ require_once __DIR__ . '/../Models/products.php';
 require_once __DIR__ . '/../Models/Categories.php';
 require_once __DIR__ . '/../Core/Functions.php';
 
-class AdminController {
+class ProductController {
 	// Procesa la creación de un producto (formulario multipart/form-data)
 	public function createProduct() {
         header('Content-Type: application/json; charset=utf-8');
@@ -71,22 +71,7 @@ class AdminController {
         }
 	}
 
-    public function getCategories() {
-        header('Content-Type: application/json; charset=utf-8');
-        try {
-            $categoriesModel = new Categories();
-            $categories = $categoriesModel->getAll();
-            echo json_encode([
-                'success' => true,
-                'data' => $categories
-            ]);
-        } catch (Exception $e) {
-            echo json_encode([
-                'success' => false,
-                'error' => $e->getMessage()
-            ]);
-        }
-    }
+    
     /* public function uploadImage() {
             header('Content-Type: application/json');
             
@@ -254,4 +239,81 @@ class AdminController {
         }
     }
 
+    public function getCategories() {
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            $categoriesModel = new Categories();
+            $categories = $categoriesModel->getAll();
+            echo json_encode([
+                'success' => true,
+                'data' => $categories
+            ]);
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function createCategories() {
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Método no permitido');
+            }
+
+            $nombre = $_POST['nombre'] ?? null;
+            if (!$nombre) {
+                throw new Exception('El nombre de la categoría es requerido');
+            }
+
+            $categoriesModel = new Categories();
+            $idCategoria = $categoriesModel->create($nombre);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Categoría creada exitosamente',
+                'idCategoria' => $idCategoria
+            ]);
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function updateCategories() {
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Método no permitido');
+            }
+
+            $idCategoria = $_POST['idCategoria'] ?? null;
+            $nombre = $_POST['nombre'] ?? null;
+            if (!$idCategoria || !$nombre) {
+                throw new Exception('ID y nombre de la categoría son requeridos');
+            }
+
+            $categoriesModel = new Categories();
+            // Aquí deberías implementar el método update en el modelo Categories
+            $success = $categoriesModel->update($idCategoria, $nombre);
+
+            if (!$success) {
+                throw new Exception('Error al actualizar la categoría');
+            }
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Categoría actualizada exitosamente'
+            ]);
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
 }

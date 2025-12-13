@@ -171,8 +171,8 @@
                 ?>
                 <a href="index.php?pg=<?php echo $backPage; ?>"><button class="btn btn-secondary ms-2"><i class="fa-solid fa-chevron-left"></i></button></a>
             </nav>
-        <?php elseif($_GET['pg'] == 'admin'): ?>
-            <nav class="navbar navbar-expand-lg bg-body-tertiary" style="min-width:350px;">
+        <?php elseif($_GET['pg'] == 'product'): ?>
+            <nav class="navbar navbar-expand-lg bg-body-tertiary" style="min-width:350px; position:fixed;">
                 <?php
                     
                     $backPage = 'home';

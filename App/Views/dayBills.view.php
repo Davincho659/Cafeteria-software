@@ -2,9 +2,8 @@
 if (!isset($_GET['ajax']) || $_GET['ajax'] != '1') {
     require loadView('Layouts/header'); 
 }
-?>
 
-<?php 
+
 if (!isset($_POST['idVenta'])) {
     $_POST['idVenta'] = '';
 }
@@ -14,15 +13,12 @@ if (!isset($_POST['precioDesde'])) {
 if (!isset($_POST['precioHasta'])) {
     $_POST['precioHasta'] = '';
 }
-if (!isset($_POST['fechaDesde'])) {
-    $_POST['fechaDesde'] = '';
-}
-if (!isset($_POST['fechaHasta'])) {
-    $_POST['fechaHasta'] = '';
-}
+if (!isset($_POST['horaDesde'])) $_POST['horaDesde'] = '';
+if (!isset($_POST['horaHasta'])) $_POST['horaHasta'] = '';
 if (!isset($_POST['metodoPago'])) {
     $_POST['metodoPago'] = '';
 }
+
 ?>
 
 <link rel="stylesheet" href="assets/css/bills.css">
@@ -59,19 +55,18 @@ if (!isset($_POST['metodoPago'])) {
                                 style="border: #bababa 1px solid; color:#000;">
                         </th>
 
-                        <!-- Fecha desde -->
                         <th>
-                            <label>Fecha desde</label>
-                            <input type="date" name="fechaDesde" class="form-control mt-2"
-                                value="<?php echo $_POST['fechaDesde'] ?? ''; ?>"
+                            <label>Hora desde</label>
+                            <input type="time" name="horaDesde" class="form-control mt-2"
+                                value="<?php echo $_POST['horaDesde'] ?? ''; ?>"
                                 style="border: #bababa 1px solid; color:#000;">
                         </th>
 
-                        <!-- Fecha hasta -->
+                        <!-- Hora hasta -->
                         <th>
-                            <label>Fecha hasta</label>
-                            <input type="date" name="fechaHasta" class="form-control mt-2"
-                                value="<?php echo $_POST['fechaHasta'] ?? ''; ?>"
+                            <label>Hora hasta</label>
+                            <input type="time" name="horaHasta" class="form-control mt-2"
+                                value="<?php echo $_POST['horaHasta'] ?? ''; ?>"
                                 style="border: #bababa 1px solid; color:#000;">
                         </th>
 
@@ -111,8 +106,11 @@ if (!isset($_POST['metodoPago'])) {
     <!-- ============================================================= -->
 
     <div class="col-12 mt-4">
-        <h4 class="card-title">Resultados del reporte (<?php echo count($resultados); ?> registros)</h4>
-
+        <h4 class="card-title">
+                    Resultados del reporte 
+                    (<?php echo $paginacion['totalRegistros']; ?> registros totales - 
+                    Mostrando página <?php echo $paginacion['paginaActual']; ?> de <?php echo $paginacion['totalPaginas']; ?>)
+                </h4>
         <table class="table table-striped table-bordered">
             <thead class="table-dark">
                 <tr>
@@ -129,7 +127,7 @@ if (!isset($_POST['metodoPago'])) {
                     <?php foreach ($resultados as $fila): ?>
                         <tr>
                             <td><?php echo $fila['idVenta']; ?></td>
-                            <td><?php echo $fila['fechaVenta']; ?></td>
+                            <td><?php echo date('d/m/Y h:i A', strtotime($fila['fechaVenta'])); ?></td>
                             <td><?php echo $fila['metodoPago']; ?></td>
                             <td>$<?php echo number_format($fila['total'], 0, ',', '.'); ?></td>
 
@@ -150,6 +148,80 @@ if (!isset($_POST['metodoPago'])) {
                 <?php endif; ?>
             </tbody>
         </table>
+
+        <!-- CONTROLES DE PAGINACIÓN -->
+        <?php if ($paginacion['totalPaginas'] > 1): ?>
+            <nav aria-label="Paginación de reportes">
+                <ul class="pagination justify-content-center">
+                    
+                    <!-- Botón anterior -->
+                    <li class="page-item <?php echo ($paginacion['paginaActual'] <= 1) ? 'disabled' : ''; ?>">
+                        <a class="page-link" href="?pg=reports&action=dayBills&page=<?php echo $paginacion['paginaActual'] - 1; ?>" 
+                           onclick="enviarFormConPagina(<?php echo $paginacion['paginaActual'] - 1; ?>); return false;">
+                            « Anterior
+                        </a>
+                    </li>
+
+                    <?php 
+                    // Mostrar números de página
+                    $rango = 2; // Cuántas páginas mostrar a cada lado
+                    $inicio = max(1, $paginacion['paginaActual'] - $rango);
+                    $fin = min($paginacion['totalPaginas'], $paginacion['paginaActual'] + $rango);
+                    
+                    // Primera página si no está en el rango
+                    if ($inicio > 1) {
+                        echo '<li class="page-item"><a class="page-link" href="#" onclick="enviarFormConPagina(1); return false;">1</a></li>';
+                        if ($inicio > 2) {
+                            echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                        }
+                    }
+                    
+                    // Páginas en el rango
+                    for ($i = $inicio; $i <= $fin; $i++): 
+                    ?>
+                        <li class="page-item <?php echo ($i == $paginacion['paginaActual']) ? 'active' : ''; ?>">
+                            <a class="page-link" href="?pg=reports&action=dayBills&page=<?php echo $i; ?>" 
+                               onclick="enviarFormConPagina(<?php echo $i; ?>); return false;">
+                                <?php echo $i; ?>
+                            </a>
+                        </li>
+                    <?php endfor; 
+                    
+                    // Última página si no está en el rango
+                    if ($fin < $paginacion['totalPaginas']) {
+                        if ($fin < $paginacion['totalPaginas'] - 1) {
+                            echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                        }
+                        echo '<li class="page-item"><a class="page-link" href="#" onclick="enviarFormConPagina(' . $paginacion['totalPaginas'] . '); return false;">' . $paginacion['totalPaginas'] . '</a></li>';
+                    }
+                    ?>
+
+                    <!-- Botón siguiente -->
+                    <li class="page-item <?php echo ($paginacion['paginaActual'] >= $paginacion['totalPaginas']) ? 'disabled' : ''; ?>">
+                        <a class="page-link" href="?pg=reports&action=dayBills&page=<?php echo $paginacion['paginaActual'] + 1; ?>" 
+                           onclick="enviarFormConPagina(<?php echo $paginacion['paginaActual'] + 1; ?>); return false;">
+                            Siguiente »
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        <?php endif; ?>
     </div>
 </div>
 
+<script>
+// Función para mantener los filtros al cambiar de página
+function enviarFormConPagina(pagina) {
+    const form = document.getElementById('filtrosReporte');
+    const url = new URL(form.action);
+    url.searchParams.set('page', pagina);
+    form.action = url.toString();
+    form.submit();
+}
+</script>
+
+<?php 
+if (!isset($_GET['ajax']) || $_GET['ajax'] != '1') {
+    require loadView('Layouts/footer');  
+} 
+?>

@@ -15,12 +15,18 @@ class Categories {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function create($idCategoria,$nombre) {
+    public function create($nombre) {
         // if idCategoria is auto-increment, caller can pass null
         $query = "INSERT INTO categorias (nombre) VALUES (?)";
         $stmt = $this->db->prepare($query);
         $stmt->execute([$nombre]);
         return $this->db->lastInsertId();
+    }
+
+    public function update($id, $nombre) {
+        $query = "UPDATE categorias SET nombre = ? WHERE idCategoria = ?";
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute([$nombre, $id]);
     }
     
 }

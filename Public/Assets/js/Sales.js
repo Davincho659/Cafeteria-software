@@ -381,6 +381,17 @@ function switchToCart(cartId) {
 }
 
 // Crea nueva pestaña y su pane con ids únicos
+function switchToCart(cartId) {
+  currentCartId = cartId;
+  document.querySelectorAll('.cantidad-display').forEach(btn => {
+    const pid = btn.id.replace('prod-qty-', '');
+    const prod = getCart().products.find(p => parseInt(p.idProducto) === parseInt(pid));
+    btn.textContent = prod ? prod.cantidad : 1;
+  });
+  updateCart();
+}
+
+// Crea nueva pestaña y su pane con ids únicos
 function addTabs() {
   const tabs = document.getElementById('ventasTabs');
   const content = document.getElementById('ventasContent');
@@ -406,15 +417,27 @@ function addTabs() {
   pane.id = id;
   pane.innerHTML = `
     <div id="carrito-${id}">
-      <center><h3>Ventas: <div class="badge bg-primary rounded-circle" id="ventasCount-${id}">0</div></h3></center>
-      <div id="productos-carrito-${id}" style="overflow-y: scroll; height: 600px;"></div>
-      <div id="total-carrito-${id}"><h4>Total: $<span id="total-${id}">0.00</span></h4></div>
-      <button id="btn-procesar-venta-${id}" class="btn btn-primary btn-lg w-100 mb-2" onclick="saleConfirmationModal('${id}', getSessionUserId())">Procesar Venta <i class="fa-solid fa-cash-register"></i></button>
-      <button id="btn-agregar-mesa-${id}" class="btn btn-secondary btn-lg w-100" onclick="openTableSelectionModal(event)" role="button">Agregar Mesa <i class="fa-solid fa-utensils"></i></button>
+      <center style="flex-shrink: 0; padding: 1rem 0;">
+        <h3>Ventas: <div class="badge bg-primary rounded-circle" id="ventasCount-${id}">0</div></h3>
+      </center>
+      <div id="productos-carrito-${id}" style="height: calc(85vh - 220px);overflow-y: auto;overflow-x: hidden;"></div>
+      <div style="flex-shrink: 0; padding: 1rem 0;">
+          <div id="total-carrito-${id}">
+              <h4>Total: $<span id="total-${id}">0.00</span></h4>
+          </div>
+          <button id="btn-procesar-venta-${id}" class="btn btn-primary btn-lg w-100 mb-2" 
+                  onclick="saleConfirmationModal('${id}', <?= $_SESSION['user_id'] ?>)" role="button">
+              Procesar Venta <i class="fa-solid fa-cash-register"></i>
+          </button>
+          <button id="btn-agregar-mesa-${id}" class="btn btn-secondary btn-lg w-100" 
+                  onclick="openTableSelectionModal(event)" role="button">
+              Agregar a Mesa <i class="fa-solid fa-utensils"></i>
+          </button>
+      </div>
     </div>`;
   content.appendChild(pane);
 
-  carts[id] = { type: 'sale', products: [], total: 0 };
+  carts[id] = { products: [], total: 0 };
   a.click();
 }
 
@@ -465,7 +488,7 @@ function dropTab(tabId) {
   
   containerTab.remove();
   pane.remove();
-}
+} 
 
 function loadTables() {
   fetch('index.php?pg=sales&action=getTables')

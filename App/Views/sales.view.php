@@ -120,9 +120,9 @@
             style=" top: 20; right: 0; min-width: 510px; height: 98vh; display: flex; flex-direction: column; z-index: 100;">
             
             <!-- Carritos por pestaña -->
-            <div id="ventasContent" class="tab-content" style="display: flex; flex-direction: column; height: 100%;">
-                <div class="tab-pane fade show active" id="venta1" style="display: flex; flex-direction: column; height: 100%;">
-                    <div id="carrito-venta1" style="display: flex; flex-direction: column; height: 100%;">
+            <div id="ventasContent" class="tab-content">
+                <div class="tab-pane fade show active" id="venta1">
+                    <div id="carrito-venta1">
                         
                         <!-- Header fijo -->
                         <center style="flex-shrink: 0; padding: 1rem 0;">
@@ -130,12 +130,7 @@
                         </center>
                         
                         <!-- Lista de productos con scroll interno -->
-                        <div id="productos-carrito-venta1" style="
-        height: calc(85vh - 220px);
-        overflow-y: auto;
-        overflow-x: hidden;
-     "></div>
-                        
+                        <div id="productos-carrito-venta1" style="height: calc(85vh - 220px);overflow-y: auto;overflow-x: hidden;"></div>
                         <!-- Total y botones fijos abajo -->
                         <div style="flex-shrink: 0; padding: 1rem 0;">
                             <div id="total-carrito-venta1">

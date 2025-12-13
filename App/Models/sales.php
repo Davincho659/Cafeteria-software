@@ -44,9 +44,36 @@ class Sales {
     }
 
     public function getAll() {
-        $sql = "SELECT * FROM ventas WHERE date(fechaVenta) = CURDATE()";
-        $strm= $this->db->query($sql);
-        return $strm->fetchAll(PDO::FETCH_ASSOC);
+        return $this->get();
+    }
+
+    public function getByDay() {
+        return $this->get(" WHERE DATE(fechaVenta) = CURDATE()");
+    }
+
+    public function getWithPagination($filterQuery = "", $offset = 0, $limit = 10) {
+        $sql = "SELECT * FROM ventas WHERE DATE(fechaVenta) = CURDATE()";
+        $sql .= $filterQuery;
+        $sql .= " ORDER BY fechaVenta DESC LIMIT $offset, $limit";
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function countWithFilters($filterQuery = "") {
+        $sql = "SELECT COUNT(*) as total FROM ventas WHERE DATE(fechaVenta) = CURDATE()";
+        $sql .= $filterQuery;
+        $stmt = $this->db->query($sql);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    }
+
+    private function get($consult = null) {
+        $sql = "SELECT * FROM ventas";
+        if ($consult) {
+            $sql .= " " . $consult;
+        }
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
 }

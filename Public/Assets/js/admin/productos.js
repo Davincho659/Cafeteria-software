@@ -24,7 +24,7 @@ function setupCreateForm() {
         
         const formData = new FormData(form);
         
-        fetch('index.php?pg=admin&action=createProduct', {
+        fetch('index.php?pg=product&action=createProduct', {
             method: 'POST',
             body: formData
         })
@@ -74,7 +74,7 @@ function setupCreateForm() {
 };
 
 function loadCategories() {
-    fetch('index.php?pg=admin&action=getCategories')
+    fetch('index.php?pg=product&action=getCategories')
         .then(res => res.json())
         .then(data => {
             if (data.success) {
@@ -97,7 +97,7 @@ function loadCategories() {
 }
 
 function loadProducts() {
-    fetch('index.php?pg=admin&action=getProducts')
+    fetch('index.php?pg=product&action=getProducts')
         .then(res => res.json())
         .then(data => {
             if (data.success) showProducts(data.data);
@@ -129,7 +129,7 @@ function showProducts(products) {
 }
 
 function openEdit(id) {
-    fetch(`index.php?pg=admin&action=getProduct&id=${id}`)
+    fetch(`index.php?pg=product&action=getProduct&id=${id}`)
         .then(res => res.json())
         .then(data => {
             if (!data.success) return alert('Producto no encontrado');
@@ -157,7 +157,7 @@ function setupEditFormHandler() {
         submitBtn.disabled = true;
         
         const fd = new FormData(form);
-        fetch('index.php?pg=admin&action=updateProduct', {
+        fetch('index.php?pg=product&action=updateProduct', {
             method: 'POST',
             body: fd
         })
@@ -184,7 +184,7 @@ function setupEditFormHandler() {
 
 function deleteProduct(id) {
     if (!confirm('¿Eliminar producto?')) return;
-    fetch(`index.php?pg=admin&action=deleteProduct&id=${id}`, {
+    fetch(`index.php?pg=product&action=deleteProduct&id=${id}`, {
         method: 'POST'
     })
     .then(res => res.json())
