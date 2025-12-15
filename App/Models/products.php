@@ -61,4 +61,6 @@ class Products {
         $stmt = $this->db->prepare($query);
         return $stmt->execute([$id]);
     }
+
+    
 }

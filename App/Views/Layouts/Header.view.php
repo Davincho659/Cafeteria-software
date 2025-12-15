@@ -182,6 +182,17 @@
                 ?>
                 <a href="index.php?pg=<?php echo $backPage; ?>"><button class="btn btn-secondary ms-2"><i class="fa-solid fa-chevron-left"></i></button></a>
             </nav>
+        <?php else: ?>
+            <nav class="navbar navbar-expand-lg bg-body-tertiary" style="min-width:350px; ">
+                <?php
+                    
+                    $backPage = 'home';
+                    if (isset($_SESSION['role']) && strtolower($_SESSION['role']) === 'admin') {
+                        $backPage = 'adminHome';
+                    }
+                ?>
+                <a href="index.php?pg=<?php echo $backPage; ?>"><button class="btn btn-secondary ms-2"><i class="fa-solid fa-chevron-left"></i></button></a>
+            </nav>
         <?php endif; ?>
     </header>
 </body>

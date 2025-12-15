@@ -91,6 +91,7 @@ function loadCategories() {
                         sel.appendChild(opt);
                     });
                 });
+                showCategories(data.data);
             }
         })
         .catch(err => console.error('Error cargando categorías:', err));
@@ -122,6 +123,25 @@ function showProducts(products) {
             <td>
                 <button class="btn btn-sm btn-primary" onclick="openEdit(${p.idProducto})">Editar</button>
                 <button class="btn btn-sm btn-danger" onclick="deleteProduct(${p.idProducto})">Eliminar</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function showCategories(categories) {
+    const tbody = document.getElementById('categories');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    categories.forEach(c => {
+        const tr = document.createElement('tr');
+        const imgPath = c.imagen ? `assets/img/${c.imagen}` : 'assets/img/categories/default.jpg';
+        tr.innerHTML = `
+            <td><img src="${imgPath}" style="width:50px;height:50px;object-fit:cover"></td>
+            <td>${c.nombre}</td>
+            <td>
+                <button class="btn btn-sm btn-primary" onclick="openEditCategory(${c.idCategoria})">Editar</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteCategory(${c.idCategoria})">Eliminar</button>
             </td>
         `;
         tbody.appendChild(tr);

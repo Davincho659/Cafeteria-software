@@ -26,7 +26,7 @@
                     </h5>
 
                     <form method="post" enctype="multipart/form-data"
-                          action="?pg=category&action=create">
+                          action="?pg=product&action=createCategorie">
 
                         <div class="mb-3">
                             <label class="form-label fw-semibold">
@@ -105,7 +105,7 @@
                                 <label class="form-label fw-semibold">
                                     Categoría
                                 </label>
-                                <select name="categoria" class="form-select" required>
+                                <select id="categoria" name="categoria" class="form-select" required>
                                     <option value="">Seleccione...</option>
                                 </select>
                             </div>
@@ -211,6 +211,7 @@
                             <!-- JS / PHP -->
                         </tbody>
                     </table>
+                    
                 </div>
             </div>
 

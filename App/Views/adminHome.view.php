@@ -61,7 +61,7 @@
                 </div>
 
                 <div class="col-md-3">
-                    <a href="index.php?pg=report" class="text-decoration-none text-dark">
+                    <a href="index.php?pg=reports&action=sales" class="text-decoration-none text-dark">
                     <div class="menu-card card-configuracion p-5">
                         <i class="fa-solid fa-chart-line fa-2xl" style="color: #ffffff;"></i><br>
                         <h5>Reportes</h5>

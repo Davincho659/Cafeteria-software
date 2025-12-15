@@ -2,6 +2,7 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/../App/Core/Init.php';
+date_default_timezone_set('America/Bogota');
 
 $pg = isset($_GET['pg']) ? preg_replace('/[^a-zA-Z0-9_]/', '', $_GET['pg']) : 'home';
 $action = isset($_GET['action']) ? preg_replace('/[^a-zA-Z0-9_]/', '', $_GET['action']) : null;

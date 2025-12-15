@@ -23,18 +23,58 @@ if (!isset($_POST['metodoPago'])) {
 
 <link rel="stylesheet" href="assets/css/bills.css">
 <div class="container-fluid mt-4">
+    <div class="filter-card">
+    <h4 class="filter-section-title">🔍 Filtros de búsqueda</h4>
+
+    <?php
+    $hasActiveFilters =
+        !empty($_POST['idVenta']) ||
+        !empty($_POST['precioDesde']) ||
+        !empty($_POST['precioHasta']) ||
+        !empty($_POST['horaDesde']) ||
+        !empty($_POST['horaHasta']) ||
+        !empty($_POST['metodoPago']);
+    ?>
+
+    <?php if ($hasActiveFilters): ?>
+        <div class="active-filters">
+            <div class="active-filters-title">Filtros activos:</div>
+
+            <?php if (!empty($_POST['idVenta'])): ?>
+                <span class="filter-badge">ID: <?= htmlspecialchars($_POST['idVenta']) ?></span>
+            <?php endif; ?>
+
+            <?php if (!empty($_POST['precioDesde'])): ?>
+                <span class="filter-badge">Desde: $<?= number_format($_POST['precioDesde'], 0, ',', '.') ?></span>
+            <?php endif; ?>
+
+            <?php if (!empty($_POST['precioHasta'])): ?>
+                <span class="filter-badge">Hasta: $<?= number_format($_POST['precioHasta'], 0, ',', '.') ?></span>
+            <?php endif; ?>
+
+            <?php if (!empty($_POST['horaDesde'])): ?>
+                <span class="filter-badge">🕒 Desde <?= htmlspecialchars($_POST['horaDesde']) ?></span>
+            <?php endif; ?>
+
+            <?php if (!empty($_POST['horaHasta'])): ?>
+                <span class="filter-badge">🕒 Hasta <?= htmlspecialchars($_POST['horaHasta']) ?></span>
+            <?php endif; ?>
+
+            <?php if (!empty($_POST['metodoPago'])): ?>
+                <span class="filter-badge">💳 <?= ucfirst(htmlspecialchars($_POST['metodoPago'])) ?></span>
+            <?php endif; ?>
+        </div>
+    <?php endif; ?>
     <form id="filtrosReporte" method="POST" action="index.php?pg=reports&action=dayBills" class="row">
 
         <!-- ID Venta -->
         <div class="col-12 mb-3">
             <label class="form-label">ID Venta</label>
             <input type="number" name="idVenta" class="form-control"
-                value="<?php echo isset($_POST['idVenta']) ? $_POST['idVenta'] : ''; ?>">
+                value="<?= htmlspecialchars($_POST['idVenta']) ?>">
         </div>
 
-        <h4 class="card-title">Filtro de búsqueda</h4>
-
-        <div class="col-11">
+        <div class="col-12">
             <table class="table">
                 <thead>
                     <tr class="filters">
@@ -43,48 +83,41 @@ if (!isset($_POST['metodoPago'])) {
                         <th>
                             <label>Precio desde</label>
                             <input type="number" name="precioDesde" class="form-control mt-2"
-                                value="<?php echo $_POST['precioDesde'] ?? ''; ?>"
-                                style="border: #bababa 1px solid; color:#000;">
+                                value="<?= htmlspecialchars($_POST['precioDesde']) ?>">
                         </th>
 
                         <!-- Precio hasta -->
                         <th>
                             <label>Precio hasta</label>
                             <input type="number" name="precioHasta" class="form-control mt-2"
-                                value="<?php echo $_POST['precioHasta'] ?? ''; ?>"
-                                style="border: #bababa 1px solid; color:#000;">
+                                value="<?= htmlspecialchars($_POST['precioHasta']) ?>">
                         </th>
 
+                        <!-- Hora desde -->
                         <th>
                             <label>Hora desde</label>
                             <input type="time" name="horaDesde" class="form-control mt-2"
-                                value="<?php echo $_POST['horaDesde'] ?? ''; ?>"
-                                style="border: #bababa 1px solid; color:#000;">
+                                value="<?= htmlspecialchars($_POST['horaDesde']) ?>">
                         </th>
 
                         <!-- Hora hasta -->
                         <th>
                             <label>Hora hasta</label>
                             <input type="time" name="horaHasta" class="form-control mt-2"
-                                value="<?php echo $_POST['horaHasta'] ?? ''; ?>"
-                                style="border: #bababa 1px solid; color:#000;">
+                                value="<?= htmlspecialchars($_POST['horaHasta']) ?>">
                         </th>
 
                         <!-- Método de pago -->
                         <th>
                             <label>Método de pago</label>
-                            <select name="metodoPago" class="form-control mt-2"
-                                    style="border: #bababa 1px solid; color:#000;">
-
-                                <?php if (!empty($_POST['metodoPago'])) { ?>
-                                    <option value="<?php echo $_POST['metodoPago']; ?>">
-                                        <?php echo $_POST['metodoPago']; ?>
-                                    </option>
-                                <?php } ?>
-
+                            <select name="metodoPago" class="form-control mt-2">
                                 <option value="">Todos</option>
-                                <option value="efectivo">Efectivo</option>
-                                <option value="transferencia">Transferencia</option>
+                                <option value="efectivo" <?= $_POST['metodoPago'] === 'efectivo' ? 'selected' : '' ?>>
+                                    Efectivo
+                                </option>
+                                <option value="transferencia" <?= $_POST['metodoPago'] === 'transferencia' ? 'selected' : '' ?>>
+                                    Transferencia
+                                </option>
                             </select>
                         </th>
 
@@ -93,9 +126,19 @@ if (!isset($_POST['metodoPago'])) {
             </table>
         </div>
 
+        <!-- Botones -->
+        <div class="col-12 mt-3">
+            <button type="submit" class="btn-search">🔍 Consultar</button>
+            <button type="button" class="btn-clear" onclick="limpiarFiltros()">✕ Limpiar filtros</button>
+        </div>
+
+    </form>
+    </div>
+
+
         <div class="col-12 mt-3">
             <button type="submit" class="btn btn-primary">Buscar</button>
-            <button type="reset" class="btn btn-secondary">Limpiar</button>
+            <button type="button"  class="btn btn-secondary" onclick="limpiarFiltros()">Limpiar filtros</button>
         </div>
 
     </form>
@@ -217,6 +260,13 @@ function enviarFormConPagina(pagina) {
     url.searchParams.set('page', pagina);
     form.action = url.toString();
     form.submit();
+}
+function limpiarFiltros() {
+    // Limpiar el formulario
+    document.getElementById('filtrosReporte').reset();
+    
+    // Recargar la página sin parámetros POST (GET limpio)
+    window.location.href = 'index.php?pg=reports&action=dayBills';
 }
 </script>
 

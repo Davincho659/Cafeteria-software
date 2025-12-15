@@ -256,7 +256,7 @@ class ProductController {
         }
     }
 
-    public function createCategories() {
+    public function createCategorie() {
         header('Content-Type: application/json; charset=utf-8');
         try {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {

@@ -52,7 +52,7 @@ class Sales {
     }
 
     public function getWithPagination($filterQuery = "", $offset = 0, $limit = 10) {
-        $sql = "SELECT * FROM ventas WHERE DATE(fechaVenta) = CURDATE()";
+        $sql = "SELECT * FROM ventas ";
         $sql .= $filterQuery;
         $sql .= " ORDER BY fechaVenta DESC LIMIT $offset, $limit";
         $stmt = $this->db->query($sql);
@@ -60,14 +60,14 @@ class Sales {
     }
 
     public function countWithFilters($filterQuery = "") {
-        $sql = "SELECT COUNT(*) as total FROM ventas WHERE DATE(fechaVenta) = CURDATE()";
+        $sql = "SELECT COUNT(*) as total FROM ventas";
         $sql .= $filterQuery;
         $stmt = $this->db->query($sql);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result['total'];
     }
 
-    private function get($consult = null) {
+    public function get($consult = null) {
         $sql = "SELECT * FROM ventas";
         if ($consult) {
             $sql .= " " . $consult;
