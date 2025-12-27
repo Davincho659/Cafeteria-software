@@ -1,23 +1,20 @@
-<?php require loadView('Layouts/header'); ?>
-
 <?php
 
 if (!isset($_POST['idVenta'])) {
-    $_POST['idVenta'] = ''; 
-} 
-if (!isset($_POST['precioDesde'])) { 
-    $_POST['precioDesde'] = ''; 
-} 
-if (!isset($_POST['precioHasta'])) { 
+    $_POST['idVenta'] = '';
+}
+if (!isset($_POST['precioDesde'])) {
+    $_POST['precioDesde'] = '';
+}
+if (!isset($_POST['precioHasta'])) {
     $_POST['precioHasta'] = '';
 }
-if (!isset($_POST['fecha'])) { 
-    $_POST['fecha'] = ''; 
-} 
-if (!isset($_POST['metodoPago'])) { 
+if (!isset($_POST['fecha'])) {
+    $_POST['fecha'] = '';
+}
+if (!isset($_POST['metodoPago'])) {
     $_POST['metodoPago'] = '';
 }
-
 
 ?>
 
@@ -25,12 +22,12 @@ if (!isset($_POST['metodoPago'])) {
 <div class="container-fluid ">
     <div class="filter-card">
         <h4 class="filter-section-title">🔍 Filtros de búsqueda</h4>
-        
-        <?php 
-        $hasActiveFilters = !empty($_POST['idVenta']) || !empty($_POST['precioDesde']) || 
-                           !empty($_POST['precioHasta']) || !empty($_POST['fecha']) || 
+
+        <?php
+        $hasActiveFilters = !empty($_POST['idVenta']) || !empty($_POST['precioDesde']) ||
+                           !empty($_POST['precioHasta']) || !empty($_POST['fecha']) ||
                            !empty($_POST['metodoPago']);
-        
+
         if ($hasActiveFilters): ?>
             <div class="active-filters">
                 <div class="active-filters-title">Filtros activos:</div>
@@ -53,43 +50,43 @@ if (!isset($_POST['metodoPago'])) {
         <?php endif; ?>
     <form id="filtrosReporte" method="POST" action="index.php?pg=reports&action=sales">
             <div class="row">
-                
+
                 <!-- ID Venta -->
                 <div class="col-md-3 col-sm-6">
                     <div class="filter-group">
                         <label class="filter-label">ID Venta</label>
-                        <input type="number" 
-                               name="idVenta" 
-                               class="filter-input" 
+                        <input type="number"
+                               name="idVenta"
+                               class="filter-input"
                                placeholder="Ej: 123"
                                value="<?= htmlspecialchars($_POST['idVenta'] ?? '') ?>">
                     </div>
                 </div>
-                
+
                 <!-- Precio desde -->
                 <div class="col-md-3 col-sm-6">
                     <div class="filter-group">
                         <label class="filter-label">Precio desde</label>
-                        <input type="number" 
-                               name="precioDesde" 
-                               class="filter-input" 
+                        <input type="number"
+                               name="precioDesde"
+                               class="filter-input"
                                placeholder="$0"
                                value="<?= htmlspecialchars($_POST['precioDesde'] ?? '') ?>">
                     </div>
                 </div>
-                
+
                 <!-- Precio hasta -->
                 <div class="col-md-3 col-sm-6">
                     <div class="filter-group">
                         <label class="filter-label">Precio hasta</label>
-                        <input type="number" 
-                               name="precioHasta" 
-                               class="filter-input" 
+                        <input type="number"
+                               name="precioHasta"
+                               class="filter-input"
                                placeholder="$999999"
                                value="<?= htmlspecialchars($_POST['precioHasta'] ?? '') ?>">
                     </div>
                 </div>
-                
+
                 <!-- Método de pago -->
                 <div class="col-md-3 col-sm-6">
                     <div class="filter-group">
@@ -105,14 +102,14 @@ if (!isset($_POST['metodoPago'])) {
                         </select>
                     </div>
                 </div>
-                
+
                 <!-- Fecha -->
                 <div class="col-md-6 col-sm-12">
                     <div class="filter-group">
                         <label class="filter-label">Rango de fecha</label>
                         <select name="fecha" class="filter-select">
                             <option value="">Seleccionar rango</option>
-                            <option value="<?php echo date('d/m/Y') . ' - ' . date('d/m/Y'); ?>" 
+                            <option value="<?php echo date('d/m/Y') . ' - ' . date('d/m/Y'); ?>"
                                     <?= (isset($_POST['fecha']) && $_POST['fecha'] === date('d/m/Y') . ' - ' . date('d/m/Y')) ? 'selected' : '' ?>>
                                 Hoy
                             </option>
@@ -121,16 +118,16 @@ if (!isset($_POST['metodoPago'])) {
                                 Ayer
                             </option>
                             <option value="<?php echo date('d/m/Y', strtotime('first day of this month')) . ' - ' . date('d/m/Y'); ?>"
-                                    <?php 
+                                    <?php
                                     $thisMonthRange = date('d/m/Y', strtotime('first day of this month')) . ' - ' . date('d/m/Y');
-                                    echo (isset($_POST['fecha']) && $_POST['fecha'] === $thisMonthRange) ? 'selected' : ''; 
+                                    echo (isset($_POST['fecha']) && $_POST['fecha'] === $thisMonthRange) ? 'selected' : '';
                                     ?>>
                                 Este mes
                             </option>
                             <option value="<?php echo date('d/m/Y', strtotime('first day of last month')) . ' - ' . date('d/m/Y', strtotime('last day of last month')); ?>"
-                                    <?php 
+                                    <?php
                                     $lastMonthRange = date('d/m/Y', strtotime('first day of last month')) . ' - ' . date('d/m/Y', strtotime('last day of last month'));
-                                    echo (isset($_POST['fecha']) && $_POST['fecha'] === $lastMonthRange) ? 'selected' : ''; 
+                                    echo (isset($_POST['fecha']) && $_POST['fecha'] === $lastMonthRange) ? 'selected' : '';
                                     ?>>
                                 Mes pasado
                             </option>
@@ -222,4 +219,3 @@ if (!isset($_POST['metodoPago'])) {
 </div>
 
 <script src="assets/js/admin/reports.js"></script>
-<?php require loadView('Layouts/Footer'); ?>

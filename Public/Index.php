@@ -11,6 +11,21 @@ $action = isset($_GET['action']) ? preg_replace('/[^a-zA-Z0-9_]/', '', $_GET['ac
 $controllerClass = ucfirst(strtolower($pg)) . 'Controller';
 $controllerFile = __DIR__ . '/../App/Controllers/' . $controllerClass . '.php';
 
+if ($pg === 'reports') {
+    // Si hay action, llamar al controlador primero para setear variables globales
+    if ($action !== null && file_exists($controllerFile)) {
+        require_once $controllerFile;
+        if (class_exists($controllerClass)) {
+            $controllerInstance = new $controllerClass();
+            if (method_exists($controllerInstance, $action)) {
+                $controllerInstance->$action();
+            }
+        }
+    }
+    require loadView('Layouts/ReportSidebar');
+    exit;
+}
+
 if ($action === null) {
     // Cargar la vista directamente cuando no hay action
     $viewFile = __DIR__ . '/../App/Views/' . strtolower($pg) . '.view.php';
