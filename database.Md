@@ -25,6 +25,7 @@ CREATE TABLE productos (
     idProducto INT(11) PRIMARY KEY AUTO_INCREMENT,
     idCategoria INT(11),
     nombre VARCHAR(100) NOT NULL,
+    stock INT(11) not null default 0,
     precioCompra DECIMAL(10,2) DEFAULT 0.00,
     precioVenta DECIMAL(10,2) DEFAULT 0.00,
     tipo ENUM('venta', 'insumo') NOT NULL,

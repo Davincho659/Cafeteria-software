@@ -1,7 +1,7 @@
 <?php require loadView('Layouts/header'); ?>
 <link rel="stylesheet" href="assets/css/sales.css">
 
-<div class="d-flex inline-block tab-container" data-user-id="<?= $_SESSION['user_id']  ?>" >
+<div class="d-flex inline-block tab-container" data-user-id="<?= $_SESSION['usuario_id']  ?>" >
     <ul class="nav nav-tabs" id="ventasTabs">
         <li class="nav-item">
             <a class="nav-link active" data-bs-toggle="tab" href="#venta1">Venta 1</a>
@@ -41,17 +41,6 @@
             <div class="d-flex "> 
                 <div id="productosContainer" class="productos-grid">
                     <h5>cargando productos...</h5>
-                    <!-- <button class="m-2 producto-card p-2" style="width: 200px; height: 300px;" oneclick="openCalculator()">
-                        <div class="producto-img-container">
-                            <img src="assets/img/products/producto.png" alt="Empanada" class="producto-img" onerror="this.src='/placeholder.svg?height=140&amp;width=220'">
-                        </div>
-                        <div class="d-flex flex-column align-items-left">
-                            <div class="producto-nombre"><b>Producto</b></div>
-                            <br>
-                            <p class="producto-precio"><b>$ ?</b></p>
-                            <span class="btn cantidad-display" id="prod-qty-1" onclick="event.stopPropagation(); changeQuantity(1)" role="button">1</span>
-                        </div>
-                    </button> -->
                 </div>
             </div>
         </div>
@@ -64,6 +53,7 @@
                     <button class="calc-btn" onclick="addNumber('3')">3</button>
                     <button class="calc-btn" onclick="addNumber('4')">4</button>
                     <button class="calc-btn" onclick="addNumber('5')">5</button>
+                    <!-- Corregir error tipográfico sclass por class -->
                     <button class="calc-btn" onclick="addNumber('6')">6</button>
                     <button class="calc-btn" onclick="addNumber('7')">7</button>
                     <button class="calc-btn" onclick="addNumber('8')">8</button>
@@ -87,7 +77,7 @@
                 </div>
             </div>
         </div>
-        <!-- Pop-up estático de confirmación de venta (igual comportamiento que calculadora/mesas) -->
+        <!-- Modal de confirmación de venta corregido con estructura correcta -->
         <div id="saleConfirmationOverlay" class="table-overlay" onclick="closeSaleConfirmation(event)">
             <div class="table-popup" onclick="event.stopPropagation()">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -131,13 +121,14 @@
                         
                         <!-- Lista de productos con scroll interno -->
                         <div id="productos-carrito-venta1" style="height: calc(85vh - 220px);overflow-y: auto;overflow-x: hidden;"></div>
+                        
                         <!-- Total y botones fijos abajo -->
                         <div style="flex-shrink: 0; padding: 1rem 0;">
                             <div id="total-carrito-venta1">
                                 <h4>Total: $<span id="total-venta1">0.00</span></h4>
                             </div>
                             <button id="btn-procesar-venta-venta1" class="btn btn-primary btn-lg w-100 mb-2" 
-                                    onclick="saleConfirmationModal('venta1', <?= $_SESSION['user_id'] ?>)" role="button">
+                                    onclick="saleConfirmationModal('venta1', null)" role="button">
                                 Procesar Venta <i class="fa-solid fa-cash-register"></i>
                             </button>
                             <button id="btn-agregar-mesa-venta1" class="btn btn-secondary btn-lg w-100" 

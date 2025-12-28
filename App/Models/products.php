@@ -10,14 +10,14 @@ class Products {
     }
     
     public function getAll(){
-    $query="SELECT p.idCategoria, p.idProducto, p.nombre, p.precioCompra, p.precioVenta, p.tipo, p.imagen, c.nombre AS categoria, c.imagen AS categoria_imagen
+    $query="SELECT p.idCategoria, p.idProducto, p.nombre, p.precioCompra, p.precioVenta, p.tipo, p.imagen, p.manejaStock, c.nombre AS categoria, c.imagen AS categoria_imagen
         FROM productos p INNER JOIN categorias c ON p.idCategoria = c.idCategoria";
         $strm= $this->db->query($query);
         return $strm->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getByCategory($id) {
-    $query = 'SELECT p.idCategoria, p.idProducto, p.nombre, p.precioCompra, p.precioVenta, p.tipo, p.imagen, c.nombre AS categoria, c.imagen AS categoria_imagen
+    $query = 'SELECT p.idCategoria, p.idProducto, p.nombre, p.precioCompra, p.precioVenta, p.tipo, p.manejaStock, p.imagen, c.nombre AS categoria, c.imagen AS categoria_imagen
             FROM productos AS p INNER JOIN categorias AS c ON p.idCategoria = c.idCategoria
             WHERE p.idCategoria = ?';
         $stmt = $this->db->prepare($query);
