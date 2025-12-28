@@ -11,17 +11,27 @@ document.addEventListener('DOMContentLoaded', function () {
         showMonths: 2,
         appendTo: fechasInput.parentElement, // 🔥 CLAVE
 
-        onClose: function (_, dateStr) {
+        onClose: function (selectedDates) {
+            if (!selectedDates.length) return;
 
-            if (!dateStr) return;
+            const format = (d) => fp.formatDate(d, "d/m/Y");
+            let rango = "";
 
-            const rango = dateStr.replace(' to ', ' - ');
+            if (selectedDates.length === 1) {
+                const f = format(selectedDates[0]);
+                rango = `${f} - ${f}`;
+            } else {
+                const fechasOrdenadas = selectedDates.slice().sort((a, b) => a - b);
+                const f1 = format(fechasOrdenadas[0]);
+                const f2 = format(fechasOrdenadas[1]);
+                rango = `${f1} - ${f2}`;
+            }
 
-            let option = document.getElementById('dynamic-range');
+            let option = document.getElementById("dynamic-range");
 
             if (!option) {
-                option = document.createElement('option');
-                option.id = 'dynamic-range';
+                option = document.createElement("option");
+                option.id = "dynamic-range";
                 selectFecha.appendChild(option);
             }
 
@@ -68,10 +78,12 @@ function cargarResultados(page = paginaActual) {
         renderTabla(data.resultados);
         renderPaginacion(data.totalPaginas, data.paginaActual);
         renderActiveFilters();
+        actualizarKPIs(data);
     })
     .catch(() => {
         document.getElementById('tablaResultados').innerHTML = `
             <tr><td colspan="5" class="text-danger text-center">Error cargando datos</td></tr>`;
+        actualizarKPIs({ resultados: [], totalPaginas: 0, paginaActual: 1 });
             
     });
 }
@@ -103,20 +115,123 @@ function renderTabla(rows) {
     });
 }
 
+function calcularTotales(rows) {
+    let totalVendido = 0;
+    let totalVentas = 0;
+
+    if (Array.isArray(rows)) {
+        for (let i = 0; i < rows.length; i++) {
+            const venta = rows[i] || {};
+            const monto = Number(venta.total) || 0;
+            totalVendido += monto;
+            totalVentas += 1;
+        }
+    }
+
+    return { totalVendido, totalVentas };
+}
+
+async function actualizarKPIs(data) {
+    const totalVendidoEl = document.getElementById('kpi-total-vendido');
+    const totalVentasEl = document.getElementById('kpi-total-ventas');
+    if (!totalVendidoEl || !totalVentasEl) return;
+
+    const totalPaginas = Number(data.totalPaginas) || 0;
+    const paginaActual = Number(data.paginaActual) || 1;
+
+    // Totales de la página visible
+    let { totalVendido, totalVentas } = calcularTotales(data.resultados || []);
+    totalVendidoEl.textContent = `$${totalVendido.toLocaleString('es-CL')}`;
+    totalVentasEl.textContent = totalVentas.toLocaleString('es-CL');
+
+    // Si solo hay una página, ya está listo
+    if (totalPaginas <= 1) return;
+
+    const formBase = document.getElementById('filtrosReporte');
+    if (!formBase) return;
+
+    // Acumular el resto de páginas con los mismos filtros
+    for (let p = 1; p <= totalPaginas; p++) {
+        if (p === paginaActual) continue;
+
+        const formData = new FormData(formBase);
+        formData.append('page', p);
+
+        try {
+            const resp = await fetch('index.php?pg=reports&action=sales&ajax=1', {
+                method: 'POST',
+                body: formData
+            });
+            const json = await resp.json();
+            const totales = calcularTotales(json.resultados || []);
+            totalVendido += totales.totalVendido;
+            totalVentas += totales.totalVentas;
+        } catch (e) {
+            console.warn('No se pudieron cargar KPIs de la página', p, e);
+        }
+    }
+
+    totalVendidoEl.textContent = `$${totalVendido.toLocaleString('es-CL')}`;
+    totalVentasEl.textContent = totalVentas.toLocaleString('es-CL');
+}
+
 function renderPaginacion(total, actual) {
     const cont = document.getElementById('paginacion');
     cont.innerHTML = '';
 
     if (total <= 1) return;
 
-    let html = '<ul class="pagination">';
+    let html = '<ul class="pagination mb-0">';
 
-    for (let i = 1; i <= total; i++) {
-        html += `
-            <li class="page-item ${i === actual ? 'active' : ''}">
-                <a class="page-link" href="#" onclick="irPagina(${i})">${i}</a>
+    const createItem = (label, page, disabled = false, active = false, aria = '') => {
+        const cls = `page-item ${disabled ? 'disabled' : ''} ${active ? 'active' : ''}`.trim();
+        const safeOnClick = disabled ? 'return false;' : `irPagina(${page}); return false;`;
+        const ariaAttr = aria ? ` aria-label="${aria}"` : '';
+        return `
+            <li class="${cls}">
+                <a class="page-link" href="#" onclick="${safeOnClick}"${ariaAttr}>${label}</a>
             </li>`;
+    };
+
+    // Controles: Primera y Anterior
+    html += createItem('&laquo;', 1, actual === 1, false, 'Primera');
+    html += createItem('&lsaquo;', Math.max(1, actual - 1), actual === 1, false, 'Anterior');
+
+    // Páginas numeradas con elipsis
+    if (total <= 7) {
+        for (let i = 1; i <= total; i++) {
+            html += createItem(i, i, false, i === actual);
+        }
+    } else {
+        const delta = 2; // cantidad alrededor de la actual
+        const start = Math.max(2, actual - delta);
+        const end = Math.min(total - 1, actual + delta);
+
+        // Siempre mostrar primera
+        html += createItem(1, 1, false, actual === 1);
+
+        // Elipsis si hay hueco entre 1 y start
+        if (start > 2) {
+            html += '<li class="page-item disabled"><span class="page-link">…</span></li>';
+        }
+
+        // Ventana central
+        for (let i = start; i <= end; i++) {
+            html += createItem(i, i, false, i === actual);
+        }
+
+        // Elipsis si hay hueco entre end y última
+        if (end < total - 1) {
+            html += '<li class="page-item disabled"><span class="page-link">…</span></li>';
+        }
+
+        // Siempre mostrar última (casilla de página final)
+        html += createItem(total, total, false, actual === total);
     }
+
+    // Controles: Siguiente y Última
+    html += createItem('&rsaquo;', Math.min(total, actual + 1), actual === total, false, 'Siguiente');
+    html += createItem('&raquo;', total, actual === total, false, 'Última');
 
     html += '</ul>';
     cont.innerHTML = html;

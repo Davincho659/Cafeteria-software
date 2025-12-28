@@ -47,10 +47,14 @@ switch ($pg) {
         require_once __DIR__ . '/../App/Controllers/ReportsController.php';
         $controller = new ReportsController();
 
+        // Si es petición AJAX → llamar directamente al método (sin layout)
         if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
             switch ($action) {
                 case 'sales':
                     $controller->sales();
+                    break;
+                case 'daily':
+                    $controller->Daily();
                     break;
                 default:
                     if ($action && method_exists($controller, $action)) {
@@ -61,9 +65,11 @@ switch ($pg) {
                     }
                     break;
             }
-        } else {
-            require_once __DIR__ . '/../App/Views/Layouts/Reports-layout.view.php';
+            exit; // Salir sin layout
         }
+        
+        // Si NO es AJAX → cargar con layout completo
+        require_once __DIR__ . '/../App/Views/Layouts/Reports-layout.view.php';
         exit;
 
     // ====================================================
@@ -201,6 +207,7 @@ switch ($pg) {
             $validActions = [
                 'createProduct',
                 'getProduct',
+                'getCategory',
                 'getProducts',
                 'updateProduct',
                 'deleteProduct',

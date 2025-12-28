@@ -10,6 +10,11 @@
         <li class="nav-item" id="addTabItem">
             <i id="nuevaVenta" class="fa-solid fa-plus fa-2xl" style="color: #26c418ff; padding-top: 20px; padding-left: 15px;"></i>
         </li>
+        <li class="nav-item ms-auto">
+            <button class="btn btn-info btn-sm mt-2 me-2" onclick="openDailyReportModal()">
+                <i class="fa-solid fa-file-invoice"></i> Ver facturas Hoy
+            </button>
+        </li>
     </ul>
 </div>
 
@@ -120,7 +125,7 @@
                         </center>
                         
                         <!-- Lista de productos con scroll interno -->
-                        <div id="productos-carrito-venta1" style="height: calc(85vh - 220px);overflow-y: auto;overflow-x: hidden;"></div>
+                        <div id="productos-carrito-venta1" style="height: calc(85vh - 280px);overflow-y: auto;overflow-x: hidden;"></div>
                         
                         <!-- Total y botones fijos abajo -->
                         <div style="flex-shrink: 0; padding: 1rem 0;">
@@ -135,6 +140,9 @@
                                     onclick="openTableSelectionModal(event)" role="button">
                                 Agregar a Mesa <i class="fa-solid fa-utensils"></i>
                             </button>
+                            <button class="btn btn-outline-danger btn-lg w-100 mt-2" onclick="clearCart('venta1')">
+                                Limpiar carrito <i class="fa-solid fa-trash-can"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -143,6 +151,28 @@
     </div>
 </div>
 
+<!-- ========================================== -->
+<!-- OVERLAY: Reporte de Facturas Diarias -->
+<!-- ========================================== -->
+<div id="dailyReportOverlay" class="table-overlay" onclick="closeDailyReport(event)">
+    <div class="daily-report-popup" onclick="event.stopPropagation()">
+        <div class="daily-report-header">
+            <h2 style="margin:0">
+                <i class="fa-solid fa-file-invoice"></i> Facturas del Día
+            </h2>
+            <i onclick="closeDailyReport()" class="fa-solid fa-circle-xmark fa-xl" style="color: #ff0000; cursor:pointer"></i>
+        </div>
+        <div id="dailyReportContent" class="daily-report-body">
+            <div class="text-center py-5">
+                <div class="spinner-border text-info" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-3 text-muted">Cargando reporte...</p>
+            </div>
+        </div>
+    </div>
+</div>
 
-  <script src="assets/js/sales.js"></script>
+
+  <script src="assets/js/Sales.js"></script>
 <?php require loadView('Layouts/Footer'); ?>

@@ -241,6 +241,7 @@ class ProductController {
 
     public function getCategories() {
         header('Content-Type: application/json; charset=utf-8');
+
         try {
             $categoriesModel = new Categories();
             $categories = $categoriesModel->getAll();
@@ -258,6 +259,7 @@ class ProductController {
 
     public function createCategorie() {
         header('Content-Type: application/json; charset=utf-8');
+        
         try {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new Exception('Método no permitido');
@@ -268,14 +270,61 @@ class ProductController {
                 throw new Exception('El nombre de la categoría es requerido');
             }
 
+            // Procesar imagen si existe
+            $imageDbPath = null;
+            if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
+                $dest = __DIR__ . '/../../Public/Assets/img/categories';
+                
+                if (!is_dir($dest)) {
+                    mkdir($dest, 0755, true);
+                }
+                
+                $res = saveUploadedImage($_FILES['imagen'], $dest);
+                if (!$res['success']) {
+                    throw new Exception($res['error'] ?? 'Error al subir la imagen');
+                }
+                $imageDbPath = 'categories/' . $res['filename'];
+            }
+
             $categoriesModel = new Categories();
-            $idCategoria = $categoriesModel->create($nombre);
+            $idCategoria = $categoriesModel->create($nombre, $imageDbPath);
 
             echo json_encode([
                 'success' => true,
                 'message' => 'Categoría creada exitosamente',
                 'idCategoria' => $idCategoria
             ]);
+        } catch (Exception $e) {
+            if (isset($imageDbPath)) {
+                $imagePath = __DIR__ . '/../../Public/Assets/img/' . $imageDbPath;
+                if (file_exists($imagePath)) @unlink($imagePath);
+            }
+
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function getCategory() {
+        header('Content-Type: application/json; charset=utf-8');
+        $id = $_GET['id'] ?? null;
+        if (!$id) {
+            echo json_encode(['success' => false, 'error' => 'ID no proporcionado']);
+            return;
+        }
+        try {
+            $categoriesModel = new Categories();
+            $category = $categoriesModel->getById($id);
+            if ($category) {
+                echo json_encode([
+                    'success' => true,
+                    'data' => $category
+                ]);
+            } else {
+                throw new Exception('Categoría no encontrada');
+            }
         } catch (Exception $e) {
             echo json_encode([
                 'success' => false,
@@ -284,25 +333,55 @@ class ProductController {
         }
     }
 
-    public function updateCategories() {
+    public function updateCategory() {
         header('Content-Type: application/json; charset=utf-8');
+        
         try {
             if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
                 throw new Exception('Método no permitido');
             }
 
-            $idCategoria = $_POST['idCategoria'] ?? null;
+            // Aceptar tanto 'id' como 'idCategoria'
+            $idCategoria = $_POST['id'] ?? $_POST['idCategoria'] ?? null;
             $nombre = $_POST['nombre'] ?? null;
+            
             if (!$idCategoria || !$nombre) {
                 throw new Exception('ID y nombre de la categoría son requeridos');
             }
 
+            // Obtener categoría actual
             $categoriesModel = new Categories();
-            // Aquí deberías implementar el método update en el modelo Categories
-            $success = $categoriesModel->update($idCategoria, $nombre);
+            $currentCategory = $categoriesModel->getById($idCategoria);
+            if (!$currentCategory) {
+                throw new Exception('Categoría no encontrada');
+            }
+
+            // Preparar datos de actualización
+            $updateData = [
+                'nombre' => trim($nombre),
+                'imagen' => $currentCategory['imagen'] ?? null
+            ];
+
+            // Procesar nueva imagen si existe
+            if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
+                $dest = __DIR__ . '/../../Public/Assets/img/categories';
+                
+                if (!is_dir($dest)) {
+                    mkdir($dest, 0755, true);
+                }
+
+                $res = saveUploadedImage($_FILES['imagen'], $dest, $currentCategory['imagen'] ?? null);
+                if (!$res['success']) {
+                    throw new Exception($res['error'] ?? 'Error al subir la imagen');
+                }
+                $updateData['imagen'] = 'categories/' . $res['filename'];
+            }
+
+            // Actualizar categoría
+            $success = $categoriesModel->update($idCategoria, $updateData);
 
             if (!$success) {
-                throw new Exception('Error al actualizar la categoría');
+                throw new Exception('Error al actualizar la categoría en la base de datos');
             }
 
             echo json_encode([
@@ -310,6 +389,11 @@ class ProductController {
                 'message' => 'Categoría actualizada exitosamente'
             ]);
         } catch (Exception $e) {
+            if (isset($res) && isset($res['filename'])) {
+                $newImagePath = $dest . '/' . $res['filename'];
+                if (file_exists($newImagePath)) @unlink($newImagePath);
+            }
+
             echo json_encode([
                 'success' => false,
                 'error' => $e->getMessage()

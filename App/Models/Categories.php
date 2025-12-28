@@ -15,6 +15,13 @@ class Categories {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    public function getById($id) {
+        $query = "SELECT * FROM categorias WHERE idCategoria = ?";
+        $stmt = $this->db->prepare($query);
+        $stmt->execute([$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
     public function create($nombre) {
         // if idCategoria is auto-increment, caller can pass null
         $query = "INSERT INTO categorias (nombre) VALUES (?)";

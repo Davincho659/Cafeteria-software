@@ -37,6 +37,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const nuevaBtn = getById("nuevaVenta")
   if (nuevaBtn) nuevaBtn.addEventListener("click", addNewSaleTab)
+
+  // Filtro de búsqueda en tiempo real
+  const searchInput = getById("search")
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => filterProductsBySearch(e.target.value))
+  }
 })
 
 function startSystem() {
@@ -166,6 +172,19 @@ function showProducts(products) {
   })
 }
 
+function filterProductsBySearch(query) {
+  const products = document.querySelectorAll(".producto-card")
+  const searchText = String(query).toLowerCase().trim()
+
+  products.forEach((card) => {
+    const nombreEl = card.querySelector(".producto-nombre")
+    const nombre = nombreEl ? nombreEl.textContent.toLowerCase() : ""
+
+    const matches = searchText === "" || nombre.includes(searchText)
+    card.style.display = matches ? "" : "none"
+  })
+}
+
 // ============================================================================
 // GESTIÓN DE CARRITOS EN MEMORIA (Ventas sin mesa)
 // ============================================================================
@@ -245,6 +264,39 @@ function updateCart(cartId = null) {
   if (totalEl) totalEl.textContent = formatCurrency(total);
 
   showCartProducts(targetCartId)
+}
+
+async function clearCart(cartId) {
+  const targetCartId = cartId || currentCartId
+  const cartObj = carts[targetCartId]
+  if (!cartObj) return
+
+  // Mesas: limpiar en BD y refrescar
+  if (cartObj.type === "table") {
+    const productos = cartObj.products || []
+    for (const p of productos) {
+      if (!p.idDetalleVenta) continue
+      try {
+        await fetchJson("?pg=sales&action=removeProductFromSale", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ idDetalleVenta: p.idDetalleVenta }),
+        })
+      } catch (error) {
+        console.warn("No se pudo eliminar producto", p.idDetalleVenta, error)
+      }
+    }
+    // Refrescar datos de la mesa desde servidor
+    if (cartObj.tableId) {
+      await reloadTableSale(cartObj.tableId)
+    }
+    return
+  }
+
+  // Ventas locales en memoria
+  cartObj.products = []
+  cartObj.total = 0
+  updateCart(targetCartId)
 }
 
 function showCartProducts(cartId) {
@@ -566,11 +618,14 @@ function createTableTab(idMesa, numeroMesa, idVenta, switchTo = true) {
       <center style="padding:1rem 0">
         <h3>Mesa ${numeroMesa}: <div class="badge bg-warning rounded-circle" id="ventasCount-${tabId}">0</div></h3>
       </center>
-      <div id="productos-carrito-${tabId}" style="height:calc(85vh - 220px);overflow-y:auto"></div>
+      <div id="productos-carrito-${tabId}" style="height:calc(85vh - 200px);overflow-y:auto"></div>
       <div style="padding:1rem 0">
         <div id="total-carrito-${tabId}"><h4>Total: $<span id="total-${tabId}">0.00</span></h4></div>
         <button class="btn btn-primary btn-lg w-100 mb-2" onclick="saleConfirmationModal('${tabId}', ${idMesa})">
           Facturar <i class="fa-solid fa-receipt"></i>
+        </button>
+        <button class="btn btn-outline-danger btn-lg w-100" onclick="clearCart('${tabId}')">
+          Limpiar carrito <i class="fa-solid fa-trash-can"></i>
         </button>
       </div>
     </div>`
@@ -931,7 +986,7 @@ function addNewSaleTab() {
       <center style="padding:1rem 0">
         <h3>Ventas: <div class="badge bg-primary rounded-circle" id="ventasCount-${id}">0</div></h3>
       </center>
-      <div id="productos-carrito-${id}" style="height:calc(85vh - 220px);overflow-y:auto"></div>
+      <div id="productos-carrito-${id}" style="height:calc(85vh - 280px);overflow-y:auto"></div>
       <div style="padding:1rem 0">
         <div id="total-carrito-${id}"><h4>Total: $<span id="total-${id}">0.00</span></h4></div>
         <button class="btn btn-primary btn-lg w-100 mb-2" onclick="saleConfirmationModal('${id}', null)">
@@ -939,6 +994,9 @@ function addNewSaleTab() {
         </button>
         <button class="btn btn-secondary btn-lg w-100" onclick="openTableSelectionModal(event)">
           Agregar a Mesa <i class="fa-solid fa-utensils"></i>
+        </button>
+        <button class="btn btn-outline-danger btn-lg w-100 mt-2" onclick="clearCart('${id}')">
+          Limpiar carrito <i class="fa-solid fa-trash-can"></i>
         </button>
       </div>
     </div>`
@@ -1195,6 +1253,247 @@ function closeTable(event) {
 function formatCurrency(value) {
   return new Intl.NumberFormat('es-CO').format(value);
 }
+
+// ============================================================================
+// OVERLAY DE REPORTE DIARIO - AUTÓNOMO Y ROBUSTO
+// ============================================================================
+
+function openDailyReportModal() {
+  const overlay = getById('dailyReportOverlay');
+  const contentContainer = getById('dailyReportContent');
+  
+  if (!overlay || !contentContainer) {
+    console.error('[REPORTE] Elementos del overlay no encontrados');
+    return;
+  }
+  
+  // Verificar si ya está cargado
+  if (contentContainer.dataset.loaded === 'true') {
+    console.log('[REPORTE] Contenido ya cargado, mostrando modal...');
+    overlay.classList.add('active');
+    
+    // Refrescar datos si la función existe
+    if (typeof window.cargarReporte === 'function') {
+      console.log('[REPORTE] Refrescando datos...');
+      setTimeout(() => window.cargarReporte(), 100);
+    }
+    return;
+  }
+  
+  // Primera carga - limpiar y preparar
+  contentContainer.innerHTML = '';
+  contentContainer.dataset.loaded = 'false';
+  
+  // Mostrar loader
+  contentContainer.innerHTML = `
+    <div class="text-center py-5">
+      <div class="spinner-border text-info" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p class="mt-3 text-muted">Cargando reporte...</p>
+    </div>`;
+  
+  // Abrir overlay
+  overlay.classList.add('active');
+  
+  console.log('[REPORTE] Iniciando carga del reporte...');
+  
+  // Cargar contenido del reporte con timeout para evitar bloqueos
+  const fetchTimeout = setTimeout(() => {
+    contentContainer.innerHTML = `
+      <div class="alert alert-warning" role="alert">
+        <i class="fa-solid fa-exclamation-triangle"></i>
+        El reporte está tardando demasiado en cargar. Por favor, intente nuevamente.
+      </div>`;
+  }, 10000); // 10 segundos timeout
+  
+  fetch('index.php?pg=reports&action=daily&ajax=1', {
+    method: 'GET',
+    headers: {
+      'Cache-Control': 'no-cache',
+      'X-Requested-With': 'XMLHttpRequest'
+    }
+  })
+    .then(response => {
+      clearTimeout(fetchTimeout);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      console.log('[REPORTE] Respuesta recibida, procesando HTML...');
+      return response.text();
+    })
+    .then(html => {
+      console.log('[REPORTE] HTML recibido, longitud:', html.length);
+      
+      // Verificar que el HTML no esté vacío
+      if (!html || html.trim().length === 0) {
+        throw new Error('Respuesta vacía del servidor');
+      }
+      
+      // Inyectar HTML
+      contentContainer.innerHTML = html;
+      contentContainer.dataset.loaded = 'true';
+      
+      console.log('[REPORTE] HTML inyectado, procesando scripts...');
+      
+      // Procesar scripts de forma segura
+      setTimeout(() => {
+        initializeReportScripts(contentContainer);
+      }, 100);
+    })
+    .catch(error => {
+      clearTimeout(fetchTimeout);
+      console.error('[REPORTE] Error cargando reporte:', error);
+      
+      contentContainer.innerHTML = `
+        <div class="alert alert-danger" role="alert">
+          <h5><i class="fa-solid fa-exclamation-triangle"></i> Error al cargar el reporte</h5>
+          <p class="mb-2"><strong>Detalles:</strong> ${error.message}</p>
+          <button class="btn btn-sm btn-primary" onclick="reloadDailyReport()">
+            <i class="fa-solid fa-rotate-right"></i> Reintentar
+          </button>
+        </div>`;
+    });
+}
+
+/**
+ * Función para forzar recarga del reporte
+ */
+function reloadDailyReport() {
+  const contentContainer = getById('dailyReportContent');
+  if (contentContainer) {
+    contentContainer.dataset.loaded = 'false';
+    contentContainer.innerHTML = '';
+  }
+  openDailyReportModal();
+}
+
+/**
+ * Inicializa los scripts del reporte de forma aislada y segura
+ */
+function initializeReportScripts(container) {
+  console.log('[REPORTE] Inicializando scripts...');
+  
+  try {
+    // Buscar y ejecutar scripts externos (como reports.js)
+    const externalScripts = container.querySelectorAll('script[src]');
+    let scriptsLoaded = 0;
+    const totalScripts = externalScripts.length;
+    
+    if (totalScripts === 0) {
+      console.log('[REPORTE] No hay scripts externos para cargar');
+      initializeReportData();
+      return;
+    }
+    
+    externalScripts.forEach((oldScript) => {
+      const src = oldScript.getAttribute('src');
+      
+      // Verificar si ya está cargado
+      const existingScript = document.querySelector(`script[src="${src}"]`);
+      
+      if (existingScript && existingScript !== oldScript) {
+        console.log('[REPORTE] Script ya cargado:', src);
+        scriptsLoaded++;
+        
+        if (scriptsLoaded === totalScripts) {
+          initializeReportData();
+        }
+        return;
+      }
+      
+      // Cargar script nuevo
+      const newScript = document.createElement('script');
+      newScript.src = src;
+      newScript.async = false; // Mantener orden de ejecución
+      
+      newScript.onload = () => {
+        console.log('[REPORTE] Script cargado exitosamente:', src);
+        scriptsLoaded++;
+        
+        if (scriptsLoaded === totalScripts) {
+          console.log('[REPORTE] Todos los scripts externos cargados');
+          initializeReportData();
+        }
+      };
+      
+      newScript.onerror = () => {
+        console.error('[REPORTE] Error cargando script:', src);
+        scriptsLoaded++;
+        
+        if (scriptsLoaded === totalScripts) {
+          initializeReportData();
+        }
+      };
+      
+      document.head.appendChild(newScript);
+    });
+    
+    // Ejecutar scripts inline
+    const inlineScripts = container.querySelectorAll('script:not([src])');
+    inlineScripts.forEach((oldScript) => {
+      try {
+        const newScript = document.createElement('script');
+        newScript.textContent = oldScript.textContent;
+        document.body.appendChild(newScript);
+        setTimeout(() => document.body.removeChild(newScript), 100);
+      } catch (e) {
+        console.warn('[REPORTE] Error ejecutando script inline:', e);
+      }
+    });
+    
+  } catch (error) {
+    console.error('[REPORTE] Error inicializando scripts:', error);
+    initializeReportData(); // Intentar inicializar de todos modos
+  }
+}
+
+/**
+ * Inicializa los datos del reporte (llamar a cargarReporte si existe)
+ */
+function initializeReportData() {
+  console.log('[REPORTE] Inicializando datos del reporte...');
+  
+  setTimeout(() => {
+    try {
+      // Verificar si la función cargarReporte existe en el scope global
+      if (typeof window.cargarReporte === 'function') {
+        console.log('[REPORTE] Llamando a cargarReporte()...');
+        window.cargarReporte();
+      } else {
+        console.warn('[REPORTE] Función cargarReporte no encontrada');
+        
+        // Intentar ejecutar el formulario de filtros manualmente
+        const form = document.getElementById('filtrosReporte');
+        if (form) {
+          console.log('[REPORTE] Disparando submit del formulario...');
+          const event = new Event('submit', { cancelable: true, bubbles: true });
+          form.dispatchEvent(event);
+        }
+      }
+    } catch (error) {
+      console.error('[REPORTE] Error inicializando datos:', error);
+    }
+  }, 200);
+}
+
+function closeDailyReport(event) {
+  const el = getById('dailyReportOverlay');
+  if (!el) return;
+  
+  if (!event || event.target.id === 'dailyReportOverlay') {
+    el.classList.remove('active');
+    
+    // NO limpiar el contenido - mantenerlo cargado para próxima apertura
+    console.log('[REPORTE] Modal cerrado, contenido preservado');
+  }
+}
+
+// ============================================================================
+// CALCULADORA DE CANTIDAD
+// ============================================================================
 
 const MAX = 99;
 const MIN = 1;

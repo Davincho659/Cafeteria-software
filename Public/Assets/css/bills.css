@@ -204,12 +204,7 @@
     transition: 0.2s;
 }
 
-/* Botón de acción */
-.table .btn-info {
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-}
+
 
 /* Mensaje sin resultados */
 .table td.text-muted {
