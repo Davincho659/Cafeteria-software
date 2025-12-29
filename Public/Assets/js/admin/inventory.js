@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadStock();
     loadInventoryValue();
     loadMovements();
+    loadAlerts();
     initializeEventListeners();
 });
 
@@ -25,6 +26,12 @@ function initializeEventListeners() {
     
     // Form ajustar stock
     document.getElementById('adjustStockForm').addEventListener('submit', saveStockAdjustment);
+
+    // Refresh alertas
+    const btnAlerts = document.getElementById('btnRefreshAlerts');
+    if (btnAlerts) {
+        btnAlerts.addEventListener('click', loadAlerts);
+    }
 }
 
 // ============ CARGAR STOCK ============
@@ -314,4 +321,47 @@ function getUserId() {
 
 function showAlert(message, type = 'info') {
     alert(message);
+}
+
+// ============ ALERTAS DE STOCK ============
+
+async function loadAlerts() {
+    try {
+        const response = await fetch('?pg=inventory&action=getAlertas&limit=100');
+        const data = await response.json();
+        if (data.success) {
+            renderAlerts(data.data);
+        }
+    } catch (error) {
+        console.error('Error loading alerts:', error);
+        showAlert('Error al cargar las alertas', 'error');
+    }
+}
+
+function renderAlerts(alerts) {
+    const tbody = document.getElementById('alertsTable');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (!alerts || alerts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No hay alertas registradas</td></tr>';
+        return;
+    }
+
+    alerts.forEach(a => {
+        const tr = document.createElement('tr');
+        const fecha = new Date(a.fechaMovimiento);
+        const tipoClass = a.tipoMovimiento === 'salida' ? 'danger' : (a.tipoMovimiento === 'ajuste' ? 'warning' : 'secondary');
+        tr.innerHTML = `
+            <td>${fecha.toLocaleString()}</td>
+            <td>${a.producto}</td>
+            <td><span class="badge bg-${tipoClass}">${a.tipoMovimiento}</span></td>
+            <td class="text-center">${a.cantidad}</td>
+            <td class="text-center">${a.stockAnterior}</td>
+            <td class="text-center fw-bold text-danger">${a.stockActual}</td>
+            <td><small>${a.descripcion || a.referencia || '-'}</small></td>
+            <td><small>${a.usuario || '-'}</small></td>
+        `;
+        tbody.appendChild(tr);
+    });
 }

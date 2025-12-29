@@ -398,40 +398,17 @@ class SalesController {
             
             $idMesa = $salesData['tableId'] ?? null;
             $metodoPago = $salesData['metodoPago'];
-            $total = $salesData['total'];
             $idUsuario = $salesData['idUsuario'];
             $productos = $salesData['productos'];
 
-            foreach ($productos as $item) {
-                $producto = $this->productModel->getById($item['idProducto']);
-                if ($producto && $producto['manejaStock']) {
-                    if (!$this->inventoryModel->verificarStock($item['idProducto'], $item['cantidad'])) {
-                        throw new Exception("Stock insuficiente para el producto: " . $producto['nombre']);
-                    }
-                }
-            }
-
-            $sale = $this->salesModel->createSale(
-                null,
-                $idMesa,
-                'completada',
+            $sale = $this->salesModel->createSaleWithDetails(
                 $metodoPago,
-                $total,
+                $productos,
                 $idUsuario,
+                $idMesa,
                 'detallada',
                 null
             );
-
-            foreach ($productos as $item) {
-                $this->salesModel->createSalesDetail(
-                    intval($sale),
-                    null,
-                    intval($item['idProducto']),
-                    $item['cantidad'],
-                    $item['precioUnitario'],
-                    $idUsuario
-                );
-            }
             
             echo json_encode([
                 'success' => true,

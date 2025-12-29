@@ -74,31 +74,33 @@ class PurchasesController {
             if (empty($data['productos']) || !is_array($data['productos'])) {
                 throw new Exception('Debe agregar al menos un producto');
             }
-            if (empty($data['total'])) {
-                throw new Exception('El total es requerido');
-            }
 
             $idUsuario = $data['idUsuario'] ?? null;
 
-            // Crear compra
-            $idCompra = $this->purchasesModel->createPurchase(
+            // Calcular total en servidor para evitar desajustes
+            $total = 0;
+            foreach ($data['productos'] as $item) {
+                $cantidad = isset($item['cantidad']) ? (float)$item['cantidad'] : 0;
+                $precio = isset($item['precioUnitario']) ? (float)$item['precioUnitario'] : 0;
+                if ($cantidad <= 0) {
+                    throw new Exception('Cantidad inválida para un producto');
+                }
+                if ($precio < 0) {
+                    throw new Exception('Precio inválido para un producto');
+                }
+                $total += $cantidad * $precio;
+            }
+
+            if ($total <= 0) {
+                throw new Exception('El total calculado es inválido');
+            }
+
+            // Crear compra + detalles en una sola transacción
+            $idCompra = $this->purchasesModel->createPurchaseWithDetails(
                 $data['idProveedor'],
-                $data['total'],
-                'detallada',
-                null,
+                $data['productos'],
                 $idUsuario
             );
-
-            // Crear detalles y actualizar inventario
-            foreach ($data['productos'] as $item) {
-                $this->purchasesModel->createPurchaseDetail(
-                    $idCompra,
-                    $item['idProducto'],
-                    $item['cantidad'],
-                    $item['precioUnitario'],
-                    $idUsuario
-                );
-            }
 
             echo json_encode([
                 'success' => true,
@@ -121,12 +123,19 @@ class PurchasesController {
         try {
             $data = json_decode(file_get_contents('php://input'), true);
             
-           
-            if (empty($data['total'])) {
+            if (empty($data['idProveedor'])) {
+                throw new Exception('El proveedor es requerido');
+            }
+            if (!isset($data['total'])) {
                 throw new Exception('El total es requerido');
             }
             if (empty($data['descripcion'])) {
                 throw new Exception('La descripción es requerida para compras rápidas');
+            }
+
+            $total = (float)$data['total'];
+            if ($total <= 0) {
+                throw new Exception('El total debe ser mayor a cero');
             }
 
             $idUsuario = $data['idUsuario'] ?? null;
@@ -134,7 +143,7 @@ class PurchasesController {
             // Crear compra rápida
             $idCompra = $this->purchasesModel->createPurchase(
                 $data['idProveedor'],
-                $data['total'],
+                $total,
                 'rapida',
                 $data['descripcion'],
                 $idUsuario

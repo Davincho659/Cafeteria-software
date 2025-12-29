@@ -53,6 +53,13 @@
                         <i class="fa-solid fa-boxes-stacked"></i> Inventario
                     </a>
                 </li>
+
+                <!-- Gastos -->
+                <li class="nav-item">
+                    <a class="nav-link <?= ($pg ?? '') === 'expenses' ? 'active' : '' ?>" href="?pg=expenses">
+                        <i class="fa-solid fa-money-bill-trend-up"></i> Gastos
+                    </a>
+                </li>
                 
                 <!-- Productos -->
                 <li class="nav-item">

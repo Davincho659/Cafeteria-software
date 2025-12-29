@@ -11,9 +11,11 @@ class Inventory {
     /**
      * Registrar movimiento de inventario (entrada, salida o ajuste)
      */
-    public function registrarMovimiento($idProducto, $tipoMovimiento, $cantidad, $referencia = null, $tipoReferencia = null, $descripcion = null, $idUsuario = null) {
+    public function registrarMovimiento($idProducto, $tipoMovimiento, $cantidad, $referencia = null, $tipoReferencia = null, $descripcion = null, $idUsuario = null, $useTransaction = true) {
         try {
-            $this->db->beginTransaction();
+            if ($useTransaction) {
+                $this->db->beginTransaction();
+            }
 
             // Obtener stock actual
             $stockAnterior = $this->obtenerStockActual($idProducto);
@@ -23,17 +25,17 @@ class Inventory {
                 $stockActual = $stockAnterior + $cantidad;
             } elseif ($tipoMovimiento === 'salida') {
                 $stockActual = $stockAnterior - $cantidad;
-                // Validar que no quede negativo
-                if ($stockActual < 0) {
-                    throw new Exception("Stock insuficiente para el producto ID: $idProducto");
-                }
+                // NO bloquear si queda negativo; lo registramos con alerta
             } else { // ajuste
                 $stockActual = $cantidad; // En ajuste, la cantidad ES el nuevo stock
             }
 
-            // Insertar movimiento
-            $sql = "INSERT INTO inventario (idProducto, tipoMovimiento, cantidad, stockAnterior, stockActual, referencia, tipoReferencia, descripcion, idUsuario) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            // Flag si resultó stock negativo
+            $tieneAlerta = $stockActual < 0 ? 1 : 0;
+
+            // Insertar movimiento (con flag de alerta si es negativo)
+            $sql = "INSERT INTO inventario (idProducto, tipoMovimiento, cantidad, stockAnterior, stockActual, referencia, tipoReferencia, descripcion, idUsuario, tieneAlerta) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([
                 $idProducto,
@@ -44,19 +46,25 @@ class Inventory {
                 $referencia,
                 $tipoReferencia,
                 $descripcion,
-                $idUsuario
+                $idUsuario,
+                $tieneAlerta
             ]);
 
-            $this->db->commit();
+            if ($useTransaction) {
+                $this->db->commit();
+            }
             return $this->db->lastInsertId();
         } catch (Exception $e) {
-            $this->db->rollBack();
+            if ($useTransaction) {
+                $this->db->rollBack();
+            }
             throw $e;
         }
     }
 
     /**
      * Obtener stock actual de un producto
+     * Retorna DECIMAL para soportar kg, L
      */
     public function obtenerStockActual($idProducto) {
         $sql = "SELECT stockActual FROM inventario 
@@ -66,7 +74,7 @@ class Inventory {
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$idProducto]);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result ? intval($result['stockActual']) : 0;
+        return $result ? floatval($result['stockActual']) : 0.0;
     }
 
     /**
@@ -79,14 +87,18 @@ class Inventory {
     }
 
     /**
-     * Obtener productos con stock bajo (menos de 10 unidades)
+     * Obtener productos con stock bajo (menos del límite especificado)
      */
     public function obtenerStockBajo($limite = 10) {
-        $sql = "SELECT * FROM vista_stock_actual 
-                WHERE stockActual < ? AND manejaStock = TRUE
+        $sql = "SELECT p.nombre AS producto, 
+                       COALESCE((SELECT stockActual FROM inventario WHERE idProducto = p.idProducto ORDER BY fechaMovimiento DESC LIMIT 1), 0) AS stockActual,
+                       ? AS stockMinimo
+                FROM productos p
+                WHERE p.manejaStock = TRUE
+                HAVING stockActual > 0 AND stockActual < ?
                 ORDER BY stockActual ASC";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$limite]);
+        $stmt->execute([$limite, $limite]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -150,10 +162,11 @@ class Inventory {
 
     /**
      * Verificar si un producto tiene stock suficiente
+     * Retorna true si hay stock, pero ahora permite venta aunque sea negativo (con alerta registrada)
      */
     public function verificarStock($idProducto, $cantidadRequerida) {
-        $stockActual = $this->obtenerStockActual($idProducto);
-        return $stockActual >= $cantidadRequerida;
+        // Siempre retorna true; stock negativo se registra con alerta y se permite la venta
+        return true;
     }
 
     /**
@@ -181,5 +194,35 @@ class Inventory {
                 FROM vista_stock_actual";
         $stmt = $this->db->query($sql);
         return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Obtener alertas de stock (movimientos con stock negativo)
+     */
+    public function obtenerAlertas($limit = 100) {
+        $sql = "SELECT i.*, p.nombre AS producto, u.nombre AS usuario
+                FROM inventario i
+                INNER JOIN productos p ON i.idProducto = p.idProducto
+                LEFT JOIN usuarios u ON i.idUsuario = u.idUsuario
+                WHERE i.tieneAlerta = 1
+                ORDER BY i.fechaMovimiento DESC, i.idInventario DESC
+                LIMIT ?";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$limit]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Obtener alertas de un producto específico
+     */
+    public function obtenerAlertasProducto($idProducto) {
+        $sql = "SELECT i.*, u.nombre AS usuario
+                FROM inventario i
+                LEFT JOIN usuarios u ON i.idUsuario = u.idUsuario
+                WHERE i.idProducto = ? AND i.tieneAlerta = 1
+                ORDER BY i.fechaMovimiento DESC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$idProducto]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

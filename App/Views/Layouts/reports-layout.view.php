@@ -21,9 +21,10 @@
                 </h3>
                 <ul class="section-links">
                     <li><a href="?pg=reports&action=sales" class="<?= ($_GET['action'] ?? '') === 'sales' ? 'active' : '' ?>">Ventas</a></li>
-                    <li><a href="?pg=reports&action=ventas-mensuales" class="<?= ($_GET['action'] ?? '') === 'ventas-mensuales' ? 'active' : '' ?>">Ventas Mensuales</a></li>
+                    <li><a href="?pg=reports&action=salesProduct" class="<?= ($_GET['action'] ?? '') === 'salesProduct' ? 'active' : '' ?>">Ventas por producto</a></li>
                     <li><a href="?pg=reports&action=ventas-anuales">Ventas Anuales</a></li>
                     <li><a href="?pg=reports&action=ventas-por-producto">Por Producto</a></li>
+                    <li><a href="?pg=reports&action=topProducts" class="<?= ($_GET['action'] ?? '') === 'topProducts' ? 'active' : '' ?>">Top Productos</a></li>
                 </ul>
             </div>
 
@@ -39,6 +40,7 @@
                 <ul class="section-links">
                     <li><a href="?pg=reports&action=compras-mensuales">Compras</a></li>
                     <li><a href="?pg=reports&action=compras-por-proveedor">Por Proveedor</a></li>
+                    <li><a href="?pg=reports&action=purchases" class="<?= ($_GET['action'] ?? '') === 'purchases' ? 'active' : '' ?>">Compras (listado)</a></li>
                 </ul>
             </div>
 
@@ -56,6 +58,7 @@
                     <li><a href="?pg=reports&action=productos-menos-vendidos">Menos Vendidos</a></li>
                     <li><a href="?pg=reports&action=alertas-stock">Alertas de Stock</a></li>
                     <li><a href="?pg=reports&action=valoracion-inventario">Valoración</a></li>
+                    <li><a href="?pg=reports&action=inventoryReport" class="<?= ($_GET['action'] ?? '') === 'inventoryReport' ? 'active' : '' ?>">Alertas y Stock Bajo (nuevo)</a></li>
                 </ul>
             </div>
 
@@ -72,6 +75,9 @@
                     <li><a href="?pg=reports&action=utilidad-neta">Utilidad Neta</a></li>
                     <li><a href="?pg=reports&action=flujo-caja">Flujo de Caja</a></li>
                     <li><a href="?pg=reports&action=punto-equilibrio">Punto de Equilibrio</a></li>
+                    <li><a href="?pg=reports&action=expenses" class="<?= ($_GET['action'] ?? '') === 'expenses' ? 'active' : '' ?>">Gastos (nuevo)</a></li>
+                    <li><a href="?pg=reports&action=profitability" class="<?= ($_GET['action'] ?? '') === 'profitability' ? 'active' : '' ?>">Rentabilidad (nuevo)</a></li>
+                    <li><a href="?pg=reports&action=cashRegister" class="<?= ($_GET['action'] ?? '') === 'cashRegister' ? 'active' : '' ?>">Flujo de Caja (nuevo)</a></li>
                 </ul>
             </div>
 
@@ -87,7 +93,7 @@
                     <li><a href="?pg=reports&action=comparativa-mensual">Comparativa Mensual</a></li>
                     <li><a href="?pg=reports&action=comparativa-anual">Comparativa Anual</a></li>
                     <li><a href="?pg=reports&action=tendencias">Tendencias</a></li>
-                    <li><a href="?pg=reports&action=rentabilidad">Rentabilidad</a></li>
+                    <li><a href="?pg=reports&action=profitability" class="<?= ($_GET['action'] ?? '') === 'profitability' ? 'active' : '' ?>">Rentabilidad</a></li>
                 </ul>
             </div>
 

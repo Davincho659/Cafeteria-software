@@ -181,4 +181,50 @@ class InventoryController {
             ]);
         }
     }
+
+    /**
+     * Obtener alertas de stock negativo
+     */
+    public function getAlertas() {
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            $limit = isset($_GET['limit']) ? intval($_GET['limit']) : 100;
+            $alertas = $this->inventoryModel->obtenerAlertas($limit);
+            echo json_encode([
+                'success' => true,
+                'data' => $alertas,
+                'total' => count($alertas)
+            ]);
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Obtener alertas de un producto específico
+     */
+    public function getProductAlertas() {
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            $idProducto = isset($_GET['idProducto']) ? intval($_GET['idProducto']) : 0;
+            if ($idProducto <= 0) {
+                throw new Exception('ID de producto inválido');
+            }
+
+            $alertas = $this->inventoryModel->obtenerAlertasProducto($idProducto);
+            echo json_encode([
+                'success' => true,
+                'data' => $alertas,
+                'total' => count($alertas)
+            ]);
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
 }

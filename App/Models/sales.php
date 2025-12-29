@@ -1,54 +1,121 @@
 <?php
 require_once __DIR__ . '/../Core/Conexion.php';
 require_once __DIR__ . '/Inventory.php';
+require_once __DIR__ . '/cashRegister.php';
 
 class Sales {
     private $db;
     private $inventoryModel;
+    private $cashRegister;
 
     public function __construct() {
         $this->db = Database::getConnection();
         $this->inventoryModel = new Inventory();
+        $this->cashRegister = new CashRegister();
     }
 
     /**
-     * Crear venta (detallada o rápida)
+     * Crear venta rápida/detallada con sus detalles en una sola transacción
      */
-    public function createSale($idVenta, $idMesa = null, $estado, $metodoPago, $total, $idUsuario, $tipoVenta = 'detallada', $descripcion = null) {
-        $sql = "INSERT INTO ventas (idVenta, idMesa, estado, metodoPago, total, idUsuario, tipoVenta, descripcion) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$idVenta, $idMesa, $estado, $metodoPago, $total, $idUsuario, $tipoVenta, $descripcion]);
-        return $this->db->lastInsertId();
+    public function createSaleWithDetails($metodoPago, array $productos, $idUsuario, $idMesa = null, $tipoVenta = 'detallada', $descripcion = null) {
+        try {
+            $this->db->beginTransaction();
+
+            // Validar caja activa
+            $cajaActiva = $this->cashRegister->getCajaActiva();
+            if (!$cajaActiva) {
+                throw new Exception('No hay caja abierta. Abra la caja antes de registrar ventas.');
+            }
+
+            // Calcular total servidor-side y validar stock
+            $total = 0;
+            foreach ($productos as $item) {
+                $cantidad = isset($item['cantidad']) ? (float)$item['cantidad'] : 0;
+                $precio = isset($item['precioUnitario']) ? (float)$item['precioUnitario'] : 0;
+                if ($cantidad <= 0) {
+                    throw new Exception('Cantidad inválida para un producto');
+                }
+                if ($precio < 0) {
+                    throw new Exception('Precio inválido para un producto');
+                }
+                $total += $cantidad * $precio;
+
+                // Validar stock si aplica
+                $sqlProd = "SELECT manejaStock, nombre FROM productos WHERE idProducto = ?";
+                $stmtProd = $this->db->prepare($sqlProd);
+                $stmtProd->execute([$item['idProducto']]);
+                $producto = $stmtProd->fetch(PDO::FETCH_ASSOC);
+                if ($producto && $producto['manejaStock']) {
+                    if (!$this->inventoryModel->verificarStock($item['idProducto'], $cantidad)) {
+                        throw new Exception('Stock insuficiente para: ' . $producto['nombre']);
+                    }
+                }
+            }
+
+            if ($total <= 0) {
+                throw new Exception('El total calculado es inválido');
+            }
+
+            // Insertar venta
+            $sqlVenta = "INSERT INTO ventas (idMesa, estado, metodoPago, total, idUsuario, tipoVenta, descripcion, idCaja) 
+                         VALUES (?, 'completada', ?, ?, ?, ?, ?, ?)";
+            $stmtVenta = $this->db->prepare($sqlVenta);
+            $stmtVenta->execute([$idMesa, $metodoPago, $total, $idUsuario, $tipoVenta, $descripcion, $cajaActiva['idCaja']]);
+            $idVenta = $this->db->lastInsertId();
+
+            // Movimiento de caja
+            $this->cashRegister->registrarIngresoVenta((int)$idVenta, (float)$total, $idUsuario);
+
+            // Detalles + inventario (sin abrir transacción interna)
+            foreach ($productos as $item) {
+                $this->createSalesDetailInternal(
+                    $idVenta,
+                    null,
+                    $item['idProducto'],
+                    (float)$item['cantidad'],
+                    (float)$item['precioUnitario'],
+                    $idUsuario,
+                    false // no iniciar transacción nueva
+                );
+            }
+
+            $this->db->commit();
+            return $idVenta;
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
     }
 
     /**
      * Crear detalle de venta Y actualizar inventario
      */
     public function createSalesDetail($idVenta, $idDetalleVenta, $idProducto, $cantidad, $precioUnitario, $idUsuario = null) {
-        try {
-            $this->db->beginTransaction();
+        // Método público si se requiere uso aislado; maneja su propia transacción.
+        return $this->createSalesDetailInternal($idVenta, $idDetalleVenta, $idProducto, $cantidad, $precioUnitario, $idUsuario, true);
+    }
 
-            // Calcular subtotal
+    private function createSalesDetailInternal($idVenta, $idDetalleVenta, $idProducto, $cantidad, $precioUnitario, $idUsuario, $useTransaction) {
+        try {
+            if ($useTransaction) {
+                $this->db->beginTransaction();
+            }
+
             $subtotal = $cantidad * $precioUnitario;
 
-            // Insertar detalle de venta
             $sql = "INSERT INTO detalle_venta (idVenta, idDetalleVenta, idProducto, cantidad, precioUnitario, subTotal) 
                     VALUES (?, ?, ?, ?, ?, ?)";
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$idVenta, $idDetalleVenta, $idProducto, $cantidad, $precioUnitario, $subtotal]);
 
-            // Verificar si el producto maneja stock
-            $sqlCheck = "SELECT manejaStock FROM productos WHERE idProducto = ?";
+            $sqlCheck = "SELECT manejaStock, nombre FROM productos WHERE idProducto = ?";
             $stmtCheck = $this->db->prepare($sqlCheck);
             $stmtCheck->execute([$idProducto]);
             $producto = $stmtCheck->fetch(PDO::FETCH_ASSOC);
 
-            // Si maneja stock, registrar salida en inventario
             if ($producto && $producto['manejaStock']) {
-                // Verificar que haya stock suficiente
                 if (!$this->inventoryModel->verificarStock($idProducto, $cantidad)) {
-                    throw new Exception("Stock insuficiente para el producto ID: $idProducto");
+                    throw new Exception('Stock insuficiente para: ' . $producto['nombre']);
                 }
 
                 $this->inventoryModel->registrarMovimiento(
@@ -58,14 +125,19 @@ class Sales {
                     $idVenta,
                     'venta',
                     "Venta #$idVenta",
-                    $idUsuario
+                    $idUsuario,
+                    false // no abrir nueva transacción
                 );
             }
 
-            $this->db->commit();
+            if ($useTransaction) {
+                $this->db->commit();
+            }
             return $this->db->lastInsertId();
         } catch (Exception $e) {
-            $this->db->rollBack();
+            if ($useTransaction) {
+                $this->db->rollBack();
+            }
             throw $e;
         }
     }
@@ -162,14 +234,16 @@ class Sales {
         $sql = "SELECT 
                     p.idProducto,
                     p.nombre,
-                    SUM(dv.cantidad) as cantidadVendida,
-                    SUM(dv.subTotal) as totalVentas
+                    c.nombre as categoria,
+                    SUM(dv.cantidad) as totalVendido,
+                    SUM(dv.subTotal) as ingresoGenerado
                 FROM detalle_venta dv
                 INNER JOIN ventas v ON dv.idVenta = v.idVenta
                 INNER JOIN productos p ON dv.idProducto = p.idProducto
+                LEFT JOIN categorias c ON p.idCategoria = c.idCategoria
                 WHERE DATE(v.fechaVenta) = CURDATE() AND v.estado = 'completada'
-                GROUP BY p.idProducto, p.nombre
-                ORDER BY cantidadVendida DESC
+                GROUP BY p.idProducto, p.nombre, c.nombre
+                ORDER BY totalVendido DESC
                 LIMIT ?";
         $stmt = $this->db->prepare($sql);
         $stmt->execute([$limit]);
@@ -188,19 +262,7 @@ class Sales {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Obtener total de ventas por rango de fechas
-     */
-    public function getTotalByDateRange($fechaDesde, $fechaHasta) {
-        $sql = "SELECT COALESCE(SUM(total), 0) AS total
-                FROM ventas
-                WHERE DATE(fechaVenta) BETWEEN ? AND ? AND estado = 'completada'";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$fechaDesde, $fechaHasta]);
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result['total'];
-    }
-
+    
     // ============================================================================
     // MÉTODOS CRÍTICOS PARA FLUJO DE MESAS (ANTES FALTABAN)
     // ============================================================================
@@ -302,7 +364,7 @@ class Sales {
             $this->db->beginTransaction();
             
             // Obtener la venta pendiente de la mesa
-            $sqlGetSale = "SELECT idVenta, total FROM ventas 
+            $sqlGetSale = "SELECT idVenta, total, idUsuario FROM ventas 
                            WHERE idMesa = ? AND estado = 'pendiente' 
                            LIMIT 1";
             $stmtGetSale = $this->db->prepare($sqlGetSale);
@@ -313,12 +375,63 @@ class Sales {
                 throw new Exception("No hay venta pendiente para esta mesa");
             }
             
+            // Validar caja activa
+            $cajaActiva = $this->cashRegister->getCajaActiva();
+            if (!$cajaActiva) {
+                throw new Exception('No hay caja abierta. Abra la caja antes de completar ventas.');
+            }
+
+            // Traer detalles para afectar inventario y validar stock
+            $detalles = $this->getSaleDetails($venta['idVenta']);
+            foreach ($detalles as $det) {
+                $cantidad = (float)$det['cantidad'];
+                $sqlProd = "SELECT manejaStock, nombre FROM productos WHERE idProducto = ?";
+                $stmtProd = $this->db->prepare($sqlProd);
+                $stmtProd->execute([$det['idProducto']]);
+                $producto = $stmtProd->fetch(PDO::FETCH_ASSOC);
+
+                if ($producto && $producto['manejaStock']) {
+                    if (!$this->inventoryModel->verificarStock($det['idProducto'], $cantidad)) {
+                        throw new Exception('Stock insuficiente para: ' . $producto['nombre']);
+                    }
+                }
+            }
+
             // Marcar venta como completada
             $sqlUpdateVenta = "UPDATE ventas 
-                               SET estado = 'completada', metodoPago = ?, fechaActualizacion = NOW() 
+                               SET estado = 'completada', metodoPago = ?, fechaActualizacion = NOW(), idCaja = ? 
                                WHERE idVenta = ?";
             $stmtUpdateVenta = $this->db->prepare($sqlUpdateVenta);
-            $stmtUpdateVenta->execute([$metodoPago, $venta['idVenta']]);
+            $stmtUpdateVenta->execute([$metodoPago, $cajaActiva['idCaja'], $venta['idVenta']]);
+            
+            // Registrar salida de inventario por cada detalle
+            foreach ($detalles as $det) {
+                $cantidad = (float)$det['cantidad'];
+                $sqlProd = "SELECT manejaStock FROM productos WHERE idProducto = ?";
+                $stmtProd = $this->db->prepare($sqlProd);
+                $stmtProd->execute([$det['idProducto']]);
+                $producto = $stmtProd->fetch(PDO::FETCH_ASSOC);
+
+                if ($producto && $producto['manejaStock']) {
+                    $this->inventoryModel->registrarMovimiento(
+                        $det['idProducto'],
+                        'salida',
+                        $cantidad,
+                        $venta['idVenta'],
+                        'venta',
+                        "Venta #{$venta['idVenta']}",
+                        isset($venta['idUsuario']) ? (int)$venta['idUsuario'] : null,
+                        false
+                    );
+                }
+            }
+
+            // Registrar ingreso en caja (movimiento VENTA)
+            $this->cashRegister->registrarIngresoVenta(
+                (int)$venta['idVenta'],
+                (float)$venta['total'],
+                isset($venta['idUsuario']) ? (int)$venta['idUsuario'] : null
+            );
             
             $this->db->commit();
             return $venta['idVenta'];

@@ -79,6 +79,12 @@
                 📋 Movimientos
             </button>
         </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="alerts-tab" data-bs-toggle="tab" 
+                    data-bs-target="#alerts" type="button" role="tab">
+                ⚠️ Alertas
+            </button>
+        </li>
     </ul>
 
     <div class="tab-content">
@@ -172,6 +178,42 @@
                                 </tr>
                             </thead>
                             <tbody id="movementsTable">
+                                <!-- Se llena con JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============== ALERTAS ============== -->
+        <div class="tab-pane fade" id="alerts" role="tabpanel">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">Alertas de Stock Negativo</h5>
+                        <div>
+                            <button id="btnRefreshAlerts" class="btn btn-sm btn-outline-danger">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Actualizar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Producto</th>
+                                    <th>Tipo</th>
+                                    <th class="text-center">Cantidad</th>
+                                    <th class="text-center">Stock Anterior</th>
+                                    <th class="text-center">Stock Actual</th>
+                                    <th>Referencia</th>
+                                    <th>Usuario</th>
+                                </tr>
+                            </thead>
+                            <tbody id="alertsTable">
                                 <!-- Se llena con JS -->
                             </tbody>
                         </table>
