@@ -1,20 +1,7 @@
 
 <link rel="stylesheet" href="assets/css/bills.css">
 <link rel="stylesheet" href="assets/css/flatpick.css">
-<style>
-    .kpi-row { margin-top: 1.5rem; }
-    .kpi-card {
-        background: #0f172a;
-        color: #f8fafc;
-        border-radius: 12px;
-        padding: 16px 18px;
-        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
-        height: 100%;
-    }
-    .kpi-label { font-size: 0.95rem; opacity: 0.85; letter-spacing: 0.3px; }
-    .kpi-value { font-size: 1.6rem; font-weight: 700; margin-top: 4px; }
-    @media (max-width: 576px) { .kpi-value { font-size: 1.35rem; } }
-</style>
+<link rel="stylesheet" href="assets/css/reports.css">
 
 <div class="container-fluid">
 

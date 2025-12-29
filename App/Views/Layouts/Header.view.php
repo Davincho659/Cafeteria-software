@@ -4,13 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?=esc(APP_NAME)?></title>
+    
+    <!-- Preload recursos críticos para evitar layout shift -->
+    <link rel="preload" href="assets/css/bootstrap.css" as="style">
+    <link rel="preload" href="assets/css/pos-theme.css" as="style">
+    <link rel="preload" href="assets/img/logo.jpg" as="image">
+    
+    <!-- Bootstrap y FontAwesome -->
     <link rel="stylesheet" href="assets/css/bootstrap.css">
     <link rel="stylesheet" href="assets/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/theme-safe.css">
+    <!-- Sistema de diseño único -->
+    <link rel="stylesheet" href="assets/css/pos-theme.css">
+    <!-- SweetAlert2 -->
     <link rel="stylesheet" href="assets/css/sweetalert2.min.css">
-    <!-- Dropzone (CDN) 
-    <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" />
-    <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>-->
     
 </head>
 
@@ -20,7 +26,7 @@
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="?pg=home">
-            <img src="assets/img/logo.jpg" alt="Logo" class="cafe-logo me-2"> La casa del pastel
+            <img src="assets/img/logo.jpg" alt="Logo" class="cafe-logo me-2" width="40" height="40" loading="eager"> La casa del pastel
         </a>
         
         <div class="collapse navbar-collapse" id="navbarNav">

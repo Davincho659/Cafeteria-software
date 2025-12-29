@@ -5,6 +5,14 @@ require_once __DIR__ . '/../Models/Categories.php';
 require_once __DIR__ . '/../Core/Functions.php';
 
 class ProductController {
+
+    private $productsModel;
+    private $categoriesModel;
+
+    public function __construct() {
+        $this->productsModel = new Products();
+        $this->categoriesModel = new Categories();
+    }
 	// Procesa la creación de un producto (formulario multipart/form-data)
 	public function createProduct() {
         header('Content-Type: application/json; charset=utf-8');
@@ -27,43 +35,38 @@ class ProductController {
             $precioCompra = !empty($_POST['precioCompra']) ? floatval($_POST['precioCompra']) : null;
             $precioVenta = !empty($_POST['precioVenta']) ? floatval($_POST['precioVenta']) : null;
 
-            // Procesar imagen si existe
-            $imageDbPath = null;
             if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
-                $dest = __DIR__ . '/../../Public/Assets/img/products';
+                $idProducto = $this->productsModel->create($idCategoria, $nombre, $tipo, $precioVenta, $precioCompra, null);
+                $imageName = $_FILES['imagen']['name'] ?? null;
+                $file = $_FILES['imagen']['tmp_name'] ?? null;
+                $imageTipe = $_FILES['imagen']['type'] ? explode('/', $_FILES['imagen']['type'])[1] : null;
+                $image = $idProducto.".".$imageTipe;
+                $path = __DIR__ . '/../../Public/Assets/img/products/' . $image;
                 
-                // Asegurar que el directorio existe
-                if (!is_dir($dest)) {
-                    mkdir($dest, 0755, true);
-                }
-                
-                $res = saveUploadedImage($_FILES['imagen'], $dest);
-                if (!$res['success']) {
-                    throw new Exception($res['error'] ?? 'Error al subir la imagen');
-                }
-                $imageDbPath = 'products/' . $res['filename'];
-            }
+                move_uploaded_file($file, $path);
 
-            // Crear producto
-            $products = new Products();
-            $result = $products->create($idCategoria, $nombre, $tipo, $precioVenta, $precioCompra, $imageDbPath);
-
-            if (!$result) {
-                throw new Exception('Error al crear el producto en la base de datos');
+                $this->productsModel->update($idProducto, [
+                    'idCategoria' => $idCategoria,
+                    'nombre' => $nombre,
+                    'tipo' => $tipo,
+                    'precioCompra' => $precioCompra,
+                    'precioVenta' => $precioVenta,
+                    'imagen' => $image,
+                    'idUnidadBase' => 1,
+                    'manejaStock' => 0
+                ]);
+            } else {
+                $image = 'default.png';
+                $idProducto = $this->productsModel->create($idCategoria, $nombre, $tipo, $precioVenta, $precioCompra, $image);
             }
 
             echo json_encode([
                 'success' => true,
-                'message' => 'Producto creado exitosamente'
+                'message' => 'Producto creado exitosamente',
+                'idProducto' => $idProducto
             ]);
 
         } catch (Exception $e) {
-            // Si hubo error y se subió una imagen, intentar eliminarla
-            if (isset($imageDbPath)) {
-                $imagePath = __DIR__ . '/../../Public/Assets/img/' . $imageDbPath;
-                if (file_exists($imagePath)) @unlink($imagePath);
-            }
-
             echo json_encode([
                 'success' => false,
                 'error' => $e->getMessage()
@@ -71,30 +74,7 @@ class ProductController {
         }
 	}
 
-    
-    /* public function uploadImage() {
-            header('Content-Type: application/json');
-            
-            if (!isset($_FILES['imagen']) || $_FILES['imagen']['error'] !== UPLOAD_ERR_OK) {
-                echo json_encode(['success' => false, 'error' => 'No se recibió la imagen']);
-                return;
-            }
-
-            $dest = __DIR__ . '/../../Public/Assets/img/products';
-            $res = saveUploadedImage($_FILES['imagen'], $dest);
-            
-            if ($res['success']) {
-                echo json_encode([
-                    'success' => true,
-                    'path' => 'products/' . $res['filename']
-                ]);
-            } else {
-                echo json_encode(['success' => false, 'error' => 'Error al guardar la imagen']);
-            }
-        }
-     */
-	
-
+   
     // Obtener un producto por ID (JSON)
     public function getProduct() {
         header('Content-Type: application/json; charset=utf-8');
@@ -105,8 +85,7 @@ class ProductController {
         }
 
         try {
-            $products = new Products();
-            $product = $products->getById($id);
+            $product = $this->productsModel->getById($id);
             if ($product) {
                 echo json_encode(['success' => true, 'data' => $product]);
             } else {
@@ -121,8 +100,8 @@ class ProductController {
     public function getProducts() {
         header('Content-Type: application/json; charset=utf-8');
         try {
-            $products = new Products();
-            $list = $products->getAll();
+            
+            $list = $this->productsModel->getAll();
             echo json_encode(['success' => true, 'data' => $list]);
         } catch (Exception $e) {
             echo json_encode(['success' => false, 'error' => $e->getMessage()]);
@@ -146,8 +125,8 @@ class ProductController {
             }
 
             // Obtener producto actual
-            $products = new Products();
-            $currentProduct = $products->getById($idProducto);
+        
+            $currentProduct = $this->productsModel->getById($idProducto);
             if (!$currentProduct) {
                 throw new Exception('Producto no encontrado');
             }
@@ -157,34 +136,47 @@ class ProductController {
             if (empty($_POST['nombre'])) throw new Exception('El nombre es requerido');
             if (empty($_POST['tipo'])) throw new Exception('El tipo es requerido');
 
-            // Preparar datos de actualización
-            $updateData = [
-                'idCategoria' => $_POST['categoria'],
-                'nombre' => trim($_POST['nombre']),
-                'tipo' => $_POST['tipo'],
-                'precioCompra' => !empty($_POST['precioCompra']) ? floatval($_POST['precioCompra']) : null,
-                'precioVenta' => !empty($_POST['precioVenta']) ? floatval($_POST['precioVenta']) : null,
-                'imagen' => $currentProduct['imagen'] // Mantener imagen actual por defecto
-            ];
+            $path = __DIR__ . '/../../Public/Assets/img/products';
 
-            // Procesar nueva imagen si existe
             if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
-                $dest = __DIR__ . '/../../Public/Assets/img/products';
                 
-                // Asegurar que el directorio existe
-                if (!is_dir($dest)) {
-                    mkdir($dest, 0755, true);
-                }
+                $currentimage = $currentProduct['imagen'] ?? null;
+                
+                $imageName = $_FILES['imagen']['name'] ?? null;
+                $file = $_FILES['imagen']['tmp_name'] ?? null;
+                $imageTipe = $_FILES['imagen']['type'] ? explode('/', $_FILES['imagen']['type'])[1] : null;
+                $image = $idProducto.".".$imageTipe;
 
-                $res = saveUploadedImage($_FILES['imagen'], $dest, $currentProduct['imagen'] ?? null);
-                if (!$res['success']) {
-                    throw new Exception($res['error'] ?? 'Error al subir la imagen');
+                if (file_exists($path . $currentimage)) {
+                    @unlink($path . $currentimage);
                 }
-                $updateData['imagen'] = 'products/' . $res['filename'];
+                
+                move_uploaded_file($file, $path. $image);
+                $success = $this->productsModel->update($idProducto, [
+                    'idCategoria' => $_POST['categoria'],
+                    'nombre' => trim($_POST['nombre']),
+                    'tipo' => $_POST['tipo'],
+                    'precioCompra' => !empty($_POST['precioCompra']) ? floatval($_POST['precioCompra']) : null,
+                    'precioVenta' => !empty($_POST['precioVenta']) ? floatval($_POST['precioVenta']) : null,
+                    'imagen' => $image,
+                    'idUnidadBase' => $currentProduct['idUnidadBase'] ?? 1,
+                    'manejaStock' => $currentProduct['manejaStock'] ?? 0
+                ]);
+            } else {
+                $success = $this->productsModel->update($idProducto, [
+                    'idCategoria' => $_POST['categoria'],
+                    'nombre' => trim($_POST['nombre']),
+                    'tipo' => $_POST['tipo'],
+                    'precioCompra' => !empty($_POST['precioCompra']) ? floatval($_POST['precioCompra']) : null,
+                    'precioVenta' => !empty($_POST['precioVenta']) ? floatval($_POST['precioVenta']) : null,
+                    'imagen' => $currentProduct['imagen'],
+                    'idUnidadBase' => $currentProduct['idUnidadBase'] ?? 1,
+                    'manejaStock' => $currentProduct['manejaStock'] ?? 0
+                ]);
             }
 
             // Actualizar producto
-            $success = $products->update($idProducto, $updateData);
+            
             if (!$success) {
                 throw new Exception('Error al actualizar el producto en la base de datos');
             }
@@ -195,11 +187,6 @@ class ProductController {
             ]);
 
         } catch (Exception $e) {
-            // Si hubo error al actualizar y se subió una imagen nueva, intentar eliminarla
-            if (isset($res) && isset($res['filename'])) {
-                $newImagePath = $dest . '/' . $res['filename'];
-                if (file_exists($newImagePath)) @unlink($newImagePath);
-            }
 
             echo json_encode([
                 'success' => false,
@@ -224,13 +211,13 @@ class ProductController {
         }
 
         try {
-            $products = new Products();
-            $currentProduct = $products->getById($id);
+            $currentProduct = $this->productsModel->getById($id);
             if ($currentProduct && !empty($currentProduct['imagen'])) {
-                $imagePath = __DIR__ . '/../../Public/Assets/img/' . $currentProduct['imagen'];
+                $dest = __DIR__ . '/../../Public/Assets/img/products';
+                $imagePath = $dest . DIRECTORY_SEPARATOR . basename($currentProduct['imagen']);
                 if (file_exists($imagePath)) @unlink($imagePath);
             }
-            $success = $products->delete($id);
+            $success = $this->productsModel->delete($id);
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode(['success' => $success]);
         } catch (Exception $e) {
@@ -243,8 +230,8 @@ class ProductController {
         header('Content-Type: application/json; charset=utf-8');
 
         try {
-            $categoriesModel = new Categories();
-            $categories = $categoriesModel->getAll();
+            
+            $categories = $this->categoriesModel->getAll();
             echo json_encode([
                 'success' => true,
                 'data' => $categories
@@ -257,7 +244,7 @@ class ProductController {
         }
     }
 
-    public function createCategorie() {
+    public function createCategory() {
         header('Content-Type: application/json; charset=utf-8');
         
         try {
@@ -269,25 +256,22 @@ class ProductController {
             if (!$nombre) {
                 throw new Exception('El nombre de la categoría es requerido');
             }
+            if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+                $idCategoria = $this->categoriesModel->create($nombre);
+                $imageName = $_FILES['image']['name'] ?? null;
+                $file = $_FILES['image']['tmp_name'] ?? null;
+                $imageTipe = $_FILES['image']['type'] ? explode('/', $_FILES['image']['type'])[1] : null;
+                $image = $idCategoria.".".$imageTipe;
+                $path = __DIR__ . '/../../Public/Assets/img/categories/' . $image;
+                
+                move_uploaded_file($file, $path);
 
-            // Procesar imagen si existe
-            $imageDbPath = null;
-            if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
-                $dest = __DIR__ . '/../../Public/Assets/img/categories';
-                
-                if (!is_dir($dest)) {
-                    mkdir($dest, 0755, true);
-                }
-                
-                $res = saveUploadedImage($_FILES['imagen'], $dest);
-                if (!$res['success']) {
-                    throw new Exception($res['error'] ?? 'Error al subir la imagen');
-                }
-                $imageDbPath = 'categories/' . $res['filename'];
+                $this->categoriesModel->insertImage($idCategoria, $image);
+            } else {
+                $image = 'default.png';
+                $idCategoria = $this->categoriesModel->create($nombre);
+                $this->categoriesModel->insertImage($idCategoria, $image);
             }
-
-            $categoriesModel = new Categories();
-            $idCategoria = $categoriesModel->create($nombre, $imageDbPath);
 
             echo json_encode([
                 'success' => true,
@@ -295,11 +279,6 @@ class ProductController {
                 'idCategoria' => $idCategoria
             ]);
         } catch (Exception $e) {
-            if (isset($imageDbPath)) {
-                $imagePath = __DIR__ . '/../../Public/Assets/img/' . $imageDbPath;
-                if (file_exists($imagePath)) @unlink($imagePath);
-            }
-
             echo json_encode([
                 'success' => false,
                 'error' => $e->getMessage()
@@ -315,8 +294,7 @@ class ProductController {
             return;
         }
         try {
-            $categoriesModel = new Categories();
-            $category = $categoriesModel->getById($id);
+            $category = $this->categoriesModel->getById($id);
             if ($category) {
                 echo json_encode([
                     'success' => true,
@@ -341,44 +319,39 @@ class ProductController {
                 throw new Exception('Método no permitido');
             }
 
-            // Aceptar tanto 'id' como 'idCategoria'
+            
             $idCategoria = $_POST['id'] ?? $_POST['idCategoria'] ?? null;
             $nombre = $_POST['nombre'] ?? null;
+            $path = __DIR__ . '/../../Public/Assets/img/categories/';
             
             if (!$idCategoria || !$nombre) {
                 throw new Exception('ID y nombre de la categoría son requeridos');
             }
 
-            // Obtener categoría actual
-            $categoriesModel = new Categories();
-            $currentCategory = $categoriesModel->getById($idCategoria);
-            if (!$currentCategory) {
-                throw new Exception('Categoría no encontrada');
-            }
-
-            // Preparar datos de actualización
-            $updateData = [
-                'nombre' => trim($nombre),
-                'imagen' => $currentCategory['imagen'] ?? null
-            ];
-
-            // Procesar nueva imagen si existe
-            if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
-                $dest = __DIR__ . '/../../Public/Assets/img/categories';
+            if (isset($_FILES['image'] ) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
                 
-                if (!is_dir($dest)) {
-                    mkdir($dest, 0755, true);
-                }
+                $currentCategory = $this->categoriesModel->getById($idCategoria);
+                $currentimage = $currentCategory['imagen'] ?? null;
+                
+                $imageName = $_FILES['image']['name'] ?? null;
+                $file = $_FILES['image']['tmp_name'] ?? null;
+                $imageTipe = $_FILES['image']['type'] ? explode('/', $_FILES['image']['type'])[1] : null;
+                $image = $idCategoria.".".$imageTipe;
 
-                $res = saveUploadedImage($_FILES['imagen'], $dest, $currentCategory['imagen'] ?? null);
-                if (!$res['success']) {
-                    throw new Exception($res['error'] ?? 'Error al subir la imagen');
+                if (file_exists($path . $currentimage)) {
+                    @unlink($path . $currentimage);
                 }
-                $updateData['imagen'] = 'categories/' . $res['filename'];
+                
+
+                move_uploaded_file($file, $path. $image);
+                $success = $this->categoriesModel->update($idCategoria, $nombre, $image);
+            } else {
+                $image = 'default.png';
+                $success = $this->categoriesModel->update($idCategoria, $nombre, $image);
             }
-
-            // Actualizar categoría
-            $success = $categoriesModel->update($idCategoria, $updateData);
+            
+            
+            
 
             if (!$success) {
                 throw new Exception('Error al actualizar la categoría en la base de datos');
@@ -389,11 +362,43 @@ class ProductController {
                 'message' => 'Categoría actualizada exitosamente'
             ]);
         } catch (Exception $e) {
-            if (isset($res) && isset($res['filename'])) {
-                $newImagePath = $dest . '/' . $res['filename'];
-                if (file_exists($newImagePath)) @unlink($newImagePath);
+
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function deleteCategory() {
+        header('Content-Type: application/json; charset=utf-8');
+        
+        try {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                throw new Exception('Método no permitido');
+            }
+            $idCategoria = $_GET['id'] ?? null;
+
+            if (!$idCategoria) {
+                throw new Exception('ID de la categoría es requerido');
             }
 
+            // Eliminar imagen física si existe
+            $currentCategory = $this->categoriesModel->getById($idCategoria);
+            if ($currentCategory && !empty($currentCategory['imagen'])) {
+                $dest = __DIR__ . '/../../Public/Assets/img/categories/';
+                $imagePath = $dest . DIRECTORY_SEPARATOR . basename($currentCategory['imagen']);
+                if (is_file($imagePath)) {
+                    @unlink($imagePath);
+                }
+            }
+
+            $this->categoriesModel->delete($idCategoria);
+            echo json_encode([
+                'success' => true,
+                'message' => 'Categoría eliminada exitosamente'
+            ]);
+        } catch (Exception $e) {
             echo json_encode([
                 'success' => false,
                 'error' => $e->getMessage()

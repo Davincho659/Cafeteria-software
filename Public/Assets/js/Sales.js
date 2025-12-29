@@ -96,8 +96,7 @@ function showCategories(categories) {
 
   const allBtn = document.createElement("button")
   allBtn.className = "categoria-item active"
-  allBtn.innerHTML = `<img src="assets/img/categories/default.png" class="categoria-icon" 
-    style="width:30px;height:30px;object-fit:cover;border-radius:4px;margin-right:6px">
+  allBtn.innerHTML = `<img src="assets/img/categories/default.png" class="categoria-icon">
     <span class="categoria-nombre">Todos</span>`
   allBtn.onclick = () => {
     document.querySelectorAll(".categoria-item").forEach((b) => b.classList.remove("active"))
@@ -109,8 +108,8 @@ function showCategories(categories) {
   categories.forEach((cat) => {
     const btn = document.createElement("button")
     btn.className = "categoria-item"
-    btn.innerHTML = `<img src="${cat.imagen ? "assets/img/" + cat.imagen : "assets/img/categories/default.png"}" 
-      class="categoria-icon" style="width:30px;height:30px;object-fit:cover;border-radius:4px;margin-right:6px">
+    btn.innerHTML = `<img src="${cat.imagen ? "assets/img/categories/" + cat.imagen : "assets/img/categories/default.png"}" 
+      class="categoria-icon">
       <span class="categoria-nombre">${cat.nombre}</span>`
     btn.onclick = () => {
       document.querySelectorAll(".categoria-item").forEach((b) => b.classList.remove("active"))
@@ -148,10 +147,8 @@ function showProducts(products) {
   container.innerHTML = ""
   products.forEach((product) => {
     const img = product.imagen
-      ? `assets/img/${product.imagen}`
-      : product.categoria_imagen
-        ? `assets/img/${product.categoria_imagen}`
-        : "assets/img/products/default.jpg"
+      ? `assets/img/products/${product.imagen}`
+      : "assets/img/products/default.jpg";
 
     const btn = document.createElement("button")
     btn.className = "m-2 producto-card p-2"
@@ -316,8 +313,8 @@ function showCartProducts(cartId) {
     div.innerHTML = `
       <div class="row align-items-center">
         <div class="col-auto">
-          <img src="${p.imagen ? "assets/img/" + p.imagen : "assets/img/products/default.jpg"}" 
-               class="product-img" style="width:80px;height:80px;object-fit:cover;border-radius:8px">
+          <img src="${p.imagen ? "assets/img/products/" + p.imagen : "assets/img/products/default.jpg"}" 
+               class="product-img">
         </div>
         <div class="col">
           <div class="product-title">${p.nombre}</div>
@@ -328,7 +325,7 @@ function showCartProducts(cartId) {
               <button onclick="increaseQty(${p.idProducto}, '${cartId}')">+</button>
             </div>
             <button class="remove-btn" onclick="dropProduct(${p.idProducto}, '${cartId}')">
-              <i class="fa-solid fa-trash-can" style="color:#ff0000"></i>
+              <i class="fa-solid fa-trash-can icon-delete"></i>
             </button>
           </div>
         </div>
@@ -448,11 +445,12 @@ function showTableSelectionPopup(mesas) {
 
     const isOccupied = mesa.idVenta !== null && mesa.idVenta !== undefined
     const numeroMesa = mesa.numeroMesa
+    const statusClass = isOccupied ? "mesa-status-occupied" : "mesa-status-available"
 
     btn.innerHTML = `
-      <h4 style="color:${isOccupied ? "red" : "green"}">Mesa #${numeroMesa}</h4>
+      <h4 class="${statusClass}">Mesa #${numeroMesa}</h4>
       <img src="assets/img/mesa.jpg" class="table-img" onerror="this.src='assets/img/categories/default.png'">
-      <small style="color:${isOccupied ? "red" : "green"};font-weight:bold">
+      <small class="${statusClass}" style="font-weight:bold">
         ${isOccupied ? "Ocupada" : "Disponible"}
       </small>`
 
@@ -583,8 +581,7 @@ function createTableTab(idMesa, numeroMesa, idVenta, switchTo = true) {
   
     // Crear el botón X como elemento separado
     const closeIcon = document.createElement("i")
-    closeIcon.className = "fa-solid fa-circle-xmark fa-xl"
-    closeIcon.style.cssText = "color:#ff0000;margin-left:8px;cursor:pointer"
+    closeIcon.className = "fa-solid fa-circle-xmark fa-xl icon-close"
     closeIcon.title = "Eliminar"
   
     // Listener en el X
@@ -615,11 +612,11 @@ function createTableTab(idMesa, numeroMesa, idVenta, switchTo = true) {
   pane.id = tabId
   pane.innerHTML = `
     <div id="carrito-${tabId}">
-      <center style="padding:1rem 0">
+      <center class="py-1rem">
         <h3>Mesa ${numeroMesa}: <div class="badge bg-warning rounded-circle" id="ventasCount-${tabId}">0</div></h3>
       </center>
-      <div id="productos-carrito-${tabId}" style="height:calc(85vh - 200px);overflow-y:auto"></div>
-      <div style="padding:1rem 0">
+      <div id="productos-carrito-${tabId}" class="cart-scroll"></div>
+      <div class="py-1rem">
         <div id="total-carrito-${tabId}"><h4>Total: $<span id="total-${tabId}">0.00</span></h4></div>
         <button class="btn btn-primary btn-lg w-100 mb-2" onclick="saleConfirmationModal('${tabId}', ${idMesa})">
           Facturar <i class="fa-solid fa-receipt"></i>
@@ -668,7 +665,7 @@ function loadTableProducts(tabId, productos) {
 
     const nombre = p.producto_nombre || p.nombre || "Producto"
     const imgPath = p.producto_imagen 
-    const img = imgPath ? `assets/img/${imgPath}` : "assets/img/products/default.jpg"
+    const img = imgPath ? `assets/img/products/${imgPath}` : "assets/img/products/default.jpg"
     const detalleId = p.idDetalleVenta || p.idDetalle
 
     const div = document.createElement("div")
@@ -678,7 +675,7 @@ function loadTableProducts(tabId, productos) {
       <div class="row align-items-center">
         <div class="col-auto">
           <img src="${img}" 
-               class="product-img" style="width:80px;height:80px;object-fit:cover;border-radius:8px">
+               class="product-img">
         </div>
         <div class="col">
           <div class="product-title">${nombre}</div>
@@ -689,7 +686,7 @@ function loadTableProducts(tabId, productos) {
               <button onclick="increaseTableQty(${detalleId})">+</button>
             </div>
             <button class="remove-btn" onclick="removeTableProduct(${detalleId})">
-              <i class="fa-solid fa-trash-can" style="color:#ff0000"></i>
+              <i class="fa-solid fa-trash-can icon-delete"></i>
             </button>
           </div>
         </div>
@@ -950,8 +947,7 @@ function addNewSaleTab() {
   
     // Crear el botón X como elemento separado
     const closeIcon = document.createElement("i")
-    closeIcon.className = "fa-solid fa-circle-xmark fa-xl"
-    closeIcon.style.cssText = "color:#ff0000;margin-left:8px;cursor:pointer"
+    closeIcon.className = "fa-solid fa-circle-xmark fa-xl icon-close"
     closeIcon.title = "Eliminar"
   
     // Listener PRIMERO en el X para detener propagación

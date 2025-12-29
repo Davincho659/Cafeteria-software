@@ -25,56 +25,16 @@ $detalles = $salesModel->getSaleDetails($idVenta);
 <head>
     <meta charset="UTF-8">
     <title>Factura #<?php echo $idVenta; ?></title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            width: 100mm;
-            margin: 0 auto;
-        }
-        h2, h3 {
-            text-align: center;
-            margin: 0;
-        }
-        .facture-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        .factura-table th {
-            background: #f2f2f2;
-            font-weight: bold;
-            border-bottom: 2px solid #ddd !important;
-            text-align: center;
-        }
-
-        .factura-table td {
-            border-bottom: 1px solid #eee !important;
-            padding: 6px 4px !important;
-            font-size: 14px;
-        }
-        .text-center {
-            text-align: center !important;
-        }
-        .text-right {
-            text-align: right !important;
-        }
-        .btn-print {
-            margin-top: 10px;
-            width: 100%;
-            padding: 10px;
-            background: black;
-            color: white;
-            border: none;
-        }
-    </style>
-
+    <link rel="stylesheet" href="assets/css/reports.css">
 </head>
-<body>
+<body class="bill-container">
     <br>
-    <h2>Cafetería Bello Horizonte</h2>
-    <center><img src="assets/img/logo.jpg" alt="Logo" class="cafe-logo me-2" style="width:50px;height:auto;">
-    <h3>Factura #<?php echo $idVenta; ?></h3>
-    <p>Fecha de creación: <b><?php echo date('d-m-Y h:i A', strtotime($venta['fechaVenta'])); ?></b></p></center>
+    <div class="bill-header">
+        <h2>Cafetería Bello Horizonte</h2>
+        <img src="assets/img/logo.jpg" alt="Logo" class="bill-logo">
+        <h3>Factura #<?php echo $idVenta; ?></h3>
+        <p>Fecha de creación: <b><?php echo date('d-m-Y h:i A', strtotime($venta['fechaVenta'])); ?></b></p>
+    </div>
 
     <table class="table factura-table">
         <thead>

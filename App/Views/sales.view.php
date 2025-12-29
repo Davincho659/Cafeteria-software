@@ -44,7 +44,7 @@
                 <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-magnifying-glass"></i></span></button>
             </div>
             <div class="d-flex "> 
-                <div id="productosContainer" class="productos-grid">
+                <div id="productosContainer" class="productosContainer">
                     <h5>cargando productos...</h5>
                 </div>
             </div>

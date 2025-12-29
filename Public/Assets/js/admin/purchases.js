@@ -109,7 +109,7 @@ function renderProducts(filter = '') {
         col.className = 'col-md-6 mb-2';
         
         col.innerHTML = `
-            <div class="card h-100 product-card" style="cursor: pointer;" onclick="addProductToPurchase(${product.idProducto})">
+            <div class="card h-100 product-card" onclick="addProductToPurchase(${product.idProducto})">
                 <div class="card-body p-2">
                     <div class="d-flex align-items-center">
                         <div class="flex-grow-1">

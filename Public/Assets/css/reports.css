@@ -1,0 +1,382 @@
+/* ============================================================================
+   REPORTS CSS - Estilos para reportes y facturas
+   ============================================================================
+   Consolidado de todos los estilos embebidos en vistas de reportes
+   ============================================================================ */
+
+/* ============================================================================
+   KPI CARDS (usado en reportes)
+   ============================================================================ */
+.kpi-row {
+    margin-top: 1.5rem;
+}
+
+.kpi-card {
+    background: var(--brown-dark);
+    color: var(--white);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-md);
+    height: 100%;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.kpi-label {
+    font-size: 0.9rem;
+    opacity: 0.85;
+    letter-spacing: 0.3px;
+    color: var(--bg-light);
+    font-weight: 500;
+}
+
+.kpi-value {
+    font-size: 1.65rem;
+    font-weight: 700;
+    margin-top: 6px;
+    color: var(--white);
+}
+
+/* ============================================================================
+   FACTURA / BILL PRINT VIEW
+   ============================================================================ */
+.bill-container {
+    font-family: Arial, sans-serif;
+    width: 100mm;
+    margin: 0 auto;
+    padding: 10px;
+    background: var(--white);
+}
+
+.bill-header h2,
+.bill-header h3 {
+    text-align: center;
+    margin: 0;
+    color: var(--brown-dark);
+}
+
+.bill-header h2 {
+    font-size: 18px;
+    margin-bottom: 8px;
+}
+
+.bill-header h3 {
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.bill-header p {
+    text-align: center;
+    margin: 4px 0;
+    font-size: 13px;
+    color: var(--text);
+}
+
+.bill-logo {
+    width: 50px;
+    height: auto;
+    display: block;
+    margin: 0 auto 8px;
+}
+
+.factura-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.factura-table th {
+    background: var(--bg-light);
+    font-weight: 700;
+    border-bottom: 2px solid var(--border) !important;
+    text-align: center;
+    padding: 8px 4px;
+    color: var(--brown-dark);
+}
+
+.factura-table td {
+    border-bottom: 1px solid var(--bg-light) !important;
+    padding: 6px 4px !important;
+    font-size: 14px;
+    color: var(--text);
+}
+
+.factura-table .text-center {
+    text-align: center !important;
+}
+
+.factura-table .text-right {
+    text-align: right !important;
+}
+
+.bill-total {
+    margin-top: 15px;
+    text-align: right;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--brown-dark);
+}
+
+.btn-print {
+    margin-top: 15px;
+    width: 100%;
+    padding: 12px;
+    background: var(--brown-dark);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.btn-print:hover {
+    background: var(--brown-mid);
+}
+
+/* ============================================================================
+   FILTER CARD (reportes)
+   ============================================================================ */
+.filter-card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 20px;
+}
+
+.filter-section-title {
+    color: var(--brown-dark);
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.filter-group {
+    margin-bottom: 15px;
+}
+
+.filter-label {
+    display: block;
+    font-weight: 600;
+    color: var(--brown-dark);
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+.filter-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 0.2rem rgba(224, 122, 47, 0.15);
+}
+
+.active-filters {
+    background: var(--bg-light);
+    border-left: 4px solid var(--accent);
+    padding: 12px 15px;
+    margin-bottom: 15px;
+    border-radius: 6px;
+}
+
+.active-filters-title {
+    font-size: 14px;
+    color: var(--brown-dark);
+    font-weight: 600;
+}
+
+/* ============================================================================
+   REPORTS CONTAINER & LAYOUT
+   ============================================================================ */
+.reports-container {
+    display: flex;
+    min-height: calc(100vh - 60px);
+    background: var(--bg-cream);
+}
+
+.reports-sidebar {
+    width: 280px;
+    min-width: 280px;
+    max-width: 280px;
+    background: linear-gradient(180deg, #F5EDE3 0%, var(--bg-cream) 100%);
+    box-shadow: 2px 0 8px rgba(91, 52, 17, 0.05);
+    padding: 20px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-right: 2px solid rgba(91, 52, 17, 0.1);
+    height: calc(100vh - 56px);
+    position: sticky;
+    top: 56px;
+}
+
+.sidebar-header {
+    padding: 1rem 1.25rem;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.sidebar-header h2 {
+    font-size: 18px;
+    color: var(--brown-dark);
+    margin: 0 0 4px 0;
+    font-weight: 700;
+}
+
+.sidebar-header p {
+    font-size: 12px;
+    color: var(--brown-mid);
+    margin: 0;
+}
+
+.sidebar-nav {
+    margin-top: 20px;
+}
+
+.nav-section {
+    margin-bottom: 25px;
+}
+
+.section-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--brown-dark);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.section-title svg {
+    width: 18px;
+    height: 18px;
+    color: var(--accent);
+}
+
+.section-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.section-links li {
+    margin-bottom: 4px;
+}
+
+.section-links a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin: 0.25rem 0;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 8px;
+    border-left: 3px solid transparent;
+    font-size: 14px;
+    transition: background 0.2s ease;
+    will-change: background;
+}
+
+.section-links a:hover {
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.section-links a.active {
+    background: linear-gradient(135deg, var(--brown-dark) 0%, var(--brown-mid) 100%);
+    color: var(--white);
+    border-left-color: var(--accent);
+    font-weight: 600;
+}
+
+/* Scrollbar personalizado para sidebar de reportes */
+.reports-sidebar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.reports-sidebar::-webkit-scrollbar-track {
+    background: rgba(91, 52, 17, 0.05);
+    border-radius: 10px;
+}
+
+.reports-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(91, 52, 17, 0.2);
+    border-radius: 10px;
+}
+
+.reports-sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(91, 52, 17, 0.3);
+}
+
+.reports-content {
+    flex: 1;
+    padding: 25px;
+    overflow-y: auto;
+}
+
+/* ============================================================================
+   RESPONSIVE
+   ============================================================================ */
+@media (max-width: 576px) {
+    .kpi-value {
+        font-size: 1.35rem;
+    }
+    
+    .reports-sidebar {
+        width: 240px;
+    }
+    
+    .bill-container {
+        width: 95%;
+    }
+}
+
+@media (max-width: 768px) {
+    .reports-container {
+        flex-direction: column;
+    }
+    
+    .reports-sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 2px solid var(--border);
+    }
+}
+
+/* ============================================================================
+   PRINT STYLES
+   ============================================================================ */
+@media print {
+    body {
+        background: white;
+    }
+    
+    .btn-print,
+    .navbar,
+    .reports-sidebar,
+    .filter-card {
+        display: none !important;
+    }
+    
+    .bill-container {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .factura-table {
+        page-break-inside: avoid;
+    }
+}

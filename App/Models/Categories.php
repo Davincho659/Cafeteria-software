@@ -23,17 +23,34 @@ class Categories {
     }
 
     public function create($nombre) {
-        // if idCategoria is auto-increment, caller can pass null
         $query = "INSERT INTO categorias (nombre) VALUES (?)";
         $stmt = $this->db->prepare($query);
         $stmt->execute([$nombre]);
         return $this->db->lastInsertId();
     }
 
-    public function update($id, $nombre) {
-        $query = "UPDATE categorias SET nombre = ? WHERE idCategoria = ?";
+    public function delete($id) {
+        $query = "DELETE FROM categorias WHERE idCategoria = ?";
         $stmt = $this->db->prepare($query);
-        return $stmt->execute([$nombre, $id]);
+        return $stmt->execute([$id]);
+    }
+
+    public function insertImage($id, $imagen) {
+        $query = "UPDATE categorias SET imagen = ? WHERE idCategoria = ?";
+        $stmt = $this->db->prepare($query);
+        return $stmt->execute([$imagen, $id]);
+    }
+
+    public function update($id, $nombre, $imagen = null) {
+        if ($imagen === null) {
+            $query = "UPDATE categorias SET nombre = ? WHERE idCategoria = ?";
+            $stmt = $this->db->prepare($query);
+            return $stmt->execute([$nombre, $id]);
+        } else {
+            $query = "UPDATE categorias SET nombre = ?, imagen = ? WHERE idCategoria = ?";
+            $stmt = $this->db->prepare($query);
+            return $stmt->execute([$nombre, $imagen, $id]);
+        }
     }
     
 }

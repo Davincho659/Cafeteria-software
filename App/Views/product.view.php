@@ -1,5 +1,6 @@
 <?php require loadView('Layouts/header'); ?>
 
+<link rel="stylesheet" href="assets/css/sales.css">
 <div class="container-fluid py-4">
     <!-- HEADER -->
     <div class="row mb-4">
@@ -137,7 +138,7 @@
                         </label>
                         <input type="file"
                                id="cat_imagen"
-                               name="imagen"
+                               name="image"
                                class="form-control"
                                accept="image/*">
                         <small class="text-muted d-block mt-1">Máximo 2MB. Formatos: JPG, PNG, GIF</small>

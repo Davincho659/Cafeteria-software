@@ -212,8 +212,9 @@ switch ($pg) {
                 'updateProduct',
                 'deleteProduct',
                 'getCategories',
-                'createCategorie',
-                'updateCategories'
+                'createCategory',
+                'updateCategory',
+                'deleteCategory'
             ];
             
             if (in_array($action, $validActions) && method_exists($controller, $action)) {

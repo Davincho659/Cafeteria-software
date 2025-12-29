@@ -2,6 +2,7 @@
     require loadView('Layouts/header');
 }  ?>
 <link rel="stylesheet" href="assets/css/bills.css">
+<link rel="stylesheet" href="assets/css/reports.css">
 <div class="reports-container">
     <!-- Sidebar -->
     <aside class="reports-sidebar" id="reportsSidebar">

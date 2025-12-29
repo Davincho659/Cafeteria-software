@@ -16,7 +16,7 @@ function openCategoryModal() {
     document.getElementById('cat_nombre').value = '';
     document.getElementById('cat_imagen').value = '';
     document.getElementById('categoryModalTitle').innerHTML = '<i class="fa-solid fa-plus"></i> Agregar Categoría';
-    document.getElementById('categoryForm').action = '?pg=product&action=createCategorie';
+    document.getElementById('categoryForm').action = '?pg=product&action=createCategory';
     
     const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
     modal.show();
@@ -250,9 +250,9 @@ function showProducts(products) {
 
     products.forEach(p => {
         const tr = document.createElement('tr');
-        const imgPath = p.imagen ? `assets/img/${p.imagen}` : (p.categoria_imagen ? `assets/img/${p.categoria_imagen}` : 'assets/img/products/default.jpg');
+        const imgPath = p.imagen ? `assets/img/products/${p.imagen}` :'assets/img/products/default.png';
         tr.innerHTML = `
-            <td class="text-center"><img src="${imgPath}" style="width:50px;height:50px;object-fit:cover;border-radius:4px"></td>
+            <td class="text-center"><img src="${imgPath}" class="product-img-sm"></td>
             <td>${p.nombre}</td>
             <td>${p.categoria}</td>
             <td><span class="badge bg-info">${p.tipo}</span></td>
@@ -283,9 +283,9 @@ function showCategories(categories) {
 
     categories.forEach(c => {
         const tr = document.createElement('tr');
-        const imgPath = c.imagen ? `assets/img/${c.imagen}` : 'assets/img/categories/default.jpg';
+        const imgPath = c.imagen ? `assets/img/categories/${c.imagen}` : 'assets/img/categories/default.png';
         tr.innerHTML = `
-            <td class="text-center"><img src="${imgPath}" style="width:50px;height:50px;object-fit:cover;border-radius:4px"></td>
+            <td class="text-center"><img src="${imgPath}" class="product-img-sm"></td>
             <td>${c.nombre}</td>
             <td class="text-center">
                 <button class="btn btn-sm btn-primary" onclick="openEditCategory(${c.idCategoria})" title="Editar">
