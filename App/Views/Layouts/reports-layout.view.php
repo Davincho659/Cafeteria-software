@@ -94,7 +94,6 @@
                     <li><a href="?pg=reports&action=comparativa-mensual">Comparativa Mensual</a></li>
                     <li><a href="?pg=reports&action=comparativa-anual">Comparativa Anual</a></li>
                     <li><a href="?pg=reports&action=tendencias">Tendencias</a></li>
-                    <li><a href="?pg=reports&action=profitability" class="<?= ($_GET['action'] ?? '') === 'profitability' ? 'active' : '' ?>">Rentabilidad</a></li>
                 </ul>
             </div>
 

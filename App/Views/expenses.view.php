@@ -19,11 +19,14 @@
                 🧾 Gasto Externo
             </button>
         </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="listado-tab" data-bs-toggle="tab" data-bs-target="#listado" type="button" role="tab">
-                📋 Listado
-            </button>
-        </li>
+        <?php if (isset($_SESSION['usuario_rol']) && $_SESSION['usuario_rol'] === 'admin'): ?>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="listado-tab" data-bs-toggle="tab" data-bs-target="#listado" type="button" role="tab">
+                    📋 Listado
+                </button>
+            </li>
+        <?php endif; ?>
+        
     </ul>
 
     <div class="tab-content">

@@ -36,28 +36,35 @@ class ProductController {
             $precioVenta = !empty($_POST['precioVenta']) ? floatval($_POST['precioVenta']) : null;
 
             if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
-                $idProducto = $this->productsModel->create($idCategoria, $nombre, $tipo, $precioVenta, $precioCompra, null);
                 $imageName = $_FILES['imagen']['name'] ?? null;
                 $file = $_FILES['imagen']['tmp_name'] ?? null;
                 $imageTipe = $_FILES['imagen']['type'] ? explode('/', $_FILES['imagen']['type'])[1] : null;
-                $image = $idProducto.".".$imageTipe;
-                $path = __DIR__ . '/../../Public/Assets/img/products/' . $image;
                 
-                move_uploaded_file($file, $path);
-
-                $this->productsModel->update($idProducto, [
-                    'idCategoria' => $idCategoria,
-                    'nombre' => $nombre,
-                    'tipo' => $tipo,
-                    'precioCompra' => $precioCompra,
-                    'precioVenta' => $precioVenta,
-                    'imagen' => $image,
-                    'idUnidadBase' => 1,
-                    'manejaStock' => 0
-                ]);
+                // Crear producto primero sin imagen
+                $idProducto = $this->productsModel->create($idCategoria, $nombre, $tipo, $precioVenta, $precioCompra, 'default.png', 1, 0, 1);
+                
+                // Procesar imagen
+                $image = $idProducto.".".$imageTipe;
+                $path = __DIR__ . '/../../Public/Assets/img/products';
+                $fullPath = $path . DIRECTORY_SEPARATOR . $image;
+                
+                if (move_uploaded_file($file, $fullPath)) {
+                    // Actualizar con la imagen correcta
+                    $this->productsModel->update($idProducto, [
+                        'idCategoria' => $idCategoria,
+                        'nombre' => $nombre,
+                        'tipo' => $tipo,
+                        'precioCompra' => $precioCompra,
+                        'precioVenta' => $precioVenta,
+                        'imagen' => $image,
+                        'idUnidadBase' => 1,
+                        'manejaStock' => 0,
+                        'estado' => 1
+                    ]);
+                }
             } else {
                 $image = 'default.png';
-                $idProducto = $this->productsModel->create($idCategoria, $nombre, $tipo, $precioVenta, $precioCompra, $image);
+                $idProducto = $this->productsModel->create($idCategoria, $nombre, $tipo, $precioVenta, $precioCompra, $image, 1, 0, 1);
             }
 
             echo json_encode([
@@ -147,21 +154,33 @@ class ProductController {
                 $imageTipe = $_FILES['imagen']['type'] ? explode('/', $_FILES['imagen']['type'])[1] : null;
                 $image = $idProducto.".".$imageTipe;
 
-                if (file_exists($path . $currentimage)) {
-                    @unlink($path . $currentimage);
+                $path = __DIR__ . '/../../Public/Assets/img/products';
+                $fullPath = $path . DIRECTORY_SEPARATOR . $image;
+                
+                // Eliminar imagen anterior si existe
+                if ($currentimage && $currentimage !== 'default.png') {
+                    $oldPath = $path . DIRECTORY_SEPARATOR . $currentimage;
+                    if (file_exists($oldPath)) {
+                        @unlink($oldPath);
+                    }
                 }
                 
-                move_uploaded_file($file, $path. $image);
-                $success = $this->productsModel->update($idProducto, [
-                    'idCategoria' => $_POST['categoria'],
-                    'nombre' => trim($_POST['nombre']),
-                    'tipo' => $_POST['tipo'],
-                    'precioCompra' => !empty($_POST['precioCompra']) ? floatval($_POST['precioCompra']) : null,
-                    'precioVenta' => !empty($_POST['precioVenta']) ? floatval($_POST['precioVenta']) : null,
-                    'imagen' => $image,
-                    'idUnidadBase' => $currentProduct['idUnidadBase'] ?? 1,
-                    'manejaStock' => $currentProduct['manejaStock'] ?? 0
-                ]);
+                // Mover nueva imagen
+                if (move_uploaded_file($file, $fullPath)) {
+                    $success = $this->productsModel->update($idProducto, [
+                        'idCategoria' => $_POST['categoria'],
+                        'nombre' => trim($_POST['nombre']),
+                        'tipo' => $_POST['tipo'],
+                        'precioCompra' => !empty($_POST['precioCompra']) ? floatval($_POST['precioCompra']) : null,
+                        'precioVenta' => !empty($_POST['precioVenta']) ? floatval($_POST['precioVenta']) : null,
+                        'imagen' => $image,
+                        'idUnidadBase' => $currentProduct['idUnidadBase'] ?? 1,
+                        'manejaStock' => $currentProduct['manejaStock'] ?? 0,
+                        'estado' => $currentProduct['estado'] ?? 1
+                    ]);
+                } else {
+                    throw new Exception('Error al subir la imagen. Verifica los permisos de la carpeta.');
+                }
             } else {
                 $success = $this->productsModel->update($idProducto, [
                     'idCategoria' => $_POST['categoria'],
@@ -171,7 +190,8 @@ class ProductController {
                     'precioVenta' => !empty($_POST['precioVenta']) ? floatval($_POST['precioVenta']) : null,
                     'imagen' => $currentProduct['imagen'],
                     'idUnidadBase' => $currentProduct['idUnidadBase'] ?? 1,
-                    'manejaStock' => $currentProduct['manejaStock'] ?? 0
+                    'manejaStock' => $currentProduct['manejaStock'] ?? 0,
+                    'estado' => $currentProduct['estado'] ?? 1
                 ]);
             }
 
@@ -195,7 +215,7 @@ class ProductController {
         }
     }
 
-    // Eliminar producto (y su imagen física si existe)
+    // Desactivar o reactivar producto (soft delete)
     public function deleteProduct() {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             header('Content-Type: application/json; charset=utf-8');
@@ -204,6 +224,7 @@ class ProductController {
         }
 
         $id = $_GET['id'] ?? null;
+        $status = isset($_GET['status']) ? (int)$_GET['status'] : 0; // 0 = inactivo, 1 = activo
         if (!$id) {
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode(['success' => false, 'error' => 'ID no proporcionado']);
@@ -212,14 +233,17 @@ class ProductController {
 
         try {
             $currentProduct = $this->productsModel->getById($id);
-            if ($currentProduct && !empty($currentProduct['imagen'])) {
-                $dest = __DIR__ . '/../../Public/Assets/img/products';
-                $imagePath = $dest . DIRECTORY_SEPARATOR . basename($currentProduct['imagen']);
-                if (file_exists($imagePath)) @unlink($imagePath);
+            if (!$currentProduct) {
+                throw new Exception('Producto no encontrado');
             }
-            $success = $this->productsModel->delete($id);
+
+            $success = $this->productsModel->setStatus($id, $status);
             header('Content-Type: application/json; charset=utf-8');
-            echo json_encode(['success' => $success]);
+            echo json_encode([
+                'success' => $success,
+                'estado' => $status,
+                'message' => $status ? 'Producto activado' : 'Producto desactivado'
+            ]);
         } catch (Exception $e) {
             header('Content-Type: application/json; charset=utf-8');
             echo json_encode(['success' => false, 'error' => $e->getMessage()]);

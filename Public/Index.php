@@ -53,7 +53,8 @@ switch ($pg) {
                 case 'sales':
                     $controller->sales();
                     break;
-                case 'daily':
+                
+                case 'Daily':
                     $controller->Daily();
                     break;
                 default:
@@ -197,7 +198,7 @@ switch ($pg) {
     // ====================================================
     // PRODUCTOS
     // ====================================================
-    case 'product':
+    case 'products':
         require_once __DIR__ . '/../App/Controllers/ProductController.php';
         $controller = new ProductController();
         

@@ -132,6 +132,13 @@
 // ============================================================================
 // REPORTE DIARIO - SCRIPT AISLADO Y AUTÓNOMO
 // ============================================================================
+
+// Definir variable para evitar conflictos con reports.js
+const tipoReporte = 'daily';
+
+// Variable para almacenar la instancia de inicialización
+let dailyReportInitialized = false;
+
 (function() {
     'use strict';
     
@@ -142,6 +149,12 @@
     
     // Función principal de inicialización
     function initDailyReport() {
+        if (dailyReportInitialized) {
+            console.log('[DAILY REPORT] Ya está inicializado, recargando datos...');
+            cargarResultados();
+            return;
+        }
+        
         console.log('[DAILY REPORT] Iniciando configuración...');
         
         const fechasInput = document.getElementById('fechas');
@@ -207,11 +220,24 @@
             cargarResultados();
         });
         
+        dailyReportInitialized = true;
+        
         // Cargar resultados iniciales
         cargarResultados();
         
         console.log('[DAILY REPORT] Configuración completada');
     }
+    
+    // Exponer función global INMEDIATAMENTE (antes de cualquier auto-inicialización)
+    window.cargarReporte = initDailyReport;
+    window.limpiarFiltros = function() {
+        const form = document.getElementById('filtrosReporte');
+        if (form) {
+            form.reset();
+            paginaActual = 1;
+            cargarResultados();
+        }
+    };
     
     // Función para cargar resultados
     function cargarResultados(page = paginaActual) {
@@ -221,7 +247,7 @@
         const data = new FormData(form);
         data.append('page', page);
 
-        fetch('index.php?pg=reports&action=daily&ajax=1', {
+        fetch('?pg=reports&action=Daily&ajax=1', {
             method: 'POST',
             body: data,
             headers: {
@@ -341,19 +367,6 @@
 
         container.appendChild(ul);
     }
-    
-    // Función de limpiar filtros
-    window.limpiarFiltros = function() {
-        const form = document.getElementById('filtrosReporte');
-        if (form) {
-            form.reset();
-            paginaActual = 1;
-            cargarResultados();
-        }
-    };
-    
-    // Exponer función global para inicialización externa
-    window.cargarReporte = initDailyReport;
     
     // Auto-inicializar si el DOM ya está listo
     if (document.readyState === 'loading') {

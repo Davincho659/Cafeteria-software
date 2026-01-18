@@ -160,12 +160,36 @@ html, body {
 }
 
 .productosContainer {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 220px));
   gap: 12px;
-  padding: 12px;
   width: 100%;
-  overflow: auto;
+  padding: 10px;
+  height: calc(100vh - 215px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  align-content: start;
+  align-items: start;
+  justify-content: flex-start;
+  min-height: 0;
+}
+
+.productosContainer::-webkit-scrollbar {
+  width: 10px;
+}
+
+.productosContainer::-webkit-scrollbar-track {
+  background: var(--bg-light);
+  border-radius: 10px;
+}
+
+.productosContainer::-webkit-scrollbar-thumb {
+  background: var(--muted);
+  border-radius: 10px;
+}
+
+.productosContainer::-webkit-scrollbar-thumb:hover {
+  background: var(--brown-mid);
 }
 
 
@@ -176,10 +200,44 @@ html, body {
   cursor: pointer;
   border-radius: var(--radius);
   background-color: var(--white);
-  padding: 2px;
-  padding-bottom: 4px;
   border: none;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 260px;
+  padding: 10px;
+}
+
+.manual-card {
+  border: 1px dashed var(--brown-mid);
+  background: linear-gradient(135deg, rgba(91,52,17,0.04), rgba(91,52,17,0.09));
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.manual-card .manual-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--white);
+  color: var(--brown-dark);
+  box-shadow: var(--shadow-sm);
+  border: 2px solid var(--brown-mid);
+  font-size: 30px;
+}
+
+.manual-card .manual-hint {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.producto-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .cart-product {
@@ -198,7 +256,7 @@ html, body {
   border-radius: 8px;
 }
 
-.product-name {
+.product-nombre {
   font-size: 0.95rem;
   font-weight: 600;
   margin-bottom: 2px;

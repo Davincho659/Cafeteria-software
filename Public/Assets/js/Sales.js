@@ -1,5 +1,5 @@
 // ============================================================================
-// SALES.JS - SISTEMA DE VENTAS POR MESAS (VERSIÓN CORREGIDA Y COMPLETA)
+// SALES.JS - SISTEMA DE VENTAS POR MESAS Y CARRITOS EN MEMORIA
 // ============================================================================
 
 let categoriasCache = []
@@ -127,7 +127,11 @@ async function loadProducts(idCategoria = null) {
   try {
     const data = await fetchJson(url)
     if (data.success) {
-      productosCache = data.data
+      // Filtro de seguridad: solo productos activos (estado = 1)
+      productosCache = data.data.filter(p => {
+        const estado = p.estado !== undefined ? Number(p.estado) : 1
+        return estado === 1
+      })
       showProducts(productosCache)
     }
   } catch (err) {
@@ -144,15 +148,24 @@ function showProducts(products) {
     return
   }
 
-  container.innerHTML = ""
+  container.innerHTML = `
+      <div class="producto-card manual-card p-3" id="prod-qty-0" onclick="event.stopPropagation(); changeQuantity(0)" role="button" style="width:200px;height:300px">  
+        <div class="manual-icon"><i class="fa-solid fa-plus"></i></div>
+        <div class="d-flex flex-column align-items-center justify-content-center">
+          <div class="producto-nombre" style="font-size:18px"><b>Agregar monto manual</b></div>
+          <p class="producto-precio" style="margin:6px 0 2px 0"><b>$ 0.00</b></p>
+          <div class="manual-hint">Registrar valor sin producto</div>
+        </div>
+      </div>`
   products.forEach((product) => {
     const img = product.imagen
       ? `assets/img/products/${product.imagen}`
-      : "assets/img/products/default.jpg";
+      : "assets/img/products/default.png";
 
     const btn = document.createElement("button")
-    btn.className = "m-2 producto-card p-2"
+    btn.className = "producto-card p-2"
     btn.style.cssText = "width:200px;height:300px"
+    btn.type = "button"
     btn.innerHTML = `
       <div class="producto-img-container">
         <img src="${img}" alt="${product.nombre}" class="producto-img">
@@ -313,7 +326,7 @@ function showCartProducts(cartId) {
     div.innerHTML = `
       <div class="row align-items-center">
         <div class="col-auto">
-          <img src="${p.imagen ? "assets/img/products/" + p.imagen : "assets/img/products/default.jpg"}" 
+          <img src="${p.imagen ? "assets/img/products/" + p.imagen : "assets/img/products/default.png"}" 
                class="product-img">
         </div>
         <div class="col">
@@ -1303,7 +1316,7 @@ function openDailyReportModal() {
       </div>`;
   }, 10000); // 10 segundos timeout
   
-  fetch('index.php?pg=reports&action=daily&ajax=1', {
+  fetch('?pg=reports&action=Daily&ajax=1', {
     method: 'GET',
     headers: {
       'Cache-Control': 'no-cache',
@@ -1373,76 +1386,84 @@ function initializeReportScripts(container) {
   console.log('[REPORTE] Inicializando scripts...');
   
   try {
-    // Buscar y ejecutar scripts externos (como reports.js)
-    const externalScripts = container.querySelectorAll('script[src]');
-    let scriptsLoaded = 0;
-    const totalScripts = externalScripts.length;
+    // PRIMERO: Ejecutar scripts inline (donde se define window.cargarReporte)
+    const inlineScripts = container.querySelectorAll('script:not([src])');
+    console.log('[REPORTE] Scripts inline encontrados:', inlineScripts.length);
     
-    if (totalScripts === 0) {
-      console.log('[REPORTE] No hay scripts externos para cargar');
-      initializeReportData();
-      return;
-    }
+    inlineScripts.forEach((oldScript, index) => {
+      try {
+        console.log(`[REPORTE] Ejecutando script inline ${index + 1}...`);
+        // Evaluar directamente en el contexto global
+        eval(oldScript.textContent);
+      } catch (e) {
+        console.error(`[REPORTE] Error ejecutando script inline ${index + 1}:`, e);
+      }
+    });
     
-    externalScripts.forEach((oldScript) => {
-      const src = oldScript.getAttribute('src');
+    // Pequeña espera para que los scripts inline terminen de ejecutarse
+    setTimeout(() => {
+      console.log('[REPORTE] Scripts inline ejecutados, verificando window.cargarReporte...');
+      console.log('[REPORTE] window.cargarReporte existe?', typeof window.cargarReporte);
       
-      // Verificar si ya está cargado
-      const existingScript = document.querySelector(`script[src="${src}"]`);
+      // SEGUNDO: Cargar scripts externos (si hay)
+      const externalScripts = container.querySelectorAll('script[src]');
+      let scriptsLoaded = 0;
+      const totalScripts = externalScripts.length;
       
-      if (existingScript && existingScript !== oldScript) {
-        console.log('[REPORTE] Script ya cargado:', src);
-        scriptsLoaded++;
-        
-        if (scriptsLoaded === totalScripts) {
-          initializeReportData();
-        }
+      if (totalScripts === 0) {
+        console.log('[REPORTE] No hay scripts externos, inicializando datos...');
+        initializeReportData();
         return;
       }
       
-      // Cargar script nuevo
-      const newScript = document.createElement('script');
-      newScript.src = src;
-      newScript.async = false; // Mantener orden de ejecución
-      
-      newScript.onload = () => {
-        console.log('[REPORTE] Script cargado exitosamente:', src);
-        scriptsLoaded++;
+      externalScripts.forEach((oldScript) => {
+        const src = oldScript.getAttribute('src');
         
-        if (scriptsLoaded === totalScripts) {
-          console.log('[REPORTE] Todos los scripts externos cargados');
-          initializeReportData();
-        }
-      };
-      
-      newScript.onerror = () => {
-        console.error('[REPORTE] Error cargando script:', src);
-        scriptsLoaded++;
+        // Verificar si ya está cargado
+        const existingScript = document.querySelector(`script[src="${src}"]`);
         
-        if (scriptsLoaded === totalScripts) {
-          initializeReportData();
+        if (existingScript && existingScript !== oldScript) {
+          console.log('[REPORTE] Script ya cargado:', src);
+          scriptsLoaded++;
+          
+          if (scriptsLoaded === totalScripts) {
+            initializeReportData();
+          }
+          return;
         }
-      };
-      
-      document.head.appendChild(newScript);
-    });
-    
-    // Ejecutar scripts inline
-    const inlineScripts = container.querySelectorAll('script:not([src])');
-    inlineScripts.forEach((oldScript) => {
-      try {
+        
+        // Cargar script nuevo
         const newScript = document.createElement('script');
-        newScript.textContent = oldScript.textContent;
-        document.body.appendChild(newScript);
-        setTimeout(() => document.body.removeChild(newScript), 100);
-      } catch (e) {
-        console.warn('[REPORTE] Error ejecutando script inline:', e);
-      }
-    });
+        newScript.src = src;
+        newScript.async = false;
+        
+        newScript.onload = () => {
+          console.log('[REPORTE] Script cargado exitosamente:', src);
+          scriptsLoaded++;
+          
+          if (scriptsLoaded === totalScripts) {
+            console.log('[REPORTE] Todos los scripts externos cargados');
+            initializeReportData();
+          }
+        };
+        
+        newScript.onerror = () => {
+          console.error('[REPORTE] Error cargando script:', src);
+          scriptsLoaded++;
+          
+          if (scriptsLoaded === totalScripts) {
+            initializeReportData();
+          }
+        };
+        
+        document.head.appendChild(newScript);
+      });
+    }, 150); // Esperar 150ms para que los scripts inline terminen
     
   } catch (error) {
     console.error('[REPORTE] Error inicializando scripts:', error);
-    initializeReportData(); // Intentar inicializar de todos modos
+    // Intentar inicializar de todos modos después de un delay
+    setTimeout(initializeReportData, 300);
   }
 }
 
@@ -1451,28 +1472,53 @@ function initializeReportScripts(container) {
  */
 function initializeReportData() {
   console.log('[REPORTE] Inicializando datos del reporte...');
+  console.log('[REPORTE] Verificando window.cargarReporte:', typeof window.cargarReporte);
   
-  setTimeout(() => {
+  // Intentar varias veces con delays crecientes
+  let attempts = 0;
+  const maxAttempts = 5;
+  
+  const tryInitialize = () => {
+    attempts++;
+    console.log(`[REPORTE] Intento ${attempts}/${maxAttempts}...`);
+    
     try {
       // Verificar si la función cargarReporte existe en el scope global
       if (typeof window.cargarReporte === 'function') {
-        console.log('[REPORTE] Llamando a cargarReporte()...');
+        console.log('[REPORTE] ✅ window.cargarReporte encontrada, ejecutando...');
         window.cargarReporte();
+        return true;
       } else {
-        console.warn('[REPORTE] Función cargarReporte no encontrada');
+        console.warn(`[REPORTE] ❌ window.cargarReporte no encontrada (intento ${attempts})`);
         
-        // Intentar ejecutar el formulario de filtros manualmente
-        const form = document.getElementById('filtrosReporte');
-        if (form) {
-          console.log('[REPORTE] Disparando submit del formulario...');
-          const event = new Event('submit', { cancelable: true, bubbles: true });
-          form.dispatchEvent(event);
+        // Si llegamos al último intento, intentar ejecutar el formulario manualmente
+        if (attempts >= maxAttempts) {
+          console.log('[REPORTE] Intentando ejecutar formulario manualmente como fallback...');
+          const form = document.getElementById('filtrosReporte');
+          if (form) {
+            console.log('[REPORTE] Formulario encontrado, disparando submit...');
+            const event = new Event('submit', { cancelable: true, bubbles: true });
+            form.dispatchEvent(event);
+          } else {
+            console.error('[REPORTE] Formulario no encontrado');
+          }
+        } else {
+          // Reintentar después de un delay
+          setTimeout(tryInitialize, 200 * attempts);
         }
+        return false;
       }
     } catch (error) {
       console.error('[REPORTE] Error inicializando datos:', error);
+      if (attempts < maxAttempts) {
+        setTimeout(tryInitialize, 200 * attempts);
+      }
+      return false;
     }
-  }, 200);
+  };
+  
+  // Primera ejecución inmediata
+  tryInitialize();
 }
 
 function closeDailyReport(event) {

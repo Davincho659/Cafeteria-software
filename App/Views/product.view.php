@@ -86,12 +86,13 @@
                                 <th>Tipo</th>
                                 <th>Compra</th>
                                 <th>Venta</th>
-                                <th width="120">Acciones</th>
+                                <th>Estado</th>
+                                <th width="160">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="products">
                             <tr>
-                                <td colspan="7" class="text-center text-muted">Cargando...</td>
+                                <td colspan="8" class="text-center text-muted">Cargando...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -175,7 +176,7 @@
                 <form id="productForm" method="post" enctype="multipart/form-data"
                       action="?pg=product&action=createProduct">
 
-                    <input type="hidden" id="prod_id" name="id" value="">
+                    <input type="hidden" id="prod_id" name="idProducto" value="">
 
                     <div class="row">
 

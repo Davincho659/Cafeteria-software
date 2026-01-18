@@ -244,13 +244,20 @@ function showProducts(products) {
     tbody.innerHTML = '';
     
     if (products.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay productos registrados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No hay productos registrados</td></tr>';
         return;
     }
 
     products.forEach(p => {
+        const estadoVal = (p.estado === undefined || p.estado === null) ? 1 : Number(p.estado);
         const tr = document.createElement('tr');
         const imgPath = p.imagen ? `assets/img/products/${p.imagen}` :'assets/img/products/default.png';
+        const estadoBadge = estadoVal ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-secondary">Inactivo</span>';
+        const nextEstado = estadoVal ? 0 : 1;
+        const toggleLabel = estadoVal ? '<i class="fa-solid fa-ban"></i>' : '<i class="fa-solid fa-rotate"></i>';
+        const toggleTitle = estadoVal ? 'Desactivar' : 'Reactivar';
+        const toggleClass = estadoVal ? 'btn-warning' : 'btn-success';
+
         tr.innerHTML = `
             <td class="text-center"><img src="${imgPath}" class="product-img-sm"></td>
             <td>${p.nombre}</td>
@@ -258,12 +265,13 @@ function showProducts(products) {
             <td><span class="badge bg-info">${p.tipo}</span></td>
             <td class="text-end">${p.precioCompra ? '$' + parseFloat(p.precioCompra).toLocaleString('es-CO') : '-'}</td>
             <td class="text-end">${p.precioVenta ? '$' + parseFloat(p.precioVenta).toLocaleString('es-CO') : '-'}</td>
+            <td class="text-center">${estadoBadge}</td>
             <td class="text-center">
                 <button class="btn btn-sm btn-primary" onclick="openEditProduct(${p.idProducto})" title="Editar">
                     <i class="fa-solid fa-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-danger" onclick="deleteProduct(${p.idProducto})" title="Eliminar">
-                    <i class="fa-solid fa-trash"></i>
+                <button class="btn btn-sm ${toggleClass}" onclick="toggleProductStatus(${p.idProducto}, ${nextEstado})" title="${toggleTitle}">
+                    ${toggleLabel}
                 </button>
             </td>
         `;
@@ -304,18 +312,20 @@ function showCategories(categories) {
 // ELIMINAR
 // ============================================================================
 
-function deleteProduct(id) {
-    if (!confirm('¿Eliminar producto?')) return;
-    fetch(`index.php?pg=product&action=deleteProduct&id=${id}`, {
+function toggleProductStatus(id, targetStatus) {
+    const actionText = targetStatus === 1 ? 'activar' : 'desactivar';
+    if (!confirm(`¿Deseas ${actionText} este producto?`)) return;
+
+    fetch(`index.php?pg=product&action=deleteProduct&id=${id}&status=${targetStatus}`, {
         method: 'POST'
     })
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            alert('Producto eliminado exitosamente');
+            alert(`Producto ${actionText}do exitosamente`);
             loadProducts();
         } else {
-            throw new Error(data.error || 'Error al eliminar');
+            throw new Error(data.error || 'Error al actualizar estado');
         }
     })
     .catch(err => {

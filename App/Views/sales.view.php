@@ -28,17 +28,14 @@
         overflow-y: auto;
         max-width: 280px;
      ">
-            <h2>Categorías</h2>
+            <h2 class="mt-2 mb-5">Categorías</h2>
             <nav class="categorias-nav" id="categoriasNav">
                 <!-- Las categorías se cargan dinámicamente aquí -->
             </nav>
         </div>
-        <div class="col mt-3"
-     id="productos"
-     style="
-        height: 100%;">
+        <div class="col p-0" id="productos" style="height: 100%;">
             <div class="input-group mb-3 mt-3">
-                <h4 id="prueba">Productos</h4>
+                <h2 class="mt-2" id="prueba">Productos</h2>
                 <input type="text" class="form-control ms-4"  placeholder="Buscar" id="search" style="max-width: 700px;">
                 <button class="btn btn-outline-secondary" type="submit" id="button-addon2">
                 <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-magnifying-glass"></i></span></button>
@@ -130,7 +127,7 @@
                         <!-- Total y botones fijos abajo -->
                         <div style="flex-shrink: 0; padding: 1rem 0;">
                             <div id="total-carrito-venta1">
-                                <h4>Total: $<span id="total-venta1">0.00</span></h4>
+                                <center><h2>Total: <strong>$<span id="total-venta1">0.00</span></strong></h2></center>
                             </div>
                             <button id="btn-procesar-venta-venta1" class="btn btn-primary btn-lg w-100 mb-2" 
                                     onclick="saleConfirmationModal('venta1', null)" role="button">

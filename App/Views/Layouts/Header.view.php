@@ -80,14 +80,14 @@
                         <i class="fa-solid fa-truck"></i> Proveedores
                     </a>
                 </li>
-                
+                <?php if (isset($_SESSION['usuario_rol']) && $_SESSION['usuario_rol'] === 'admin'): ?>
                 <!-- Reportes -->
                 <li class="nav-item">
                     <a class="nav-link <?= ($pg ?? '') === 'reports' ? 'active' : '' ?>" href="?pg=reports">
                         <i class="fa-solid fa-chart-line"></i> Reportes
                     </a>
                 </li>
-                
+                <?php endif; ?>
             </ul>
             
             <!-- Usuario y Logout -->

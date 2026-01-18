@@ -41,10 +41,11 @@ class SalesController {
         try {
             $idCategory = $_GET['idCategory'] ?? null;
             
+            $soloActivos = true;
             if ($idCategory == null) {
-                $products = $this->productModel->getAll();
+                $products = $this->productModel->getAll($soloActivos);
             } else {
-                $products = $this->productModel->getByCategory($idCategory);
+                $products = $this->productModel->getByCategory($idCategory, $soloActivos);
             }
             
             foreach ($products as &$product) {

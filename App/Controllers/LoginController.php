@@ -58,6 +58,11 @@ class LoginController {
             $_SESSION['usuario_rol'] = $usuario['rol'];
             $_SESSION['login_time'] = time();
             
+            // Verificar si hay caja abierta
+            require_once __DIR__ . '/../Models/cashRegister.php';
+            $cashRegisterModel = new CashRegister();
+            $cajaAbierta = $cashRegisterModel->getCajaActiva();
+            
             echo json_encode([
                 'success' => true,
                 'message' => 'Inicio de sesión exitoso',
@@ -65,7 +70,8 @@ class LoginController {
                     'id' => $usuario['idUsuario'],
                     'nombre' => $usuario['nombre'],
                     'rol' => $usuario['rol']
-                ]
+                ],
+                'cajaAbierta' => !empty($cajaAbierta)
             ]);
         } catch (Exception $e) {
             echo json_encode([

@@ -14,6 +14,7 @@
   align-items: center;
   text-align: center;
   padding: 18px;
+  height: 200px !important;
 }
 
 .menu-card:hover {

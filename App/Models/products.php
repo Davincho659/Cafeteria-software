@@ -9,34 +9,44 @@ class Products {
         $this->db = Database::getConnection();
     }
     
-    public function getAll(){
-    $query="SELECT p.idCategoria, p.idProducto, p.nombre, p.precioCompra, p.precioVenta, p.tipo, p.idUnidadBase, p.imagen, p.manejaStock, 
-        c.nombre AS categoria, c.imagen AS categoria_imagen,
-        u.nombre AS unidadNombre, u.abreviatura AS unidadAbreviatura
-        FROM productos p 
-        INNER JOIN categorias c ON p.idCategoria = c.idCategoria
-        LEFT JOIN unidades_medida u ON p.idUnidadBase = u.idUnidad";
+    public function getAll($soloActivos = false){
+        $query="SELECT p.idCategoria, p.idProducto, p.nombre, p.precioCompra, p.precioVenta, p.tipo, p.idUnidadBase, p.imagen, p.manejaStock, COALESCE(p.estado,1) AS estado,
+            c.nombre AS categoria, c.imagen AS categoria_imagen,
+            u.nombre AS unidadNombre, u.abreviatura AS unidadAbreviatura
+            FROM productos p 
+            INNER JOIN categorias c ON p.idCategoria = c.idCategoria
+            LEFT JOIN unidades_medida u ON p.idUnidadBase = u.idUnidad";
+
+        if ($soloActivos) {
+            $query .= " WHERE p.estado = 1";
+        }
+
         $strm= $this->db->query($query);
         return $strm->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getByCategory($id) {
-    $query = 'SELECT p.idCategoria, p.idProducto, p.nombre, p.precioCompra, p.precioVenta, p.tipo, p.idUnidadBase, p.manejaStock, p.imagen, 
-            c.nombre AS categoria, c.imagen AS categoria_imagen,
-            u.nombre AS unidadNombre, u.abreviatura AS unidadAbreviatura
-            FROM productos AS p 
-            INNER JOIN categorias AS c ON p.idCategoria = c.idCategoria
-            LEFT JOIN unidades_medida u ON p.idUnidadBase = u.idUnidad
-            WHERE p.idCategoria = ?';
+    public function getByCategory($id, $soloActivos = false) {
+        $query = 'SELECT p.idCategoria, p.idProducto, p.nombre, p.precioCompra, p.precioVenta, p.tipo, p.idUnidadBase, p.manejaStock, p.imagen, COALESCE(p.estado,1) AS estado,
+                c.nombre AS categoria, c.imagen AS categoria_imagen,
+                u.nombre AS unidadNombre, u.abreviatura AS unidadAbreviatura
+                FROM productos AS p 
+                INNER JOIN categorias AS c ON p.idCategoria = c.idCategoria
+                LEFT JOIN unidades_medida u ON p.idUnidadBase = u.idUnidad
+                WHERE p.idCategoria = ?';
+
+        if ($soloActivos) {
+            $query .= ' AND p.estado = 1';
+        }
+
         $stmt = $this->db->prepare($query);
         $stmt->execute([$id]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function create($idCategoria,$nombre,$tipo,$precioVenta = null,$precioCompra = null , $imagen, $idUnidadBase = 1, $manejaStock = 0) {
-        $query = "INSERT INTO productos (idCategoria, nombre, tipo, precioVenta, precioCompra, imagen, idUnidadBase, manejaStock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    public function create($idCategoria,$nombre,$tipo,$precioVenta = null,$precioCompra = null , $imagen, $idUnidadBase = 1, $manejaStock = 0, $estado = 1) {
+        $query = "INSERT INTO productos (idCategoria, nombre, tipo, precioVenta, precioCompra, imagen, idUnidadBase, manejaStock, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->db->prepare($query);
-        $stmt->execute([$idCategoria, $nombre, $tipo, $precioVenta, $precioCompra, $imagen, $idUnidadBase, $manejaStock]);
+        $stmt->execute([$idCategoria, $nombre, $tipo, $precioVenta, $precioCompra, $imagen, $idUnidadBase, $manejaStock, $estado]);
         return $this->db->lastInsertId();
     }
 
@@ -53,7 +63,7 @@ class Products {
     }
 
     public function update($id, $data) {
-        $query = "UPDATE productos SET idCategoria = ?, nombre = ?, tipo = ?, precioVenta = ?, precioCompra = ?, imagen = ?, idUnidadBase = ?, manejaStock = ? WHERE idProducto = ?";
+        $query = "UPDATE productos SET idCategoria = ?, nombre = ?, tipo = ?, precioVenta = ?, precioCompra = ?, imagen = ?, idUnidadBase = ?, manejaStock = ?, estado = ? WHERE idProducto = ?";
         $stmt = $this->db->prepare($query);
         return $stmt->execute([
             $data['idCategoria'],
@@ -64,14 +74,19 @@ class Products {
             $data['imagen'],
             $data['idUnidadBase'] ?? 1,
             $data['manejaStock'] ?? 0,
+            $data['estado'] ?? 1,
             $id
         ]);
     }
 
     public function delete($id) {
-        $query = "DELETE FROM productos WHERE idProducto = ?";
+        return $this->setStatus($id, 0);
+    }
+
+    public function setStatus($id, $estado) {
+        $query = "UPDATE productos SET estado = ? WHERE idProducto = ?";
         $stmt = $this->db->prepare($query);
-        return $stmt->execute([$id]);
+        return $stmt->execute([(int)$estado, $id]);
     }
 
     /**

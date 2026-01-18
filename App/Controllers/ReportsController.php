@@ -79,6 +79,9 @@ class ReportsController {
         // Si es petición AJAX con POST (paginación/filtros) → JSON
         if (isset($_GET['ajax']) && $_GET['ajax'] == 1 && $_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Content-Type: application/json');
+            error_log('Daily() - Petición AJAX POST recibida');
+            error_log('POST data: ' . print_r($_POST, true));
+            
             $limit = 10; 
             $page = isset($_POST['page']) ? max(1, intval($_POST['page'])) : 1;
             $offset = ($page - 1) * $limit;
@@ -110,6 +113,8 @@ class ReportsController {
                 $query .= (!empty($query) ? " AND" : " WHERE") . 
                         " metodoPago = '" . $_POST['metodoPago'] . "'";
             }
+            
+            error_log('Query generado: ' . $query);
 
             $resultados = $this->salesModel->getWithPagination($query, $offset, $limit);
             $total = $this->salesModel->countWithFilters($query);
