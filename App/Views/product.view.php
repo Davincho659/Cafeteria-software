@@ -202,6 +202,16 @@
                             </select>
                         </div>
 
+                        <!-- Unidad de medida -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">
+                                Unidad de medida
+                            </label>
+                            <select id="prod_unidad" name="idUnidadBase" class="form-select">
+                                <option value="1">Seleccione...</option>
+                            </select>
+                        </div>
+
                         <!-- Nombre -->
                         <div class="col-12 mb-3">
                             <label class="form-label fw-semibold">

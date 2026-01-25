@@ -122,7 +122,7 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Proveedor
                                     </label>
-                                    <select id="quickSupplierSelect" class="form-select" required>
+                                    <select id="quickSupplierSelect" class="form-select" >
                                         <option value="">Seleccione...</option>
                                     </select>
                                 </div>

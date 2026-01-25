@@ -30,26 +30,34 @@ class Sales {
             // Calcular total servidor-side y validar stock
             $total = 0;
             foreach ($productos as $item) {
+                $idProducto = isset($item['idProducto']) ? intval($item['idProducto']) : null;
                 $cantidad = isset($item['cantidad']) ? (float)$item['cantidad'] : 0;
                 $precio = isset($item['precioUnitario']) ? (float)$item['precioUnitario'] : 0;
+                
                 if ($cantidad <= 0) {
                     throw new Exception('Cantidad inválida para un producto');
                 }
                 if ($precio < 0) {
                     throw new Exception('Precio inválido para un producto');
                 }
-                $total += $cantidad * $precio;
+                
+                $total += $precio * $cantidad;
+                
 
-                // Validar stock si aplica
-                $sqlProd = "SELECT manejaStock, nombre FROM productos WHERE idProducto = ?";
-                $stmtProd = $this->db->prepare($sqlProd);
-                $stmtProd->execute([$item['idProducto']]);
-                $producto = $stmtProd->fetch(PDO::FETCH_ASSOC);
-                if ($producto && $producto['manejaStock']) {
-                    if (!$this->inventoryModel->verificarStock($item['idProducto'], $cantidad)) {
-                        throw new Exception('Stock insuficiente para: ' . $producto['nombre']);
+                // Si es monto manual (idProducto = NULL), NO validar stock
+                if ($idProducto !== null) {
+                    // Validar stock si aplica
+                    $sqlProd = "SELECT manejaStock, nombre FROM productos WHERE idProducto = ?";
+                    $stmtProd = $this->db->prepare($sqlProd);
+                    $stmtProd->execute([$item['idProducto']]);
+                    $producto = $stmtProd->fetch(PDO::FETCH_ASSOC);
+                    if ($producto && $producto['manejaStock']) {
+                        if (!$this->inventoryModel->verificarStock($item['idProducto'], $cantidad)) {
+                            throw new Exception('Stock insuficiente para: ' . $producto['nombre']);
+                        }
                     }
                 }
+                
             }
 
             if ($total <= 0) {
@@ -108,26 +116,28 @@ class Sales {
             $stmt = $this->db->prepare($sql);
             $stmt->execute([$idVenta, $idDetalleVenta, $idProducto, $cantidad, $precioUnitario, $subtotal]);
 
-            $sqlCheck = "SELECT manejaStock, nombre FROM productos WHERE idProducto = ?";
-            $stmtCheck = $this->db->prepare($sqlCheck);
-            $stmtCheck->execute([$idProducto]);
-            $producto = $stmtCheck->fetch(PDO::FETCH_ASSOC);
+            if ($idProducto !== null) {
+                $sqlCheck = "SELECT manejaStock, nombre FROM productos WHERE idProducto = ?";
+                $stmtCheck = $this->db->prepare($sqlCheck);
+                $stmtCheck->execute([$idProducto]);
+                $producto = $stmtCheck->fetch(PDO::FETCH_ASSOC);
 
-            if ($producto && $producto['manejaStock']) {
-                if (!$this->inventoryModel->verificarStock($idProducto, $cantidad)) {
-                    throw new Exception('Stock insuficiente para: ' . $producto['nombre']);
+                if ($producto && $producto['manejaStock']) {
+                    if (!$this->inventoryModel->verificarStock($idProducto, $cantidad)) {
+                        throw new Exception('Stock insuficiente para: ' . $producto['nombre']);
+                    }
+
+                    $this->inventoryModel->registrarMovimiento(
+                        $idProducto,
+                        'salida',
+                        $cantidad,
+                        $idVenta,
+                        'venta',
+                        "Venta #$idVenta",
+                        $idUsuario,
+                        false // no abrir nueva transacción
+                    );
                 }
-
-                $this->inventoryModel->registrarMovimiento(
-                    $idProducto,
-                    'salida',
-                    $cantidad,
-                    $idVenta,
-                    'venta',
-                    "Venta #$idVenta",
-                    $idUsuario,
-                    false // no abrir nueva transacción
-                );
             }
 
             if ($useTransaction) {
@@ -154,7 +164,7 @@ class Sales {
     }
 
     public function getSaleDetails($idVenta) {
-        $sql = "SELECT dv.idDetalleVenta, dv.idProducto, p.nombre AS producto_nombre,
+        $sql = "SELECT dv.idDetalleVenta, dv.idProducto, COALESCE(p.nombre, 'Producto') AS producto_nombre,
                        p.imagen AS producto_imagen,
                        dv.cantidad, dv.precioUnitario, dv.subTotal
                 FROM detalle_venta dv

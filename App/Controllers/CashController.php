@@ -82,13 +82,22 @@ class CashController {
     public function close() {
         header('Content-Type: application/json; charset=utf-8');
         try {
-            $data = $_GET;
+            // Validar que esté autenticado
+            if (!isset($_SESSION['usuario_id'])) {
+                throw new Exception('Sesión no válida');
+            }
+
+            $data = json_decode(file_get_contents('php://input'), true) ?: [];
             $idCaja = isset($data['idCaja']) ? intval($data['idCaja']) : null;
             $saldoReal = isset($data['saldoReal']) ? floatval($data['saldoReal']) : null;
             $notas = $data['notas'] ?? null;
 
             if ($idCaja === null || $saldoReal === null) {
                 throw new Exception('idCaja y saldoReal son requeridos');
+            }
+
+            if ($saldoReal < 0) {
+                throw new Exception('El saldo real no puede ser negativo');
             }
 
             $activa = $this->cashModel->getCajaActiva();

@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Cargar datos iniciales
     loadCategories();
     loadProducts();
+    loadUnits();
     setupFormHandlers();
     setupSearchFilter();
 });
@@ -26,6 +27,7 @@ function openProductModal() {
     document.getElementById('prod_id').value = '';
     document.getElementById('prod_nombre').value = '';
     document.getElementById('prod_categoria').value = '';
+    document.getElementById('prod_unidad').value = '';
     document.getElementById('prod_tipo').value = '';
     document.getElementById('prod_precioCompra').value = '';
     document.getElementById('prod_precioVenta').value = '';
@@ -69,6 +71,7 @@ function openEditProduct(id) {
             document.getElementById('prod_id').value = p.idProducto;
             document.getElementById('prod_nombre').value = p.nombre;
             document.getElementById('prod_categoria').value = p.idCategoria;
+            document.getElementById('prod_unidad').value = p.idUnidadBase;
             document.getElementById('prod_tipo').value = p.tipo;
             document.getElementById('prod_precioCompra').value = p.precioCompra;
             document.getElementById('prod_precioVenta').value = p.precioVenta;
@@ -227,6 +230,24 @@ function loadCategories() {
             }
         })
         .catch(err => console.error('Error cargando categorías:', err));
+}
+
+function loadUnits() {
+    fetch('index.php?pg=product&action=getUnits')
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            console.log(data.data);
+            document.getElementById('prod_unidad').innerHTML = '<option value="">Seleccione...</option>';
+            data.data.forEach(unit => {
+                const opt = document.createElement('option');
+                opt.value = unit.idUnidad;
+                opt.textContent = unit.nombre;
+                document.getElementById('prod_unidad').appendChild(opt);
+            });
+        }
+    })
+    .catch(err => console.error('Error cargando unidades:', err));
 }
 
 function loadProducts() {

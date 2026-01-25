@@ -64,11 +64,11 @@
                             <label for="montoInicial" class="form-label">Monto Inicial</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" id="montoInicial" 
-                                       name="montoInicial" placeholder="0.00" step="0.01" 
-                                       min="0" required autofocus>
+                                <input type="text" class="form-control" id="montoInicial" 
+                                       name="montoInicial" placeholder="0" 
+                                       required autofocus>
                             </div>
-                            <small class="form-text text-muted">Puedes ingresarlo en formato decimal</small>
+                            <small class="form-text text-muted">Formato: 1.000.000</small>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -122,13 +122,16 @@
                 if (data.success) {
                     // Éxito - verificar si hay caja abierta
                     if (!data.cajaAbierta) {
-                        showAlert('Abre la caja para continuar', 'info');
-                        abrirModalCaja();
+                        // No hay caja abierta - mostrar modal para abrir
+                        showAlert('✅ Login exitoso. Por favor, abre la caja para continuar.', 'success');
+                        setTimeout(() => {
+                            abrirModalCaja();
+                        }, 500);
                         btnLogin.disabled = false;
                         btnLogin.innerHTML = originalText;
                     } else {
                         // Caja ya abierta - redirigir al home
-                        showAlert('Inicio de sesión exitoso. Redirigiendo...', 'success');
+                        showAlert('✅ Inicio de sesión exitoso. Redirigiendo...', 'success');
                         setTimeout(() => {
                             window.location.href = '?pg=home';
                         }, 1000);
@@ -153,7 +156,10 @@
             
             const btnAbrirCaja = document.getElementById('btnAbrirCaja');
             const originalText = btnAbrirCaja.innerHTML;
-            const monto = document.getElementById('montoInicial').value.trim();
+            const montoFormateado = document.getElementById('montoInicial').value.trim();
+            
+            // Convertir el monto formateado a número (eliminar puntos)
+            const monto = montoFormateado.replace(/\./g, '');
             
             // Validar monto
             if (!monto || parseFloat(monto) < 0) {
@@ -235,6 +241,27 @@
         // Permitir solo números en el campo PIN
         document.getElementById('pin').addEventListener('input', function(e) {
             this.value = this.value.replace(/[^0-9]/g, '');
+        });
+
+        // Formatear monto inicial con separadores de miles
+        document.getElementById('montoInicial').addEventListener('input', function(e) {
+            // Obtener solo números
+            let value = this.value.replace(/\D/g, '');
+            
+            // Limitar a 10 dígitos (máximo 99.999.999)
+            if (value.length > 6) {
+                value = value.slice(0, 6);
+            }
+            
+            // Si está vacío, no hacer nada
+            if (value === '') {
+                this.value = '';
+                return;
+            }
+            
+            // Convertir a número y formatear con separadores de miles
+            let num = parseInt(value, 10);
+            this.value = num.toLocaleString('es-CO');
         });
 
         // Botón cancelar modal

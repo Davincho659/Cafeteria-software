@@ -41,11 +41,10 @@ class SalesController {
         try {
             $idCategory = $_GET['idCategory'] ?? null;
             
-            $soloActivos = true;
             if ($idCategory == null) {
-                $products = $this->productModel->getAll($soloActivos);
+                $products = $this->productModel->getAll();
             } else {
-                $products = $this->productModel->getByCategory($idCategory, $soloActivos);
+                $products = $this->productModel->getByCategory($idCategory);
             }
             
             foreach ($products as &$product) {
@@ -130,20 +129,22 @@ class SalesController {
             // Si hay productos, agregarlos a la venta
             if ($tieneProductos) {
                 foreach ($productos as $producto) {
-                    $idProducto = intval($producto['idProducto']);
+                    $idProducto = isset($producto['idProducto']) ? intval($producto['idProducto']) : null;
                     $cantidad = intval($producto['cantidad']);
                     $precioUnitario = floatval($producto['precioUnitario']);
 
-                    // Validar que el producto exista
-                    $productoData = $this->productModel->getById($idProducto);
-                    if (!$productoData) {
-                        throw new Exception("Producto no encontrado: ID {$idProducto}");
-                    }
+                    // Validar que el producto exista (si no es NULL)
+                    if ($idProducto !== null) {
+                        $productoData = $this->productModel->getById($idProducto);
+                        if (!$productoData) {
+                            throw new Exception("Producto no encontrado: ID {$idProducto}");
+                        }
 
-                    // Validar stock si el producto lo maneja
-                    if ($productoData['manejaStock']) {
-                        if (!$this->inventoryModel->verificarStock($idProducto, $cantidad)) {
-                            throw new Exception("Stock insuficiente para: " . $productoData['nombre']);
+                        // Validar stock si el producto lo maneja
+                        if ($productoData['manejaStock']) {
+                            if (!$this->inventoryModel->verificarStock($idProducto, $cantidad)) {
+                                throw new Exception("Stock insuficiente para: " . $productoData['nombre']);
+                            }
                         }
                     }
 
@@ -242,15 +243,21 @@ class SalesController {
             }
             
             $idVenta = intval($data['idVenta']);
-            $idProducto = intval($data['idProducto']);
+            $idProducto = isset($data['idProducto']) ? intval($data['idProducto']) : null;
             $cantidad = intval($data['cantidad'] ?? 1);
             $precioUnitario = floatval($data['precioUnitario']);
             $idUsuario = $data['idUsuario'] ?? $_SESSION['usuario_id'] ?? null;
 
-            $producto = $this->productModel->getById($idProducto);
-            if ($producto && $producto['manejaStock']) {
-                if (!$this->inventoryModel->verificarStock($idProducto, $cantidad)) {
-                    throw new Exception("Stock insuficiente para: " . $producto['nombre']);
+            // Validar producto solo si no es NULL (monto manual)
+            if ($idProducto !== null) {
+                $producto = $this->productModel->getById($idProducto);
+                if (!$producto) {
+                    throw new Exception("Producto no encontrado: ID {$idProducto}");
+                }
+                if ($producto['manejaStock']) {
+                    if (!$this->inventoryModel->verificarStock($idProducto, $cantidad)) {
+                        throw new Exception("Stock insuficiente para: " . $producto['nombre']);
+                    }
                 }
             }
 

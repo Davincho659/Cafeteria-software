@@ -80,6 +80,13 @@
                         <i class="fa-solid fa-truck"></i> Proveedores
                     </a>
                 </li>
+                
+                <!-- Mesas -->
+                <li class="nav-item">
+                    <a class="nav-link <?= ($pg ?? '') === 'tables' ? 'active' : '' ?>" href="?pg=tables">
+                        <i class="fa-solid fa-chair"></i> Mesas
+                    </a>
+                </li>
                 <?php if (isset($_SESSION['usuario_rol']) && $_SESSION['usuario_rol'] === 'admin'): ?>
                 <!-- Reportes -->
                 <li class="nav-item">

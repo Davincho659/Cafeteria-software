@@ -285,8 +285,8 @@ async function saveQuickPurchase(e) {
     const descripcion = document.getElementById('quickDescription').value.trim();
     const total = parseFloat(document.getElementById('quickTotal').value);
     
-    if (!idProveedor || !descripcion || !total) {
-        showAlert('Todos los campos son requeridos', 'warning');
+    if ( !descripcion || !total) {
+        showAlert('Los campos son requeridos', 'warning');
         return;
     }
     

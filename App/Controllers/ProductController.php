@@ -3,15 +3,18 @@
 require_once __DIR__ . '/../Models/products.php';
 require_once __DIR__ . '/../Models/Categories.php';
 require_once __DIR__ . '/../Core/Functions.php';
+require_once __DIR__ . '/../Models/UnitsOfMeasure.php';
 
 class ProductController {
 
     private $productsModel;
     private $categoriesModel;
+    private $unitsModel;
 
     public function __construct() {
         $this->productsModel = new Products();
         $this->categoriesModel = new Categories();
+        $this->unitsModel = new UnitsOfMeasure();
     }
 	// Procesa la creación de un producto (formulario multipart/form-data)
 	public function createProduct() {
@@ -265,6 +268,19 @@ class ProductController {
                 'success' => false,
                 'error' => $e->getMessage()
             ]);
+        }
+    }
+
+    public function getUnits() {
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            $units = $this->unitsModel->getAll();
+            echo json_encode([
+                'success' => true,
+                'data' => $units
+            ]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
         }
     }
 

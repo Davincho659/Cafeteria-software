@@ -198,7 +198,7 @@ switch ($pg) {
     // ====================================================
     // PRODUCTOS
     // ====================================================
-    case 'products':
+    case 'product':
         require_once __DIR__ . '/../App/Controllers/ProductController.php';
         $controller = new ProductController();
         
@@ -215,7 +215,35 @@ switch ($pg) {
                 'getCategories',
                 'createCategory',
                 'updateCategory',
-                'deleteCategory'
+                'deleteCategory',
+                'getUnits'
+            ];
+            
+            if (in_array($action, $validActions) && method_exists($controller, $action)) {
+                $controller->$action();
+            } else {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'error' => 'Acción no encontrada']);
+            }
+        }
+        exit;
+
+    // ====================================================
+    // GESTIÓN DE MESAS
+    // ====================================================
+    case 'tables':
+        require_once __DIR__ . '/../App/Controllers/TablesController.php';
+        $controller = new TablesController();
+        
+        if ($action === null) {
+            $controller->index();
+        } else {
+            $validActions = [
+                'getTables',
+                'getStatistics',
+                'createTable',
+                'updateTable',
+                'deleteTable'
             ];
             
             if (in_array($action, $validActions) && method_exists($controller, $action)) {

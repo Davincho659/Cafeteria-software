@@ -125,7 +125,61 @@
         <div id="paginacion" class="mt-3"></div>
         <br>
     </div>
+    <!-- Modal de Detalles de Venta -->
+    <div id="saleDetailModalContainer">
+        <div class="modal fade" id="saleDetailModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable  modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            Detalles de la venta #<span id="saleDetailId"></span>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="saleDetailLoader" class="text-center py-4 d-none">
+                            <div class="spinner-border text-info" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Cargando detalles...</p>
+                        </div>
+
+                        <div id="saleDetailError" class="alert alert-danger d-none" role="alert"></div>
+
+                        <div id="saleDetailContent">
+                            <table class="table table-sm table-striped table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th class="text-center" style="width:120px">Cantidad</th>
+                                        <th style="width:180px">Precio unitario</th>
+                                        <th style="width:180px">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="saleDetailTableBody">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">Sin datos</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="d-flex justify-content-end mt-2">
+                                <div>
+                                    <strong>Total:</strong>
+                                    $<span id="saleDetailTotal">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-info" id="saleDetailPrintBtn">Imprimir factura</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
 
 
 <script>
@@ -299,10 +353,16 @@ let dailyReportInitialized = false;
                             onclick="window.open('?pg=bill&id=${r.idVenta}','_blank','width=350,height=900')">
                             Ver factura
                         </button>
+                        <button class="btn btn-sm btn-info" 
+                            onclick= "detail(${r.idVenta})">
+                            Ver detalles
+                        </button>
                     </td>
                 </tr>`;
         });
     }
+
+    
     
     // Función para renderizar paginación
     function renderPaginacion(total, actual) {
@@ -377,4 +437,97 @@ let dailyReportInitialized = false;
     }
     
 })();
+
+// ========================
+// MODAL: Detalles de venta
+// ========================
+window.detail = function(idVenta) {
+    try {
+        const modalEl = document.getElementById('saleDetailModal');
+        const saleIdEl = document.getElementById('saleDetailId');
+        const loaderEl = document.getElementById('saleDetailLoader');
+        const errorEl = document.getElementById('saleDetailError');
+        const tbodyEl = document.getElementById('saleDetailTableBody');
+        const totalEl = document.getElementById('saleDetailTotal');
+        const printBtn = document.getElementById('saleDetailPrintBtn');
+
+        if (!modalEl || !saleIdEl || !loaderEl || !errorEl || !tbodyEl || !totalEl || !printBtn) {
+            console.error('[DAILY REPORT] Elementos del modal no encontrados');
+            return;
+        }
+
+        // Preparar estado inicial
+        saleIdEl.textContent = String(idVenta);
+        loaderEl.classList.remove('d-none');
+        errorEl.classList.add('d-none');
+        tbodyEl.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Cargando...</td></tr>';
+        totalEl.textContent = '0';
+        printBtn.onclick = () => window.open('?pg=bill&id=' + idVenta, '_blank', 'width=350,height=900');
+
+        // Mostrar modal (Bootstrap si está disponible)
+        try {
+            const bs = window.bootstrap;
+            if (bs && typeof bs.Modal === 'function') {
+                bs.Modal.getOrCreateInstance(modalEl).show();
+            } else {
+                // Fallback muy básico
+                modalEl.classList.add('show');
+                modalEl.style.display = 'block';
+                document.body.classList.add('modal-open');
+            }
+        } catch (e) {
+            console.warn('[DAILY REPORT] No se pudo abrir modal con Bootstrap:', e);
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+        }
+
+        // Fetch de detalles de la venta
+        fetch('?pg=sales&action=GetSale&id=' + encodeURIComponent(idVenta), {
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
+        .then(data => {
+            const detalles = data?.data?.detalles || data?.detalles || data?.data?.productos || [];
+            tbodyEl.innerHTML = '';
+
+            if (!Array.isArray(detalles) || detalles.length === 0) {
+                tbodyEl.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Sin productos</td></tr>';
+                return;
+            }
+
+            let total = 0;
+            detalles.forEach(d => {
+                const nombre = d.producto_nombre || d.nombre || 'Producto';
+                const qty = parseInt(d.cantidad || 0, 10);
+                const unit = parseFloat((d.precioUnitario ?? d.precioVenta ?? d.precio ?? 0));
+                const subtotal = parseFloat((d.subTotal ?? d.precioTotal ?? (qty * unit)));
+                total += (isNaN(subtotal) ? 0 : subtotal);
+
+                tbodyEl.innerHTML += `
+                    <tr>
+                        <td>${nombre}</td>
+                        <td class="text-center">${isNaN(qty) ? 0 : qty}</td>
+                        <td>$${Number(isNaN(unit) ? 0 : unit).toLocaleString('es-CO')}</td>
+                        <td>$${Number(isNaN(subtotal) ? 0 : subtotal).toLocaleString('es-CO')}</td>
+                    </tr>`;
+            });
+            totalEl.textContent = Number(total).toLocaleString('es-CO');
+        })
+        .catch(err => {
+            console.error('[DAILY REPORT] Error detalles:', err);
+            errorEl.textContent = 'No se pudieron cargar los detalles: ' + err.message;
+            errorEl.classList.remove('d-none');
+            tbodyEl.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error cargando detalles</td></tr>';
+        })
+        .finally(() => {
+            loaderEl.classList.add('d-none');
+        });
+    } catch (error) {
+        console.error('[DAILY REPORT] Error mostrando detalles:', error);
+    }
+};
 </script>
