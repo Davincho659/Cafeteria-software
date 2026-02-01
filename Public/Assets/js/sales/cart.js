@@ -43,6 +43,7 @@ function getCurrentTabInfo() {
 
 /**
  * Añade un producto al carrito
+ * PASO 2: Sincroniza inmediatamente con BD si hay idVenta
  */
 async function addToCart(product) {
   const currentTab = getCurrentTabInfo()
@@ -55,39 +56,99 @@ async function addToCart(product) {
     return
   }
 
-  // Si es venta en memoria
+  // Si es venta en memoria (carrito normal)
   const cartId = currentTab.cartId
   const cartObj = getCart(cartId)
   
+  // Validar que tenga idVenta (debe existir desde la creación del tab)
+  if (!cartObj.idVenta) {
+    console.error("[CART] addToCart: No hay idVenta en el carrito", cartId)
+    alert("Error: No hay venta pendiente. Intenta crear un nuevo tab.")
+    return
+  }
+
   // Para NULL (monto manual), no consolidar: cada monto manual es un ítem independiente
   const isManualAmount = product.idProducto === null
   const exist = isManualAmount 
     ? null
     : cartObj.products.find((p) => toInt(p.idProducto) === toInt(product.idProducto))
 
-  if (exist) {
-    exist.cantidad++
-    exist.precioTotal = exist.cantidad * exist.precioVenta
-  } else {
-    const manualId = isManualAmount ? `manual-${Date.now()}-${Math.random().toString(16).slice(2, 8)}` : null
-    cartObj.products.push({
-      idProducto: product.idProducto,
-      nombre: product.nombre,
-      imagen: product.imagen,
-      precioVenta: toFloat(product.precioVenta),
-      cantidad: 1,
-      precioTotal: toFloat(product.precioVenta),
-      isManualAmount: isManualAmount,
-      manualId: manualId
-    })
-  }
+  try {
+    if (exist) {
+      // El producto ya existe: aumentar cantidad
+      console.log("[CART] Producto existe, aumentando cantidad:", product.nombre)
+      
+      // Sincronizar con BD: agregar +1 cantidad
+      const response = await fetchJson("?pg=sales&action=addProductToSale", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          idVenta: cartObj.idVenta,
+          idProducto: product.idProducto,
+          cantidad: 1, // Aumentar en 1
+          precioUnitario: product.precioVenta,
+        }),
+      })
 
-  updateCart(cartId)
+      if (!response.success) {
+        throw new Error("No se pudo sincronizar con BD: " + response.error)
+      }
+
+      // Actualizar en memoria solo si BD fue exitosa
+      exist.cantidad++
+      exist.precioTotal = exist.cantidad * exist.precioVenta
+      console.log("[CART] ✅ Producto sincronizado en BD")
+      
+    } else {
+      // Producto nuevo: insertar en BD primero
+      console.log("[CART] Producto nuevo, agregando a BD:", product.nombre)
+      
+      const manualId = isManualAmount ? `manual-${Date.now()}-${Math.random().toString(16).slice(2, 8)}` : null
+      
+      // Sincronizar con BD
+      const response = await fetchJson("?pg=sales&action=addProductToSale", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          idVenta: cartObj.idVenta,
+          idProducto: product.idProducto,
+          cantidad: 1,
+          precioUnitario: product.precioVenta,
+        }),
+      })
+
+      if (!response.success) {
+        throw new Error("No se pudo agregar producto en BD: " + response.error)
+      }
+
+      // Agregar a carrito en memoria con idDetalleVenta guardado
+      const newProduct = {
+        idProducto: product.idProducto,
+        nombre: product.nombre,
+        imagen: product.imagen,
+        precioVenta: toFloat(product.precioVenta),
+        cantidad: 1,
+        precioTotal: toFloat(product.precioVenta),
+        isManualAmount: isManualAmount,
+        manualId: manualId,
+        idDetalleVenta: response.data?.idDetalle // ← Guardar para poder eliminarlo después
+      }
+      
+      cartObj.products.push(newProduct)
+      console.log("[CART] ✅ Producto agregado en BD con idDetalleVenta:", response.data?.idDetalle)
+    }
+
+    updateCart(cartId)
+    
+  } catch (error) {
+    console.error("[CART] Error en addToCart:", error)
+    alert("Error al agregar producto: " + error.message)
+  }
 }
 
-/**
- * Actualiza el carrito (total, cantidad, UI)
- */
+  /**
+   * Actualiza el carrito (total, cantidad, UI)
+   */
 function updateCart(cartId = null) {
   const targetCartId = cartId || currentCartId
   const cartObj = getCart(targetCartId)
@@ -111,9 +172,8 @@ async function clearCart(cartId) {
   const targetCartId = cartId || currentCartId
   const cartObj = carts[targetCartId]
   if (!cartObj) return
-
-  // Mesas: limpiar en BD y refrescar
-  if (cartObj.type === "table") {
+  // Ventas normales: eliminar detalles en BD y mantener el mismo idVenta
+  if (cartObj.idVenta) {
     const productos = cartObj.products || []
     for (const p of productos) {
       if (!p.idDetalleVenta) continue
@@ -127,14 +187,11 @@ async function clearCart(cartId) {
         console.warn("No se pudo eliminar producto", p.idDetalleVenta, error)
       }
     }
-    // Refrescar datos de la mesa desde servidor
-    if (cartObj.tableId) {
+  }
+  if (cartObj.tableId) {
       await reloadTableSale(cartObj.tableId)
     }
-    return
-  }
-
-  // Ventas locales en memoria
+  // Limpiar productos en memoria
   cartObj.products = []
   cartObj.total = 0
   updateCart(targetCartId)
@@ -190,28 +247,75 @@ function showCartProducts(cartId) {
 /**
  * Elimina un producto del carrito
  */
-function dropProduct(idProducto, cartId, manualId = null) {
+async function dropProduct(idProducto, cartId, manualId = null) {
   const cartObj = carts[cartId]
   if (!cartObj) {
     console.error("[CART] dropProduct: carrito no encontrado", cartId)
     return
   }
   
-  // Manejar NULL (monto manual)
+  console.log("[CART] dropProduct:", { idProducto, cartId, manualId })
+  
+  // Encontrar el producto a eliminar
+  const producto = cartObj.products.find((p) => {
+    if (idProducto === null) {
+      return p.idProducto === null && p.isManualAmount === true && p.manualId === manualId
+    } else {
+      return toInt(p.idProducto) === toInt(idProducto)
+    }
+  })
+  
+  if (!producto) {
+    console.error("[CART] dropProduct: producto no encontrado", { idProducto, manualId })
+    return
+  }
+  
+  // Si la venta está en BD (tiene idVenta e idDetalleVenta), eliminar desde BD
+  if (cartObj.idVenta && producto.idDetalleVenta) {
+    try {
+      console.log("[CART] Eliminando producto de BD con idDetalleVenta:", producto.idDetalleVenta)
+      
+      const response = await fetchJson("?pg=sales&action=removeProductFromSale", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          idDetalleVenta: producto.idDetalleVenta 
+        }),
+      })
+      
+      if (!response.success) {
+        alert("Error al eliminar producto: " + response.error)
+        return
+      }
+
+      // Eliminar del carrito en memoria después de éxito en BD
+      cartObj.products = cartObj.products.filter((p) => p.idDetalleVenta !== producto.idDetalleVenta)
+      updateCart(cartId)
+      console.log("[CART] ✅ Producto eliminado correctamente de BD y carrito")
+      
+    } catch (error) {
+      console.error("[CART] Error al eliminar producto de BD:", error)
+      alert("Error al eliminar el producto. Intenta de nuevo.")
+    }
+    return
+  }
+  
+  // Si es solo en memoria (carrito local sin idVenta)
+  console.log("[CART] Eliminando producto de memoria (sin BD)")
   if (idProducto === null) {
     cartObj.products = cartObj.products.filter((p) => !(p.idProducto === null && p.isManualAmount === true && p.manualId === manualId))
   } else {
     cartObj.products = cartObj.products.filter((p) => toInt(p.idProducto) !== toInt(idProducto))
   }
   
-  // Actualizar el carrito específico
   updateCart(cartId)
+  console.log("[CART] ✅ Producto eliminado de memoria")
 }
 
 /**
  * Aumenta la cantidad de un producto
  */
-function increaseQty(idProducto, cartId, manualId = null) {
+async function increaseQty(idProducto, cartId, manualId = null) {
   const cartObj = carts[cartId]
   if (!cartObj) {
     console.error("[CART] increaseQty: carrito no encontrado", cartId)
@@ -223,17 +327,53 @@ function increaseQty(idProducto, cartId, manualId = null) {
     ? cartObj.products.find((p) => p.idProducto === null && p.isManualAmount === true && p.manualId === manualId)
     : cartObj.products.find((p) => toInt(p.idProducto) === toInt(idProducto))
   
-  if (p) {
-    p.cantidad++
-    p.precioTotal = p.cantidad * p.precioVenta
-    updateCart(cartId)
+  if (!p) {
+    console.error("[CART] increaseQty: producto no encontrado")
+    return
   }
+
+  console.log("[CART] increaseQty:", { producto: p.nombre, cantidadActual: p.cantidad })
+
+  // Si el carrito tiene idVenta en BD, sincronizar directamente
+  if (cartObj.idVenta && p.idDetalleVenta) {
+    try {
+      const response = await fetchJson("?pg=sales&action=addProductToSale", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          idVenta: cartObj.idVenta,
+          idProducto: p.idProducto,
+          cantidad: 1, // Aumentar en 1
+          precioUnitario: p.precioVenta,
+        }),
+      })
+
+      if (!response.success) {
+        console.error("[CART] Error al aumentar cantidad en BD:", response.error)
+        return
+      }
+
+      p.cantidad++
+      p.precioTotal = p.cantidad * p.precioVenta
+      updateCart(cartId)
+      console.log("[CART] Cantidad aumentada en BD:", p.nombre)
+    } catch (error) {
+      console.error("[CART] Error sincronizando cantidad:", error)
+      alert("Error al sincronizar: " + error.message)
+    }
+    return
+  }
+
+  // Si es solo en memoria (sin idVenta)
+  p.cantidad++
+  p.precioTotal = p.cantidad * p.precioVenta
+  updateCart(cartId)
 }
 
 /**
  * Disminuye la cantidad de un producto
  */
-function decreaseQty(idProducto, cartId, manualId = null) {
+async function decreaseQty(idProducto, cartId, manualId = null) {
   const cartObj = carts[cartId]
   if (!cartObj) {
     console.error("[CART] decreaseQty: carrito no encontrado", cartId)
@@ -245,11 +385,44 @@ function decreaseQty(idProducto, cartId, manualId = null) {
     ? cartObj.products.find((p) => p.idProducto === null && p.isManualAmount === true && p.manualId === manualId)
     : cartObj.products.find((p) => toInt(p.idProducto) === toInt(idProducto))
   
-  if (p && p.cantidad > 1) {
-    p.cantidad--
-    p.precioTotal = p.cantidad * p.precioVenta
-    updateCart(cartId)
+  if (!p || p.cantidad <= 1) return
+
+  console.log("[CART] decreaseQty:", { producto: p.nombre, cantidadActual: p.cantidad })
+
+  // Si el carrito tiene idVenta en BD, sincronizar directamente
+  if (cartObj.idVenta && p.idDetalleVenta) {
+    try {
+      const response = await fetchJson("?pg=sales&action=addProductToSale", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          idVenta: cartObj.idVenta,
+          idProducto: p.idProducto,
+          cantidad: -1, // Disminuir en 1 (negativo)
+          precioUnitario: p.precioVenta,
+        }),
+      })
+
+      if (!response.success) {
+        console.error("[CART] Error al disminuir cantidad en BD:", response.error)
+        return
+      }
+
+      p.cantidad--
+      p.precioTotal = p.cantidad * p.precioVenta
+      updateCart(cartId)
+      console.log("[CART] Cantidad disminuida en BD:", p.nombre)
+    } catch (error) {
+      console.error("[CART] Error sincronizando cantidad:", error)
+      alert("Error al sincronizar: " + error.message)
+    }
+    return
   }
+
+  // Si es solo en memoria (sin idVenta)
+  p.cantidad--
+  p.precioTotal = p.cantidad * p.precioVenta
+  updateCart(cartId)
 }
 
 // ============================================================================
@@ -336,9 +509,13 @@ function confirmSalePayment() {
 }
 
 /**
- * Procesa una venta
+ * Procesa una venta siguiendo el flujo: Crear pendiente → Agregar productos → Completar
  */
-function saleProcess(cartId, userId, paymentMethod = "efectivo") {
+/**
+ * Procesa una venta usando el idVenta que ya existe desde la creación del tab
+ * Paso 2: Agregar productos → Paso 3: Completar venta
+ */
+async function saleProcess(cartId, userId, paymentMethod = "efectivo") {
   if (!cartId || currentCartId !== cartId) cartId = currentCartId
 
   const cartObj = getCart(cartId)
@@ -348,57 +525,89 @@ function saleProcess(cartId, userId, paymentMethod = "efectivo") {
     return
   }
 
-  console.log("[CART] Procesando venta:", { cartId, productos: cartObj.products.length, total: cartObj.total })
-
-  const payload = {
-    cartId: cartId,
-    tipo: cartObj.type,
-    tableId: cartObj.tableId || null,
-    tableNumber: cartObj.tableNumber || null,
-    metodoPago: paymentMethod,
-    idUsuario: userId,
-    total: cartObj.total,
-    productos: cartObj.products.map((p) => ({
-      idProducto: p.idProducto,
-      cantidad: p.cantidad,
-      precioUnitario: p.precioVenta,
-      precioTotal: p.precioTotal,
-    })),
+  if (!cartObj.idVenta) {
+    alert("Error: No hay venta pendiente asociada. Intenta crear un nuevo tab.")
+    return
   }
 
-  fetchJson("?pg=sales&action=CreateSale", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  })
-    .then((data) => {
-      if (data.success) {
-        if (typeof Swal !== "undefined") {
-          Swal.fire({
-            icon: "success",
-            title: "¡Éxito!",
-            text: "Venta registrada correctamente",
-            timer: 1500,
-            showConfirmButton: false,
-          })
-        }
+  console.log("[CART] Procesando venta con idVenta existente:", { cartId, idVenta: cartObj.idVenta, productos: cartObj.products.length })
 
-        window.open(`?pg=bill&id=${data.saleId}`, "_blank", "width=350,height=900")
-
-        const cartObj = getCart(cartId)
-        cartObj.products = []
-        cartObj.total = 0
-        updateCart()
-
-        console.log("[CART] ✅ Venta procesada correctamente")
-      } else {
-        alert("Error: " + data.error)
+  try {
+    // PASO 2: Agregar productos que aún no estén agregados en BD
+    console.log("[CART] PASO 2: Validando productos en BD...")
+    
+    for (const producto of cartObj.products) {
+      // Si ya tiene idDetalleVenta, significa que ya fue agregado a BD
+      if (producto.idDetalleVenta) {
+        console.log("[CART] Producto ya en BD:", producto.nombre)
+        continue
       }
+
+      const addResponse = await fetchJson("?pg=sales&action=addProductToSale", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          idVenta: cartObj.idVenta,
+          idProducto: producto.idProducto,
+          cantidad: producto.cantidad,
+          precioUnitario: producto.precioVenta,
+          idUsuario: userId,
+        }),
+      })
+
+      if (!addResponse.success) {
+        throw new Error("Error al agregar producto: " + addResponse.error)
+      }
+
+      if (addResponse.data?.idDetalle) {
+        producto.idDetalleVenta = addResponse.data.idDetalle
+      }
+
+      console.log("[CART] ✅ Producto agregado:", producto.nombre)
+    }
+
+    // PASO 3: Completar la venta
+    console.log("[CART] PASO 3: Completando venta...")
+    const completeResponse = await fetchJson("?pg=sales&action=CompleteSale", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idVenta: cartObj.idVenta,
+        metodoPago: paymentMethod,
+      }),
     })
-    .catch((err) => {
-      console.error("[CART] Error al procesar venta:", err)
-      alert("Error al procesar la venta. Intenta de nuevo.")
-    })
+
+    if (!completeResponse.success) {
+      throw new Error("No se pudo completar la venta: " + completeResponse.error)
+    }
+
+    console.log("[CART] ✅ Venta completada exitosamente")
+
+    // Mostrar confirmación
+    if (typeof Swal !== "undefined") {
+      Swal.fire({
+        icon: "success",
+        title: "¡Éxito!",
+        text: "Venta registrada correctamente",
+        timer: 1500,
+        showConfirmButton: false,
+      })
+    }
+
+    // Abrir comprobante
+    window.open(`?pg=bill&id=${completeResponse.saleId}`, "_blank", "width=350,height=900")
+
+    // Limpiar carrito
+    cartObj.products = []
+    cartObj.total = 0
+    cartObj.idVenta = null
+    updateCart()
+    dropTab(cartId)
+    
+  } catch (error) {
+    console.error("[CART] Error en saleProcess:", error)
+    alert("Error al procesar la venta: " + error.message)
+  }
 }
 
 console.log("✅ [CART] Módulo de carrito cargado correctamente")

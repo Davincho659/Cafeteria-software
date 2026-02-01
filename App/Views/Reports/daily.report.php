@@ -357,6 +357,10 @@ let dailyReportInitialized = false;
                             onclick= "detail(${r.idVenta})">
                             Ver detalles
                         </button>
+                        <button class="btn btn-sm btn-danger" 
+                            onclick="cancelarVenta(${r.idVenta})">
+                            Anular
+                        </button>
                     </td>
                 </tr>`;
         });
@@ -437,6 +441,83 @@ let dailyReportInitialized = false;
     }
     
 })();
+
+// ========================
+// CANCELAR VENTA
+// ========================
+window.cancelarVenta = function(idVenta) {
+    if (!confirm('¿Está seguro de que desea anular esta venta? Esta acción no se puede deshacer.')) {
+        return;
+    }
+
+    // Mostrar loading
+    const btnAnular = event.target;
+    const originalText = btnAnular.textContent;
+    btnAnular.disabled = true;
+    btnAnular.textContent = 'Anulando...';
+
+    fetch('?pg=sales&action=cancelSaleByInvoice', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ idVenta: idVenta })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // Mostrar éxito
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Venta Anulada!',
+                    text: 'La venta ha sido cancelada correctamente',
+                    timer: 2000,
+                    showConfirmButton: false,
+                });
+            } else {
+                alert('Venta anulada correctamente');
+            }
+            
+            // Recargar tabla
+            setTimeout(() => {
+                cargarResultados();
+            }, 1500);
+        } else {
+            // Mostrar error
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.error || 'No se pudo anular la venta',
+                });
+            } else {
+                alert('Error: ' + (data.error || 'No se pudo anular la venta'));
+            }
+            
+            // Restaurar botón
+            btnAnular.disabled = false;
+            btnAnular.textContent = originalText;
+        }
+    })
+    .catch(err => {
+        console.error('Error:', err);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Error en la comunicación con el servidor',
+            });
+        } else {
+            alert('Error: ' + err.message);
+        }
+        
+        // Restaurar botón
+        btnAnular.disabled = false;
+        btnAnular.textContent = originalText;
+    });
+};
 
 // ========================
 // MODAL: Detalles de venta

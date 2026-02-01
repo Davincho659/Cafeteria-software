@@ -100,6 +100,11 @@ function cargarResultados(page = paginaActual) {
     const form = document.getElementById('filtrosReporte');
     const data = new FormData(form);
     data.append('page', page);
+    
+    // Para reporte de sales, siempre mostrar todas las ventas (incluidas anuladas)
+    if (tipo === 'sales') {
+        data.append('mostrarTodas', 1);
+    }
 
     fetch(`index.php?pg=reports&action=${tipo}&ajax=1`, {
         method: 'POST',
@@ -129,18 +134,31 @@ function renderTabla(rows, tipo = 'sales') {
     tbody.innerHTML = '';
 
     if (!rows || rows.length === 0) {
-        const colSpan = tipo === 'sales' ? 5 : tipo === 'purchases' ? 5 : 5;
+        const colSpan = tipo === 'sales' ? 6 : tipo === 'purchases' ? 5 : 5;
         tbody.innerHTML = `<tr><td colspan="${colSpan}" class="text-center text-muted">No hay resultados</td></tr>`;
         return;
     }
 
     if (tipo === 'sales') {
         rows.forEach(r => {
+            // Determinar badge de estado con colores
+            let estadoBadge = '<span class="badge bg-secondary">Desconocido</span>';
+            if (r.estado === 'completada') {
+                estadoBadge = '<span class="badge bg-success">✓ Completada</span>';
+            } else if (r.estado === 'cancelada') {
+                estadoBadge = '<span class="badge bg-danger">✕ Anulada</span>';
+            } else if (r.estado === 'temporal') {
+                estadoBadge = '<span class="badge bg-warning text-dark">⏳ Temporal</span>';
+            } else if (r.estado === 'pendiente') {
+                estadoBadge = '<span class="badge bg-info">⋯ Pendiente</span>';
+            }
+            
             tbody.innerHTML += `
                 <tr>
                     <td>${r.idVenta}</td>
                     <td>${new Date(r.fechaVenta).toLocaleString()}</td>
                     <td>${r.metodoPago}</td>
+                    <td>${estadoBadge}</td>
                     <td>$${Number(r.total).toLocaleString()}</td>
                     <td>
                         <button class="btn btn-sm btn-success"

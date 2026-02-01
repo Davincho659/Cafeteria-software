@@ -176,50 +176,87 @@ $detalles = $salesModel->getSaleDetails($idVenta);
         .btn-print:hover {
             background: #333;
         }
+
+        /* Sello ANULADO */
+        .sello-anulado-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            z-index: 999;
+            pointer-events: none;
+        }
+
+        .sello-anulado {
+            font-size: 48px;
+            font-weight: bold;
+            color: rgba(220, 53, 69, 0.3);
+            border: 3px solid rgba(220, 53, 69, 0.3);
+            padding: 10px 20px;
+            letter-spacing: 3px;
+            transform: rotate(0deg);
+            text-transform: uppercase;
+        }
+
+        @media print {
+            .sello-anulado {
+                color: rgba(220, 53, 69, 0.15);
+                border: 3px solid rgba(220, 53, 69, 0.15);
+            }
+        }
+        
     </style>
 
 </head>
 <body>
-    <div class="receipt-header">
-        <h2>Cafetería Bello Horizonte</h2>
-        <img src="assets/img/logo.jpg" alt="Logo" class="logo">
-        <h3>FACTURA #<?php echo str_pad($idVenta, 6, '0', STR_PAD_LEFT); ?></h3>
+    <div class="factura-contenedor" id="factura">
+        <div class="receipt-header">
+            <h2>Cafetería Bello Horizonte</h2>
+            <img src="assets/img/logo.jpg" alt="Logo" class="logo">
+            <h3>FACTURA #<?php echo str_pad($idVenta, 6, '0', STR_PAD_LEFT); ?></h3>
+        </div>
+
+        <div class="receipt-info">
+            <p><?php echo date('d/m/Y H:i', strtotime($venta['fechaVenta'])); ?></p>
+        </div>
+
+        <table class="factura-table">
+            <thead>
+                <tr>
+                    <th class="product-name">Producto</th>
+                    <th class="product-qty">Cant.</th>
+                    <th class="product-total">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach($detalles as $d): ?>
+                <tr>
+                    <td class="product-name"><?php echo substr($d['producto_nombre'], 0, 20); ?></td>
+                    <td class="product-qty"><?php echo $d['cantidad']; ?></td>
+                    <td class="product-total">$<?php echo number_format($d['subTotal'], 0, ',', '.'); ?></td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+
+        <div class="total-section">
+            <div>TOTAL FACTURA</div>
+            <div class="total-amount">$<?php echo number_format($venta['total'], 0, ',', '.'); ?></div>
+        </div>
+
+        <div class="footer">
+            <p>¡Gracias por su compra!</p>
+            <p>Vuelva pronto</p>
+        </div>
+        
+        <!-- Sello ANULADO si la venta está cancelada -->
+        <?php if ($venta['estado'] === 'cancelada'): ?>
+        <div class="sello-anulado-container">
+            <div class="sello-anulado">ANULADO</div>
+        </div>
+        <?php endif; ?>
+        
+        <button class="btn-print" onclick="window.print()">Imprimir Factura</button>
     </div>
-
-    <div class="receipt-info">
-        <p><?php echo date('d/m/Y H:i', strtotime($venta['fechaVenta'])); ?></p>
-    </div>
-
-    <table class="factura-table">
-        <thead>
-            <tr>
-                <th class="product-name">Producto</th>
-                <th class="product-qty">Cant.</th>
-                <th class="product-total">Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach($detalles as $d): ?>
-            <tr>
-                <td class="product-name"><?php echo substr($d['producto_nombre'], 0, 20); ?></td>
-                <td class="product-qty"><?php echo $d['cantidad']; ?></td>
-                <td class="product-total">$<?php echo number_format($d['subTotal'], 0, ',', '.'); ?></td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-
-    <div class="total-section">
-        <div>TOTAL FACTURA</div>
-        <div class="total-amount">$<?php echo number_format($venta['total'], 0, ',', '.'); ?></div>
-    </div>
-
-    <div class="footer">
-        <p>¡Gracias por su compra!</p>
-        <p>Vuelva pronto</p>
-    </div>
-
-    <button class="btn-print" onclick="window.print()">Imprimir Factura</button>
-
 </body>
 </html>

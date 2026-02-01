@@ -30,18 +30,21 @@ class ReportsController {
             $limit = 10; 
             $page = isset($_POST['page']) ? max(1, intval($_POST['page'])) : 1;
             $offset = ($page - 1) * $limit;
-            $query = "";
+            
+            // Permitir mostrar todas las ventas si se especifica, sino solo las completadas
+            $mostrarTodas = isset($_POST['mostrarTodas']) && $_POST['mostrarTodas'] == 1;
+            $query = $mostrarTodas ? " WHERE 1=1" : " WHERE estado = 'completada'";
 
             if (!empty($_POST['idVenta'])) {
-                $query .= (!empty($query) ? " AND" : " WHERE") . " idVenta = " . intval($_POST['idVenta']);
+                $query .= " AND idVenta = " . intval($_POST['idVenta']);
             }
 
             if (!empty($_POST['precioDesde'])) {
-                $query .= (!empty($query) ? " AND" : " WHERE") . " total >= " . floatval($_POST['precioDesde']);
+                $query .= " AND total >= " . floatval($_POST['precioDesde']);
             }
 
             if (!empty($_POST['precioHasta'])) {
-                $query .= (!empty($query) ? " AND" : " WHERE") . " total <= " . floatval($_POST['precioHasta']);
+                $query .= " AND total <= " . floatval($_POST['precioHasta']);
             }
             
             if (!empty($_POST['fecha'])) {
@@ -50,13 +53,11 @@ class ReportsController {
                 $fecha_inicio = DateTime::createFromFormat('d/m/Y', trim($partes_fecha[0]))->format('Y-m-d') . ' 00:00:00';
                 $fecha_fin = DateTime::createFromFormat('d/m/Y', trim($partes_fecha[1]))->format('Y-m-d') . ' 23:59:59';
 
-                $query .= (!empty($query) ? " AND" : " WHERE") . 
-                        " fechaVenta BETWEEN '$fecha_inicio' AND '$fecha_fin'";
+                $query .= " AND fechaVenta BETWEEN '$fecha_inicio' AND '$fecha_fin'";
             }
 
             if (!empty($_POST['metodoPago'])) {
-                $query .= (!empty($query) ? " AND" : " WHERE") . 
-                        " metodoPago = '" . $_POST['metodoPago'] . "'";
+                $query .= " AND metodoPago = '" . $_POST['metodoPago'] . "'";
             }
 
             $resultados = $this->salesModel->getWithPagination($query, $offset, $limit);
@@ -85,18 +86,18 @@ class ReportsController {
             $limit = 10; 
             $page = isset($_POST['page']) ? max(1, intval($_POST['page'])) : 1;
             $offset = ($page - 1) * $limit;
-            $query = "";
+            $query = " WHERE estado = 'completada'";
 
             if (!empty($_POST['idVenta'])) {
-                $query .= (!empty($query) ? " AND" : " WHERE") . " idVenta = " . intval($_POST['idVenta']);
+                $query .= " AND idVenta = " . intval($_POST['idVenta']);
             }
 
             if (!empty($_POST['precioDesde'])) {
-                $query .= (!empty($query) ? " AND" : " WHERE") . " total >= " . floatval($_POST['precioDesde']);
+                $query .= " AND total >= " . floatval($_POST['precioDesde']);
             }
 
             if (!empty($_POST['precioHasta'])) {
-                $query .= (!empty($query) ? " AND" : " WHERE") . " total <= " . floatval($_POST['precioHasta']);
+                $query .= " AND total <= " . floatval($_POST['precioHasta']);
             }
             
             if (!empty($_POST['fecha'])) {
@@ -105,13 +106,11 @@ class ReportsController {
                 $fecha_inicio = DateTime::createFromFormat('d/m/Y', trim($partes_fecha[0]))->format('Y-m-d') . ' 00:00:00';
                 $fecha_fin = DateTime::createFromFormat('d/m/Y', trim($partes_fecha[1]))->format('Y-m-d') . ' 23:59:59';
 
-                $query .= (!empty($query) ? " AND" : " WHERE") . 
-                        " fechaVenta BETWEEN '$fecha_inicio' AND '$fecha_fin'";
+                $query .= " AND fechaVenta BETWEEN '$fecha_inicio' AND '$fecha_fin'";
             }
 
             if (!empty($_POST['metodoPago'])) {
-                $query .= (!empty($query) ? " AND" : " WHERE") . 
-                        " metodoPago = '" . $_POST['metodoPago'] . "'";
+                $query .= " AND metodoPago = '" . $_POST['metodoPago'] . "'";
             }
             
             error_log('Query generado: ' . $query);

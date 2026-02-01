@@ -132,7 +132,7 @@ async function openOrTransferToTable(idMesa, numeroMesa) {
       })
 
       if (data.success) {
-        const idVenta = data.data.idVenta || data.data.venta?.idVenta || data.data.venta?.id || data.data.id
+        const idVenta = data.data.idVenta 
         const numero = data.data.numeroMesa || numeroMesa
 
         activeTables[idMesa] = { idMesa, idVenta, numero, total: 0 }
@@ -165,24 +165,21 @@ async function openOrTransferToTable(idMesa, numeroMesa) {
       })
 
       if (data.success) {
-        const idVenta = data.data.idVenta || data.data.venta?.idVenta || data.data.venta?.id || data.data.id
-        const numero = data.data.numeroMesa || numeroMesa
+        const idVenta = data.data.idVenta
+        const numero = data.data.numeroMesa
         const productos = data.data.productos || []
 
         activeTables[idMesa] = { idMesa, idVenta, numero, total: 0 }
         const tabId = createTableTab(idMesa, numero, idVenta, true)
 
-        if (Array.isArray(productos)) {
-          loadTableProducts(tabId, productos)
-        } else if (data.data.venta && Array.isArray(data.data.venta.detalles)) {
-          loadTableProducts(tabId, data.data.venta.detalles)
-        }
+        // Cargar productos transferidos (pueden ser vacíos o con datos)
+        loadTableProducts(tabId, productos)
 
         // Limpiar carrito usando el cartId capturado
         sourceCart.products = []
         sourceCart.total = 0
         updateCart(cartId)
-
+        dropTab(cartId)
         closeTable()
 
         console.log("[TABLES] ✅ Productos transferidos correctamente a Mesa", numero)
@@ -220,7 +217,7 @@ function createTableTab(idMesa, numeroMesa, idVenta, switchTo = true) {
   a.className = "nav-link"
   a.setAttribute("data-bs-toggle", "tab")
   a.setAttribute("href", `#${tabId}`)
-  a.setAttribute("data-table-id", idMesa)
+  a.setAttribute("id", idMesa)
   a.setAttribute("data-venta-id", idVenta)
     a.textContent = `Mesa ${numeroMesa} `
   
@@ -234,7 +231,7 @@ function createTableTab(idMesa, numeroMesa, idVenta, switchTo = true) {
       console.log("[TABLES] Click en X para cerrar mesa:", idMesa)
       e.stopPropagation()
       e.preventDefault()
-      closeTableSale(idMesa)
+      closeTableSale(idVenta, idMesa)
     })
   
     a.appendChild(closeIcon)
@@ -301,7 +298,7 @@ function loadTableProducts(tabId, productos) {
   }
 
   let total = 0,
-    totalItems = 0
+  totalItems = 0
 
   productos.forEach((p) => {
     const qty = toInt(p.cantidad || 0)
@@ -313,7 +310,7 @@ function loadTableProducts(tabId, productos) {
 
     const nombre = p.producto_nombre || p.nombre || "Producto"
     const imgPath = p.producto_imagen 
-    const img = imgPath ? `assets/img/products/${imgPath}` : "assets/img/products/default.jpg"
+    const img = imgPath ? `assets/img/products/${imgPath}` : "assets/img/products/default.png"
     const detalleId = p.idDetalleVenta || p.idDetalle
 
     const div = document.createElement("div")
@@ -371,7 +368,7 @@ async function addProductToTableSale(idMesa, product) {
       producto: product.nombre,
     })
 
-    const data = await fetchJson("?pg=sales&action=addProductToTableSale", {
+    const data = await fetchJson("?pg=sales&action=addProductToSale", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -514,24 +511,55 @@ async function completeTableSale(idMesa, metodoPago) {
 /**
  * Cierra/cancela una venta de mesa
  */
-async function closeTableSale(idMesa) {
-  if (!confirm("¿Cancelar esta venta? Se perderán todos los productos.")) return
+async function closeTableSale(idVenta, idMesa) {
+  const result = await Swal.fire({
+    title: "Seguro de eliminar la venta de esta mesa?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#d33",
+    cancelButtonColor: "#808080",
+    confirmButtonText: "Confirmar",
+    cancelButtonText: "Cancelar",
+  })
+  
+  if (!result.isConfirmed) {
+    return
+  }
 
   try {
     console.log("[TABLES] Cancelando venta de mesa:", idMesa)
 
-    const data = await fetchJson("?pg=sales&action=cancelTableSale", {
+    const data = await fetchJson("?pg=sales&action=CancelSale", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idMesa }),
+      body: JSON.stringify({ idVenta }),
     })
+    
     if (data.success) {
+      Swal.fire({
+        title: "¡Eliminada con éxito!",
+        icon: "success",
+        timer: 800,
+        showConfirmButton: false,
+      })
+      
       removeTableTab(`mesa-${idMesa}`, idMesa)
       delete activeTables[idMesa]
       console.log("[TABLES] ✅ Venta cancelada correctamente")
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: data.error || "No se pudo cancelar la venta"
+      })
     }
   } catch (error) {
     console.error("[TABLES] Error al cancelar venta:", error)
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Error al cancelar la venta de la mesa"
+    })
   }
 }
 

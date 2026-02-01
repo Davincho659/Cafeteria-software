@@ -111,104 +111,235 @@ function switchToTableCart(tabId, idMesa) {
 
 /**
  * Añade un nuevo tab de venta
+ * PASO 1: Crear venta pendiente en BD inmediatamente
  */
-function addNewSaleTab() {
-  const tabs = getById("ventasTabs")
-  const content = getById("ventasContent")
-  if (!tabs || !content) {
-    console.error("[TABS] No se encontraron elementos ventasTabs o ventasContent")
-    return
-  }
-
-  // Obtener el siguiente número disponible de forma inteligente
+async function addNewSaleTab() {
+  // Obtener el siguiente número disponible
   const number = getNextAvailableTabNumber()
   const id = `venta${number}`
   
-  console.log(`[TABS] Creando nuevo tab: ${id}`)
+  console.log(`[TABS] addNewSaleTab: creando nuevo tab ${id}`)
 
+  // PASO 1: Crear venta pendiente en BD
+  try {
+    const userId = getSessionUserId()
+    const createResponse = await fetchJson("?pg=sales&action=CreateSale", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idUsuario: userId,
+        productos: [], // Sin productos inicialmente
+      }),
+    })
+
+    if (!createResponse.success) {
+      throw new Error("No se pudo crear la venta: " + createResponse.error)
+    }
+
+    const idVenta = createResponse.data?.idVenta
+    if (!idVenta) {
+      throw new Error("No se obtuvo idVenta del servidor")
+    }
+
+    console.log(`[TABS] ✅ Venta pendiente creada. idVenta: ${idVenta}`)
+
+    // Usar función genérica para crear el tab
+    createSaleTab(idVenta, id, true)
+
+  } catch (error) {
+    console.error("[TABS] Error al crear venta pendiente:", error)
+    alert("Error al crear la venta: " + error.message)
+  }
+}
+
+/**
+ * Crea un tab de venta (genérico - usado por addNewSaleTab y loadActiveSales)
+ * @param {number} idVenta - ID de la venta en BD
+ * @param {string} tabId - ID del tab (ej: venta2, venta3)
+ * @param {boolean} switchTo - Si true, activa el tab inmediatamente
+ */
+function createSaleTab(idVenta, tabId, switchTo = true) {
+  const tabs = getById("ventasTabs")
+  const content = getById("ventasContent")
+  if (!tabs || !content) {
+    console.error("[TABS] createSaleTab: elementos no encontrados")
+    return
+  }
+
+  // Extraer número de venta del tabId (ej: "venta2" → 2)
+  const ventaNumber = tabId.replace("venta", "")
+
+  console.log(`[TABS] createSaleTab: creando ${tabId} para idVenta ${idVenta}`)
+
+  // Verificar si el tab ya existe
+  if (getById(tabId)) {
+    console.warn(`[TABS] El tab ${tabId} ya existe`)
+    if (switchTo) {
+      const tab = document.querySelector(`a[href="#${tabId}"]`)
+      if (tab) showTab(tab)
+    }
+    return
+  }
+
+  // Crear el elemento del tab
   const li = document.createElement("li")
   li.className = "nav-item"
+  
   const a = document.createElement("a")
   a.className = "nav-link"
   a.setAttribute("data-bs-toggle", "tab")
-  a.setAttribute("href", `#${id}`)
-  a.textContent = `Venta ${number} `
+  a.setAttribute("href", `#${tabId}`)
+  a.setAttribute("id", idVenta) // Guardar idVenta en el tab
+  a.textContent = `Venta ${ventaNumber} `
   
-    // Crear el botón X como elemento separado
-    const closeIcon = document.createElement("i")
-    closeIcon.className = "fa-solid fa-circle-xmark fa-xl icon-close"
-    closeIcon.title = "Eliminar"
+  // Crear el botón X
+  const closeIcon = document.createElement("i")
+  closeIcon.className = "fa-solid fa-circle-xmark fa-xl icon-close"
+  closeIcon.title = "Eliminar"
+
+  closeIcon.addEventListener("click", (e) => {
+    e.stopPropagation()
+    e.preventDefault()
+    dropTab(tabId,1)
+  })
+
+  a.appendChild(closeIcon)
+
+  a.addEventListener("click", (e) => {
+    if (!e.target.matches(".fa-circle-xmark")) {
+      switchToCart(tabId)
+    }
+  })
   
-    // Listener PRIMERO en el X para detener propagación
-    closeIcon.addEventListener("click", (e) => {
-      e.stopPropagation()
-      e.preventDefault()
-      dropTab(id)
-    })
-  
-    a.appendChild(closeIcon)
-  
-    // Listener DESPUÉS en el tab link
-    a.addEventListener("click", (e) => {
-      // Solo ejecutar si NO fue click en el X
-      if (!e.target.matches(".fa-circle-xmark")) {
-        switchToCart(id)
-      }
-    })
   li.appendChild(a)
 
+  // Insertar antes del botón "+" de agregar nueva venta
   const addTabItem = getById("addTabItem")
   if (addTabItem) tabs.insertBefore(li, addTabItem)
   else tabs.appendChild(li)
 
+  // Crear el panel de contenido
   const pane = document.createElement("div")
   pane.className = "tab-pane fade"
-  pane.id = id
+  pane.id = tabId
   pane.innerHTML = `
-    <div id="carrito-${id}">
+    <div id="carrito-${tabId}">
       <center style="padding:1rem 0">
-        <h3>Ventas: <div class="badge bg-primary rounded-circle" id="ventasCount-${id}">0</div></h3>
+        <h3>Ventas: <div class="badge bg-primary rounded-circle" id="ventasCount-${tabId}">0</div></h3>
       </center>
-      <div id="productos-carrito-${id}" style="height:calc(85vh - 280px);overflow-y:auto"></div>
+      <div id="productos-carrito-${tabId}" style="height:calc(85vh - 280px);overflow-y:auto;overflow-x:hidden;"></div>
       <div style="padding:1rem 0">
-        <div id="total-carrito-${id}">
-            <center><h1>Total: $<span id="total-${id}">0.00</span></h1></center>
+        <div id="total-carrito-${tabId}">
+          <center><h1>Total: <strong>$<span id="total-${tabId}">0.00</span></strong></h1></center>
         </div>
-        <button class="btn btn-primary btn-lg w-100 mb-2" onclick="saleConfirmationModal('${id}', null)">
+        <button class="btn btn-primary btn-lg w-100 mb-2" onclick="saleConfirmationModal('${tabId}', null)">
           Procesar Venta <i class="fa-solid fa-cash-register"></i>
         </button>
         <button class="btn btn-secondary btn-lg w-100" onclick="openTableSelectionModal(event)">
           Agregar a Mesa <i class="fa-solid fa-utensils"></i>
         </button>
-        <button class="btn btn-outline-danger btn-lg w-100 mt-2" onclick="clearCart('${id}')">
+        <button class="btn btn-outline-danger btn-lg w-100 mt-2" onclick="clearCart('${tabId}')">
           Limpiar carrito <i class="fa-solid fa-trash-can"></i>
         </button>
       </div>
     </div>`
   content.appendChild(pane)
 
-  // Inicializar carrito
-  carts[id] = { type: "sale", products: [], total: 0 }
-  
-  // Activar el tab de forma segura y sincronizar el carrito
-  showTab(a)
-  switchToCart(id)
+  // Inicializar carrito en memoria
+  if (!carts[tabId]) {
+    carts[tabId] = { type: "sale", products: [], total: 0, idVenta: idVenta }
+    console.log("[TABS] ✅ Carrito inicializado:", tabId)
+  }
+
+  // Activar el tab si se solicita
+  if (switchTo) {
+    showTab(a)
+    switchToCart(tabId)
+  }
+
+  return tabId
 }
 
 /**
  * Elimina un tab de venta
+ * Elimina la venta de BD antes de eliminar el tab del DOM
  */
-function dropTab(tabId) {
+async function dropTab(tabId,Confirmation = 0) {
+    // Proteger el tab fijo venta1
+    if (tabId === "venta1") {
+      return
+    }
+  
   const tab = document.querySelector(`#ventasTabs a[href="#${tabId}"]`)
   const containerTab = tab?.parentElement
   const pane = getById(tabId)
 
-    if (!tab || !containerTab || !pane) {
-      console.error("[TABS] dropTab: elementos no encontrados para", tabId)
+  if (!tab || !containerTab || !pane) {
+    console.error("[TABS] dropTab: elementos no encontrados para", tabId)
+    return
+  }
+
+  console.log("[TABS] dropTab ejecutado para:", tabId)
+
+  // Obtener idVenta del tab
+  const idVenta = toInt(tab.getAttribute("id"))
+  
+  if (!idVenta) {
+    console.warn("[TABS] No se encontró idVenta, eliminando solo del DOM")
+    performTabRemoval(tab, containerTab, pane, tabId)
+    return
+  }
+
+  // Confirmar eliminación
+  if (Confirmation === 1) {
+    const confirmed = await Swal.fire({
+      title: '¿Eliminar venta?',
+      text: 'Esto eliminará la venta y todos sus productos',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#dc3545',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    })
+
+    if (!confirmed.isConfirmed) {
+      console.log("[TABS] Eliminación cancelada por el usuario")
       return
     }
+  }
 
-    console.log("[TABS] dropTab ejecutado para:", tabId)
+  // Eliminar de BD
+  try {
+    console.log("[TABS] Eliminando venta de BD:", idVenta)
+    const response = await fetchJson("?pg=sales&action=CancelSale", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idVenta: idVenta }),
+    })
+
+    if (!response.success) {
+      throw new Error(response.error || "Error desconocido")
+    }
+
+    console.log("[TABS] ✅ Venta eliminada de BD:", idVenta)
+    
+    // Después de eliminar de BD, eliminar del DOM
+    performTabRemoval(tab, containerTab, pane, tabId)
+  } catch (error) {
+    console.error("[TABS] Error al eliminar venta de BD:", error)
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'No se pudo eliminar la venta: ' + error.message
+    })
+  }
+}
+
+/**
+ * Realiza la eliminación del tab del DOM
+ */
+function performTabRemoval(tab, containerTab, pane, tabId) {
 
   if (tab.classList.contains("active")) {
     let nextTab = containerTab.previousElementSibling
@@ -238,6 +369,8 @@ function dropTab(tabId) {
           // Finalmente eliminar del DOM
           containerTab.remove()
           pane.remove()
+          
+          console.log(`[TABS] ✅ Tab eliminado: ${tabId}`)
         }, 100)
 
         return

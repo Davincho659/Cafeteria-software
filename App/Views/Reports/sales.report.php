@@ -112,6 +112,7 @@
                     <th>ID Venta</th>
                     <th>Fecha</th>
                     <th>Método Pago</th>
+                    <th>Estado</th>
                     <th>Total</th>
                     <th>Acciones</th>
                 </tr>

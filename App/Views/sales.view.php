@@ -4,7 +4,7 @@
 <div class="d-flex inline-block tab-container" data-user-id="<?= $_SESSION['usuario_id']  ?>" >
     <ul class="nav nav-tabs" id="ventasTabs">
         <li class="nav-item">
-            <a class="nav-link active" data-bs-toggle="tab" href="#venta1">Venta 1</a>
+            <a class="nav-link active" data-bs-toggle="tab" href="#venta1" id="">Venta 1</a>
         </li>
         <!-- botón fijo para agregar nueva pestaña; siempre debe quedar al final -->
         <li class="nav-item" id="addTabItem">
