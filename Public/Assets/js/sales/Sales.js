@@ -526,3 +526,22 @@ function closeDailyReport(event) {
   }
 }
 
+// ============================================================================
+// LIMPIEZA AUTOMÁTICA DE VENTAS VACÍAS AL SALIR
+// ============================================================================
+
+window.addEventListener('beforeunload', function() {
+  // Verificar si venta1 existe, tiene un idVenta en BD y está vacía
+  const cart1 = carts['venta1'];
+  
+  if (cart1 && cart1.idVenta && cart1.products.length === 0) {
+    console.log('[CLEANUP] Eliminando venta1 vacía antes de salir:', cart1.idVenta);
+    
+    // Usar sendBeacon con JSON en blob para mantener el formato esperado por el backend
+    const payload = JSON.stringify({ idVenta: cart1.idVenta });
+    const blob = new Blob([payload], { type: 'application/json' });
+    
+    navigator.sendBeacon('?pg=sales&action=CancelSale', blob);
+  }
+});
+

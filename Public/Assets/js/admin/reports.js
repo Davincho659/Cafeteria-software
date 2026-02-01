@@ -147,10 +147,8 @@ function renderTabla(rows, tipo = 'sales') {
                 estadoBadge = '<span class="badge bg-success">✓ Completada</span>';
             } else if (r.estado === 'cancelada') {
                 estadoBadge = '<span class="badge bg-danger">✕ Anulada</span>';
-            } else if (r.estado === 'temporal') {
-                estadoBadge = '<span class="badge bg-warning text-dark">⏳ Temporal</span>';
             } else if (r.estado === 'pendiente') {
-                estadoBadge = '<span class="badge bg-info">⋯ Pendiente</span>';
+                estadoBadge = '<span class="badge bg-info">⏳ Pendiente</span>';
             }
             
             tbody.innerHTML += `
@@ -161,9 +159,9 @@ function renderTabla(rows, tipo = 'sales') {
                     <td>${estadoBadge}</td>
                     <td>$${Number(r.total).toLocaleString()}</td>
                     <td>
-                        <button class="btn btn-sm btn-success"
-                            onclick="window.open('factura.php?pg=bill&id=${r.idVenta}','_blank','width=350,height=900')">
-                            Ver factura
+                        <button class="btn btn-sm btn-info"
+                            onclick="detail(${r.idVenta})">
+                            Ver detalles
                         </button>
                     </td>
                 </tr>`;

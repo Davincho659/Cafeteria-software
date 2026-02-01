@@ -505,9 +505,20 @@ class Sales {
      * 
      * Diferente de cancelSale() que ELIMINA completamente
      */
-    public function cancelInvoice($idVenta) {
-        $sql = "UPDATE ventas SET estado = 'cancelada' Where idVenta = ?";
+    public function cancelInvoice($idVenta, $observacion = null) {
+        $sql = "UPDATE ventas SET estado = 'cancelada'";
+        $params = [];
+        
+        // Si hay observación, guardarla en el campo descripción
+        if (!empty($observacion)) {
+            $sql .= ", descripcion = ?";
+            $params[] = $observacion;
+        }
+        
+        $sql .= " WHERE idVenta = ?";
+        $params[] = $idVenta;
+        
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$idVenta]);
+        $stmt->execute($params);
     }
 }

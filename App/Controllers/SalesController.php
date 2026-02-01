@@ -137,6 +137,7 @@ class SalesController {
                     $precioUnitario = floatval($producto['precioUnitario']);
 
                     // Validar que el producto exista (si no es NULL)
+                    $productoData = null;
                     if ($idProducto !== null) {
                         $productoData = $this->productModel->getById($idProducto);
                         if (!$productoData) {
@@ -163,7 +164,7 @@ class SalesController {
                     $productosAgregados[] = [
                         'idDetalle' => $idDetalle,
                         'idProducto' => $idProducto,
-                        'nombre' => $productoData['nombre'],
+                        'nombre' => $productoData ? $productoData['nombre'] : null,
                         'cantidad' => $cantidad,
                         'precioUnitario' => $precioUnitario
                     ];
@@ -583,6 +584,7 @@ class SalesController {
             }
 
             $idVenta = intval($data['idVenta']);
+            $observacion = isset($data['observacion']) ? trim($data['observacion']) : null;
 
             // Obtener venta para verificar que exista
             $venta = $this->salesModel->getSaleById($idVenta);
@@ -596,7 +598,7 @@ class SalesController {
             }
 
             // Marcar como cancelada usando el método existente
-            $this->salesModel->cancelInvoice($idVenta);
+            $this->salesModel->cancelInvoice($idVenta, $observacion);
 
             echo json_encode([
                 'success' => true,

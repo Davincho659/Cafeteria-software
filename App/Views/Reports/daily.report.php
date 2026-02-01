@@ -1,19 +1,5 @@
 
 <link rel="stylesheet" href="assets/css/bills.css">
-<style>
-    .kpi-row { margin-top: 1.5rem; }
-    .kpi-card {
-        background: #0f172a;
-        color: #f8fafc;
-        border-radius: 12px;
-        padding: 16px 18px;
-        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
-        height: 100%;
-    }
-    .kpi-label { font-size: 0.95rem; opacity: 0.85; letter-spacing: 0.3px; }
-    .kpi-value { font-size: 1.6rem; font-weight: 700; margin-top: 4px; }
-    @media (max-width: 576px) { .kpi-value { font-size: 1.35rem; } }
-</style>
 
 <div class="container-fluid">
 
@@ -127,7 +113,7 @@
     </div>
     <!-- Modal de Detalles de Venta -->
     <div id="saleDetailModalContainer">
-        <div class="modal fade" id="saleDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal fade" id="saleDetailModal" tabindex="-1" >
             <div class="modal-dialog modal-xl modal-dialog-scrollable  modal-dialog-centered">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -291,8 +277,7 @@ let dailyReportInitialized = false;
             paginaActual = 1;
             cargarResultados();
         }
-    };
-    
+    };    window.cargarResultados = cargarResultados;    
     // Función para cargar resultados
     function cargarResultados(page = paginaActual) {
         console.log('[DAILY REPORT] Cargando resultados página:', page);
@@ -445,78 +430,101 @@ let dailyReportInitialized = false;
 // ========================
 // CANCELAR VENTA
 // ========================
-window.cancelarVenta = function(idVenta) {
-    if (!confirm('¿Está seguro de que desea anular esta venta? Esta acción no se puede deshacer.')) {
+window.cancelarVenta = async function(idVenta) {
+    const result = await Swal.fire({
+        title: '¿Anular venta?',
+        text: 'Esta acción no se puede deshacer',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#808080',
+        confirmButtonText: 'Sí, anular',
+        cancelButtonText: 'Cancelar',
+        html: `
+            <div style="text-align: left; margin-top: 15px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600;">
+                    Observación (opcional):
+                </label>
+                <textarea 
+                    id="motivoCancelacion" 
+                    class="swal2-textarea"
+                    placeholder="Ej: Error del cliente, cambio de decisión, etc."
+                    style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit;">
+                </textarea>
+            </div>
+        `,
+        didOpen: () => {
+            const textarea = Swal.getHtmlContainer().querySelector('#motivoCancelacion');
+            if (textarea) textarea.focus();
+        },
+        preConfirm: () => {
+            const observacion = Swal.getHtmlContainer().querySelector('#motivoCancelacion').value;
+            return { observacion };
+        }
+    });
+
+    if (!result.isConfirmed) {
         return;
     }
 
-    // Mostrar loading
-    const btnAnular = event.target;
-    const originalText = btnAnular.textContent;
-    btnAnular.disabled = true;
-    btnAnular.textContent = 'Anulando...';
+    const observacion = result.value.observacion;
+    
+    // Mostrar estado de carga
+    Swal.fire({
+        title: 'Anulando venta...',
+        icon: 'info',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
 
-    fetch('?pg=sales&action=cancelSaleByInvoice', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({ idVenta: idVenta })
-    })
-    .then(r => r.json())
-    .then(data => {
+    try {
+        const response = await fetch('?pg=sales&action=cancelSaleByInvoice', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ 
+                idVenta: idVenta,
+                observacion: observacion || null
+            })
+        });
+
+        const data = await response.json();
+
         if (data.success) {
             // Mostrar éxito
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Venta Anulada!',
-                    text: 'La venta ha sido cancelada correctamente',
-                    timer: 2000,
-                    showConfirmButton: false,
-                });
-            } else {
-                alert('Venta anulada correctamente');
-            }
+            Swal.fire({
+                icon: 'success',
+                title: '¡Venta Anulada!',
+                text: 'La venta ha sido cancelada correctamente',
+                timer: 1500,
+                showConfirmButton: false,
+            });
             
             // Recargar tabla
             setTimeout(() => {
-                cargarResultados();
+                window.cargarResultados();
             }, 1500);
         } else {
             // Mostrar error
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: data.error || 'No se pudo anular la venta',
-                });
-            } else {
-                alert('Error: ' + (data.error || 'No se pudo anular la venta'));
-            }
-            
-            // Restaurar botón
-            btnAnular.disabled = false;
-            btnAnular.textContent = originalText;
-        }
-    })
-    .catch(err => {
-        console.error('Error:', err);
-        if (typeof Swal !== 'undefined') {
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: 'Error en la comunicación con el servidor',
+                text: data.error || 'No se pudo anular la venta'
             });
-        } else {
-            alert('Error: ' + err.message);
         }
-        
-        // Restaurar botón
-        btnAnular.disabled = false;
-        btnAnular.textContent = originalText;
-    });
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error en la comunicación con el servidor'
+        });
+    }
 };
 
 // ========================

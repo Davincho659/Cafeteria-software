@@ -150,41 +150,61 @@ async function openOrTransferToTable(idMesa, numeroMesa) {
       // Transferir productos existentes a la mesa
       console.log("[TABLES] Transfiriendo productos a mesa:", { idMesa, numeroMesa, productos: sourceCart.products.length })
 
-      const data = await fetchJson("?pg=sales&action=transferProductsToTable", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          idMesa: idMesa,
-          idUsuario: userId,
-          productos: sourceCart.products.map((p) => ({
-            idProducto: p.idProducto,
-            cantidad: p.cantidad,
-            precioUnitario: p.precioVenta,
-          })),
-        }),
-      })
+      try {
+        const response = await fetch("?pg=sales&action=transferProductsToTable", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            idMesa: idMesa,
+            idUsuario: userId,
+            productos: sourceCart.products.map((p) => ({
+              idProducto: p.idProducto,
+              cantidad: p.cantidad,
+              precioUnitario: p.precioVenta,
+            })),
+          }),
+        })
 
-      if (data.success) {
-        const idVenta = data.data.idVenta
-        const numero = data.data.numeroMesa
-        const productos = data.data.productos || []
+        // Leer respuesta como texto primero
+        const responseText = await response.text()
+        console.log("[TABLES] Respuesta del servidor:", responseText.substring(0, 200))
 
-        activeTables[idMesa] = { idMesa, idVenta, numero, total: 0 }
-        const tabId = createTableTab(idMesa, numero, idVenta, true)
+        // Intentar parsear como JSON
+        let data
+        try {
+          data = JSON.parse(responseText)
+        } catch (parseError) {
+          console.error("[TABLES] Error parseando JSON:", parseError)
+          console.error("[TABLES] Respuesta recibida:", responseText)
+          alert("Error del servidor: Respuesta inválida. Verifica la consola para más detalles.")
+          return
+        }
 
-        // Cargar productos transferidos (pueden ser vacíos o con datos)
-        loadTableProducts(tabId, productos)
+        if (data.success) {
+          const idVenta = data.data.idVenta
+          const numero = data.data.numeroMesa
+          const productos = data.data.productos || []
 
-        // Limpiar carrito usando el cartId capturado
-        sourceCart.products = []
-        sourceCart.total = 0
-        updateCart(cartId)
-        dropTab(cartId)
-        closeTable()
+          activeTables[idMesa] = { idMesa, idVenta, numero, total: 0 }
+          const tabId = createTableTab(idMesa, numero, idVenta, true)
 
-        console.log("[TABLES] ✅ Productos transferidos correctamente a Mesa", numero)
-      } else {
-        alert("Error: " + data.error)
+          // Cargar productos transferidos (pueden ser vacíos o con datos)
+          loadTableProducts(tabId, productos)
+
+          // Limpiar carrito usando el cartId capturado
+          sourceCart.products = []
+          sourceCart.total = 0
+          updateCart(cartId)
+          dropTab(cartId)
+          closeTable()
+
+          console.log("[TABLES] ✅ Productos transferidos correctamente a Mesa", numero)
+        } else {
+          alert("Error: " + (data.error || "Error desconocido"))
+        }
+      } catch (fetchError) {
+        console.error("[TABLES] Error en fetch:", fetchError)
+        alert("Error al procesar la transferencia: " + fetchError.message)
       }
     }
   } catch (error) {
