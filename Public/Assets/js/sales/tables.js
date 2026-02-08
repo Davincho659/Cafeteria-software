@@ -362,8 +362,14 @@ function loadTableProducts(tabId, productos) {
     container.appendChild(div)
   })
 
+  if (carts[tabId]) {
+    carts[tabId].total = total
+  }
   const totalEl = getById(`total-${tabId}`)
-  if (totalEl) totalEl.textContent = formatCurrency(total)
+  if (totalEl) {
+    totalEl.textContent = formatCurrency(total)
+    totalEl.dataset.total = String(total)
+  }
   const countEl = getById(`ventasCount-${tabId}`)
   if (countEl) countEl.textContent = totalItems
 }

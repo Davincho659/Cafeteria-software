@@ -436,14 +436,10 @@ function saleConfirmationModal(cartId, idMesa = null) {
   const currentTab = getCurrentTabInfo()
   const overlay = getById("saleConfirmationOverlay")
   if (!overlay) return
-
+  console.log(getCart(cartId))
   let total = 0
-  if (currentTab.type === "table") {
-    const totalEl = getById(`total-${cartId}`)
-    total = toFloat((totalEl?.textContent || "0").replace(/[^0-9.-]+/g, ""))
-  } else {
-    total = getCart(cartId).total
-  }
+  
+  total = getCart(cartId).total
 
   if (total <= 0) {
     alert("Carrito vacío. Agrega productos antes de procesar la venta.")

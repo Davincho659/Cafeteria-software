@@ -64,17 +64,24 @@
                 
                 <!-- Fecha -->
                  <div class="col-md-6">
+                    <label class="filter-label">Fecha</label>
                     <select name="fecha" id="select" class="filter-select"> 
                         <option value="<?php echo date('d/m/Y') . ' - ' . date('d/m/Y'); ?>" <?= (isset($_POST['fecha']) && $_POST['fecha'] === date('d/m/Y') . ' - ' . date('d/m/Y')) ? 'selected' : '' ?>> Hoy </option>
                         <option value="<?php echo date('d/m/Y', strtotime('-1 day')) . ' - ' . date('d/m/Y', strtotime('-1 day')); ?>" <?= (isset($_POST['fecha']) && $_POST['fecha'] === date('d/m/Y', strtotime('-1 day')) . ' - ' . date('d/m/Y', strtotime('-1 day'))) ? 'selected' : '' ?>> Ayer </option> 
                         <option value="<?php echo date('d/m/Y', strtotime('first day of this month')) . ' - ' . date('d/m/Y'); ?>" <?php $thisMonthRange = date('d/m/Y', strtotime('first day of this month')) . ' - ' . date('d/m/Y'); echo (isset($_POST['fecha']) && $_POST['fecha'] === $thisMonthRange) ? 'selected' : ''; ?>> Este mes </option> 
                         <option value="custom" id="custom-option">Rango personalizado</option>
                     </select>
-
-                    <!-- Input REAL pero invisible visualmente -->
-                    
                 </div>
-
+                <div class="col-md-3">
+                    <div class="filter-group">
+                        <label class="filter-label">Estado</label>
+                        <select name="estado" class="filter-select">
+                            <option value="">Todos</option>
+                            <option value="Completada">Completada</option>
+                            <option value="cancelada">Anulada</option>
+                        </select>
+                    </div>
+                </div>
             </div>
 
             <!-- BOTONES -->

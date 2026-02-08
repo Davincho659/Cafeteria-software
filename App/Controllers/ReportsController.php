@@ -60,6 +60,10 @@ class ReportsController {
                 $query .= " AND metodoPago = '" . $_POST['metodoPago'] . "'";
             }
 
+            if (!empty($_POST['estado'])) {
+                $query .= " AND estado = '" . $_POST['estado'] . "'";
+            }
+
             $resultados = $this->salesModel->getWithPagination($query, $offset, $limit);
             $total = $this->salesModel->countWithFilters($query);
             $totalPaginas = ceil($total / $limit);

@@ -22,6 +22,7 @@
 
 <body>
 
+<?php $currentPg = $_GET['pg'] ?? ''; ?>
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
@@ -34,63 +35,63 @@
                 
                 <!-- Home -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($pg ?? '') === 'home' ? 'active' : '' ?>" href="?pg=home">
+                    <a class="nav-link <?= ($currentPg === 'home') ? 'active' : '' ?>" href="?pg=home">
                         <i class="fa-solid fa-house"></i> Inicio
                     </a>
                 </li>
                 
                 <!-- Ventas -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($pg ?? '') === 'sales' ? 'active' : '' ?>" href="?pg=sales">
+                    <a class="nav-link <?= ($currentPg === 'sales') ? 'active' : '' ?>" href="?pg=sales">
                         <i class="fa-solid fa-cash-register"></i> Ventas
                     </a>
                 </li>
                 
                 <!-- Compras -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($pg ?? '') === 'purchases' ? 'active' : '' ?>" href="?pg=purchases">
+                    <a class="nav-link <?= ($currentPg === 'purchases') ? 'active' : '' ?>" href="?pg=purchases">
                         <i class="fa-solid fa-shopping-cart"></i> Compras
                     </a>
                 </li>
                 
                 <!-- Inventario -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($pg ?? '') === 'inventory' ? 'active' : '' ?>" href="?pg=inventory">
+                    <a class="nav-link <?= ($currentPg === 'inventory') ? 'active' : '' ?>" href="?pg=inventory">
                         <i class="fa-solid fa-boxes-stacked"></i> Inventario
                     </a>
                 </li>
 
                 <!-- Gastos -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($pg ?? '') === 'expenses' ? 'active' : '' ?>" href="?pg=expenses">
+                    <a class="nav-link <?= ($currentPg === 'expenses') ? 'active' : '' ?>" href="?pg=expenses">
                         <i class="fa-solid fa-money-bill-trend-up"></i> Gastos
                     </a>
                 </li>
                 
                 <!-- Productos -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($pg ?? '') === 'product' ? 'active' : '' ?>" href="?pg=product">
+                    <a class="nav-link <?= ($currentPg === 'product') ? 'active' : '' ?>" href="?pg=product">
                         <i class="fa-solid fa-box"></i> Productos
                     </a>
                 </li>
                 
                 <!-- Proveedores -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($pg ?? '') === 'suppliers' ? 'active' : '' ?>" href="?pg=suppliers">
+                    <a class="nav-link <?= ($currentPg === 'suppliers') ? 'active' : '' ?>" href="?pg=suppliers">
                         <i class="fa-solid fa-truck"></i> Proveedores
                     </a>
                 </li>
                 
                 <!-- Mesas -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($pg ?? '') === 'tables' ? 'active' : '' ?>" href="?pg=tables">
+                    <a class="nav-link <?= ($currentPg === 'tables') ? 'active' : '' ?>" href="?pg=tables">
                         <i class="fa-solid fa-chair"></i> Mesas
                     </a>
                 </li>
                 <?php if (isset($_SESSION['usuario_rol']) && $_SESSION['usuario_rol'] === 'admin'): ?>
                 <!-- Reportes -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($pg ?? '') === 'reports' ? 'active' : '' ?>" href="?pg=reports">
+                    <a class="nav-link <?= ($currentPg === 'reports') ? 'active' : '' ?>" href="?pg=reports">
                         <i class="fa-solid fa-chart-line"></i> Reportes
                     </a>
                 </li>

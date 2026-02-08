@@ -175,6 +175,11 @@ function renderTabla(rows, tipo = 'sales') {
                     <td>${new Date(r.fechaCompra).toLocaleString()}</td>
                     <td>${r.tipoCompra}</td>
                     <td>$${Number(r.total).toLocaleString()}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="window.purchaseDetail(${r.idCompra})">
+                            Ver detalles
+                        </button>
+                    </td>
                 </tr>`;
         });
     } else if (tipo === 'expenses') {
