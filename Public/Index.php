@@ -9,6 +9,7 @@ require __DIR__ . '/../vendor/autoload.php';
 require __DIR__ . '/../App/Core/Init.php';
 date_default_timezone_set('America/Bogota');
 
+
 // Sanitizar parámetros de entrada
 $pg = isset($_GET['pg']) ? preg_replace('/[^a-zA-Z0-9_]/', '', $_GET['pg']) : 'home';
 $action = isset($_GET['action']) ? preg_replace('/[^a-zA-Z0-9_]/', '', $_GET['action']) : null;
@@ -53,7 +54,8 @@ switch ($pg) {
                 case 'sales':
                     $controller->sales();
                     break;
-                case 'daily':
+                
+                case 'Daily':
                     $controller->Daily();
                     break;
                 default:
@@ -172,17 +174,21 @@ switch ($pg) {
                 'getProducts',
                 'GetTables',
                 'CreateSale',
-                'createQuickSale',
                 'GetSale',
                 'seeTodayBills',
                 'checkStock',
+                'LoadActiveSales',
+                'CompleteSale',
+                'CancelSale',
+                'cancelSaleByInvoice',
                 // Mesas / POS
                 'transferProductsToTable',
                 'updateProductQuantity',
                 'removeProductFromSale',
                 'completeTableSale',
                 'cancelTableSale',
-                'addProductToTableSale'
+                'addProductToSale',
+                
             ];
             
             if (in_array($action, $validActions) && method_exists($controller, $action)) {
@@ -212,8 +218,37 @@ switch ($pg) {
                 'updateProduct',
                 'deleteProduct',
                 'getCategories',
-                'createCategorie',
-                'updateCategories'
+                'createCategory',
+                'updateCategory',
+                'deleteCategory',
+                'getUnits'
+            ];
+            
+            if (in_array($action, $validActions) && method_exists($controller, $action)) {
+                $controller->$action();
+            } else {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'error' => 'Acción no encontrada']);
+            }
+        }
+        exit;
+
+    // ====================================================
+    // GESTIÓN DE MESAS
+    // ====================================================
+    case 'tables':
+        require_once __DIR__ . '/../App/Controllers/TablesController.php';
+        $controller = new TablesController();
+        
+        if ($action === null) {
+            $controller->index();
+        } else {
+            $validActions = [
+                'getTables',
+                'getStatistics',
+                'createTable',
+                'updateTable',
+                'deleteTable'
             ];
             
             if (in_array($action, $validActions) && method_exists($controller, $action)) {

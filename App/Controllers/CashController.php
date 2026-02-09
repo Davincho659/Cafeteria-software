@@ -33,28 +33,44 @@ class CashController {
     public function open() {
         header('Content-Type: application/json; charset=utf-8');
         try {
+            // Validar que esté autenticado
+            if (!isset($_SESSION['usuario_id'])) {
+                throw new Exception('Sesión no válida. Por favor, inicia sesión nuevamente');
+            }
+
             $data = json_decode(file_get_contents('php://input'), true) ?: [];
+            
+            // Obtener parámetros
             $saldoInicial = isset($data['saldoInicial']) ? floatval($data['saldoInicial']) : 0.0;
             $notas = $data['notas'] ?? null;
-            $idUsuario = $data['idUsuario'] ?? ($_SESSION['usuario_id'] ?? null);
+            $idUsuario = (int)$_SESSION['usuario_id']; // Usar siempre del usuario logueado
 
-            if ($idUsuario === null) {
-                throw new Exception('Usuario requerido para abrir caja');
+            // Validar monto
+            if ($saldoInicial < 0) {
+                throw new Exception('El saldo inicial no puede ser negativo');
             }
+
+            // Verificar si ya hay caja abierta
             if ($this->cashModel->hasCajaAbierta()) {
-                throw new Exception('Ya existe una caja abierta');
+                throw new Exception('Ya existe una caja abierta. Debe cerrarse antes de abrir una nueva');
             }
 
-            $idCaja = $this->cashModel->openCashRegister($saldoInicial, (int)$idUsuario, $notas);
+            // Abrir caja
+            $idCaja = $this->cashModel->openCashRegister($saldoInicial, $idUsuario, $notas);
             $caja = $this->cashModel->getCajaResumen($idCaja);
 
             echo json_encode([
                 'success' => true,
                 'message' => 'Caja abierta correctamente',
+                'idCaja' => $idCaja,
+                'saldoInicial' => $saldoInicial,
                 'data' => $caja
             ]);
         } catch (Exception $e) {
-            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 
@@ -66,13 +82,22 @@ class CashController {
     public function close() {
         header('Content-Type: application/json; charset=utf-8');
         try {
-            $data = $_GET;
+            // Validar que esté autenticado
+            if (!isset($_SESSION['usuario_id'])) {
+                throw new Exception('Sesión no válida');
+            }
+
+            $data = json_decode(file_get_contents('php://input'), true) ?: [];
             $idCaja = isset($data['idCaja']) ? intval($data['idCaja']) : null;
             $saldoReal = isset($data['saldoReal']) ? floatval($data['saldoReal']) : null;
             $notas = $data['notas'] ?? null;
 
             if ($idCaja === null || $saldoReal === null) {
                 throw new Exception('idCaja y saldoReal son requeridos');
+            }
+
+            if ($saldoReal < 0) {
+                throw new Exception('El saldo real no puede ser negativo');
             }
 
             $activa = $this->cashModel->getCajaActiva();

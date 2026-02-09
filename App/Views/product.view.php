@@ -1,5 +1,6 @@
 <?php require loadView('Layouts/header'); ?>
 
+<link rel="stylesheet" href="assets/css/sales.css">
 <div class="container-fluid py-4">
     <!-- HEADER -->
     <div class="row mb-4">
@@ -85,12 +86,13 @@
                                 <th>Tipo</th>
                                 <th>Compra</th>
                                 <th>Venta</th>
-                                <th width="120">Acciones</th>
+                                <th>Estado</th>
+                                <th width="160">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="products">
                             <tr>
-                                <td colspan="7" class="text-center text-muted">Cargando...</td>
+                                <td colspan="8" class="text-center text-muted">Cargando...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -137,7 +139,7 @@
                         </label>
                         <input type="file"
                                id="cat_imagen"
-                               name="imagen"
+                               name="image"
                                class="form-control"
                                accept="image/*">
                         <small class="text-muted d-block mt-1">Máximo 2MB. Formatos: JPG, PNG, GIF</small>
@@ -174,7 +176,7 @@
                 <form id="productForm" method="post" enctype="multipart/form-data"
                       action="?pg=product&action=createProduct">
 
-                    <input type="hidden" id="prod_id" name="id" value="">
+                    <input type="hidden" id="prod_id" name="idProducto" value="">
 
                     <div class="row">
 
@@ -197,6 +199,16 @@
                                 <option value="">Seleccione...</option>
                                 <option value="venta">Producto de venta</option>
                                 <option value="insumo">Insumo</option>
+                            </select>
+                        </div>
+
+                        <!-- Unidad de medida -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">
+                                Unidad de medida
+                            </label>
+                            <select id="prod_unidad" name="idUnidadBase" class="form-select">
+                                <option value="1">Seleccione...</option>
                             </select>
                         </div>
 

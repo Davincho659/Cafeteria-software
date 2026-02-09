@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Cargar datos iniciales
     loadCategories();
     loadProducts();
+    loadUnits();
     setupFormHandlers();
     setupSearchFilter();
 });
@@ -16,7 +17,7 @@ function openCategoryModal() {
     document.getElementById('cat_nombre').value = '';
     document.getElementById('cat_imagen').value = '';
     document.getElementById('categoryModalTitle').innerHTML = '<i class="fa-solid fa-plus"></i> Agregar Categoría';
-    document.getElementById('categoryForm').action = '?pg=product&action=createCategorie';
+    document.getElementById('categoryForm').action = '?pg=product&action=createCategory';
     
     const modal = new bootstrap.Modal(document.getElementById('categoryModal'));
     modal.show();
@@ -26,6 +27,7 @@ function openProductModal() {
     document.getElementById('prod_id').value = '';
     document.getElementById('prod_nombre').value = '';
     document.getElementById('prod_categoria').value = '';
+    document.getElementById('prod_unidad').value = '';
     document.getElementById('prod_tipo').value = '';
     document.getElementById('prod_precioCompra').value = '';
     document.getElementById('prod_precioVenta').value = '';
@@ -69,6 +71,7 @@ function openEditProduct(id) {
             document.getElementById('prod_id').value = p.idProducto;
             document.getElementById('prod_nombre').value = p.nombre;
             document.getElementById('prod_categoria').value = p.idCategoria;
+            document.getElementById('prod_unidad').value = p.idUnidadBase;
             document.getElementById('prod_tipo').value = p.tipo;
             document.getElementById('prod_precioCompra').value = p.precioCompra;
             document.getElementById('prod_precioVenta').value = p.precioVenta;
@@ -229,6 +232,24 @@ function loadCategories() {
         .catch(err => console.error('Error cargando categorías:', err));
 }
 
+function loadUnits() {
+    fetch('index.php?pg=product&action=getUnits')
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            console.log(data.data);
+            document.getElementById('prod_unidad').innerHTML = '<option value="">Seleccione...</option>';
+            data.data.forEach(unit => {
+                const opt = document.createElement('option');
+                opt.value = unit.idUnidad;
+                opt.textContent = unit.nombre;
+                document.getElementById('prod_unidad').appendChild(opt);
+            });
+        }
+    })
+    .catch(err => console.error('Error cargando unidades:', err));
+}
+
 function loadProducts() {
     fetch('index.php?pg=product&action=getProducts')
         .then(res => res.json())
@@ -244,26 +265,34 @@ function showProducts(products) {
     tbody.innerHTML = '';
     
     if (products.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No hay productos registrados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No hay productos registrados</td></tr>';
         return;
     }
 
     products.forEach(p => {
+        const estadoVal = (p.estado === undefined || p.estado === null) ? 1 : Number(p.estado);
         const tr = document.createElement('tr');
-        const imgPath = p.imagen ? `assets/img/${p.imagen}` : (p.categoria_imagen ? `assets/img/${p.categoria_imagen}` : 'assets/img/products/default.jpg');
+        const imgPath = p.imagen ? `assets/img/products/${p.imagen}` :'assets/img/products/default.png';
+        const estadoBadge = estadoVal ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-secondary">Inactivo</span>';
+        const nextEstado = estadoVal ? 0 : 1;
+        const toggleLabel = estadoVal ? '<i class="fa-solid fa-ban"></i>' : '<i class="fa-solid fa-rotate"></i>';
+        const toggleTitle = estadoVal ? 'Desactivar' : 'Reactivar';
+        const toggleClass = estadoVal ? 'btn-warning' : 'btn-success';
+
         tr.innerHTML = `
-            <td class="text-center"><img src="${imgPath}" style="width:50px;height:50px;object-fit:cover;border-radius:4px"></td>
+            <td class="text-center"><img src="${imgPath}" class="product-img-sm"></td>
             <td>${p.nombre}</td>
             <td>${p.categoria}</td>
             <td><span class="badge bg-info">${p.tipo}</span></td>
             <td class="text-end">${p.precioCompra ? '$' + parseFloat(p.precioCompra).toLocaleString('es-CO') : '-'}</td>
             <td class="text-end">${p.precioVenta ? '$' + parseFloat(p.precioVenta).toLocaleString('es-CO') : '-'}</td>
+            <td class="text-center">${estadoBadge}</td>
             <td class="text-center">
                 <button class="btn btn-sm btn-primary" onclick="openEditProduct(${p.idProducto})" title="Editar">
                     <i class="fa-solid fa-pencil"></i>
                 </button>
-                <button class="btn btn-sm btn-danger" onclick="deleteProduct(${p.idProducto})" title="Eliminar">
-                    <i class="fa-solid fa-trash"></i>
+                <button class="btn btn-sm ${toggleClass}" onclick="toggleProductStatus(${p.idProducto}, ${nextEstado})" title="${toggleTitle}">
+                    ${toggleLabel}
                 </button>
             </td>
         `;
@@ -283,9 +312,9 @@ function showCategories(categories) {
 
     categories.forEach(c => {
         const tr = document.createElement('tr');
-        const imgPath = c.imagen ? `assets/img/${c.imagen}` : 'assets/img/categories/default.jpg';
+        const imgPath = c.imagen ? `assets/img/categories/${c.imagen}` : 'assets/img/categories/default.png';
         tr.innerHTML = `
-            <td class="text-center"><img src="${imgPath}" style="width:50px;height:50px;object-fit:cover;border-radius:4px"></td>
+            <td class="text-center"><img src="${imgPath}" class="product-img-sm"></td>
             <td>${c.nombre}</td>
             <td class="text-center">
                 <button class="btn btn-sm btn-primary" onclick="openEditCategory(${c.idCategoria})" title="Editar">
@@ -304,18 +333,20 @@ function showCategories(categories) {
 // ELIMINAR
 // ============================================================================
 
-function deleteProduct(id) {
-    if (!confirm('¿Eliminar producto?')) return;
-    fetch(`index.php?pg=product&action=deleteProduct&id=${id}`, {
+function toggleProductStatus(id, targetStatus) {
+    const actionText = targetStatus === 1 ? 'activar' : 'desactivar';
+    if (!confirm(`¿Deseas ${actionText} este producto?`)) return;
+
+    fetch(`index.php?pg=product&action=deleteProduct&id=${id}&status=${targetStatus}`, {
         method: 'POST'
     })
     .then(res => res.json())
     .then(data => {
         if (data.success) {
-            alert('Producto eliminado exitosamente');
+            alert(`Producto ${actionText}do exitosamente`);
             loadProducts();
         } else {
-            throw new Error(data.error || 'Error al eliminar');
+            throw new Error(data.error || 'Error al actualizar estado');
         }
     })
     .catch(err => {

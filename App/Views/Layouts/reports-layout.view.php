@@ -2,6 +2,7 @@
     require loadView('Layouts/header');
 }  ?>
 <link rel="stylesheet" href="assets/css/bills.css">
+<link rel="stylesheet" href="assets/css/reports.css">
 <div class="reports-container">
     <!-- Sidebar -->
     <aside class="reports-sidebar" id="reportsSidebar">
@@ -24,7 +25,6 @@
                     <li><a href="?pg=reports&action=salesProduct" class="<?= ($_GET['action'] ?? '') === 'salesProduct' ? 'active' : '' ?>">Ventas por producto</a></li>
                     <li><a href="?pg=reports&action=ventas-anuales">Ventas Anuales</a></li>
                     <li><a href="?pg=reports&action=ventas-por-producto">Por Producto</a></li>
-                    <li><a href="?pg=reports&action=topProducts" class="<?= ($_GET['action'] ?? '') === 'topProducts' ? 'active' : '' ?>">Top Productos</a></li>
                 </ul>
             </div>
 
@@ -38,9 +38,8 @@
                     Compras
                 </h3>
                 <ul class="section-links">
-                    <li><a href="?pg=reports&action=compras-mensuales">Compras</a></li>
+                    <li><a href="?pg=reports&action=purchases" class="<?= ($_GET['action'] ?? '') === 'purchases' ? 'active' : '' ?>">Compras</a></li>
                     <li><a href="?pg=reports&action=compras-por-proveedor">Por Proveedor</a></li>
-                    <li><a href="?pg=reports&action=purchases" class="<?= ($_GET['action'] ?? '') === 'purchases' ? 'active' : '' ?>">Compras (listado)</a></li>
                 </ul>
             </div>
 
@@ -93,7 +92,6 @@
                     <li><a href="?pg=reports&action=comparativa-mensual">Comparativa Mensual</a></li>
                     <li><a href="?pg=reports&action=comparativa-anual">Comparativa Anual</a></li>
                     <li><a href="?pg=reports&action=tendencias">Tendencias</a></li>
-                    <li><a href="?pg=reports&action=profitability" class="<?= ($_GET['action'] ?? '') === 'profitability' ? 'active' : '' ?>">Rentabilidad</a></li>
                 </ul>
             </div>
 
@@ -122,3 +120,28 @@
 <script type="text/javascript" src="https://cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+<script src="assets/js/bootstrap.bundle.min.js"></script>
+<script>
+    (function() {
+        const sidebar = document.getElementById('reportsSidebar');
+        if (!sidebar) return;
+
+        // Restaurar scroll
+        const saved = sessionStorage.getItem('reportsSidebarScroll');
+        if (saved !== null) {
+            sidebar.scrollTop = parseInt(saved, 10) || 0;
+        }
+
+        // Guardar scroll al hacer click en links
+        sidebar.addEventListener('click', (e) => {
+            const link = e.target.closest('a');
+            if (!link) return;
+            sessionStorage.setItem('reportsSidebarScroll', String(sidebar.scrollTop));
+        });
+
+        // Guardar scroll al mover
+        sidebar.addEventListener('scroll', () => {
+            sessionStorage.setItem('reportsSidebarScroll', String(sidebar.scrollTop));
+        }, { passive: true });
+    })();
+</script>

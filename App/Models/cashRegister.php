@@ -58,8 +58,17 @@ class CashRegister {
 	 * Cerrar caja: guarda saldo real, calcula saldoCalculado y diferencia
 	 */
 	public function closeCashRegister($idCaja, $saldoReal, $notas = null) {
-		// Obtener totales de movimientos
-		$sqlTotales = "SELECT COALESCE(SUM(monto), 0) as totalMovimientos FROM movimientos_caja WHERE idCaja = ?";
+		// Obtener totales de movimientos (solo ventas completadas)
+		$sqlTotales = "SELECT COALESCE(SUM(
+			CASE 
+				WHEN tipo_movimiento = 'VENTA'
+				AND EXISTS (SELECT 1 FROM ventas v WHERE v.idVenta = referencia AND v.estado = 'completada')
+				THEN monto
+				WHEN tipo_movimiento != 'VENTA'
+				THEN monto
+				ELSE 0
+			END
+		), 0) as totalMovimientos FROM movimientos_caja WHERE idCaja = ?";
 		$stmt = $this->db->prepare($sqlTotales);
 		$stmt->execute([$idCaja]);
 		$totales = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -107,12 +116,25 @@ class CashRegister {
 		$caja = $stmtCaja->fetch(PDO::FETCH_ASSOC);
 
 		$sqlMov = "SELECT 
-			COALESCE(SUM(CASE WHEN tipo_movimiento='VENTA' THEN monto ELSE 0 END),0) as totalVentas,
+			COALESCE(SUM(CASE 
+				WHEN tipo_movimiento='VENTA' 
+				AND EXISTS (SELECT 1 FROM ventas v WHERE v.idVenta = referencia AND v.estado = 'completada')
+				THEN monto ELSE 0 END),0) as totalVentas,
 			COALESCE(SUM(CASE WHEN tipo_movimiento='COMPRA' THEN ABS(monto) ELSE 0 END),0) as totalCompras,
 			COALESCE(SUM(CASE WHEN tipo_movimiento='GASTO' THEN ABS(monto) ELSE 0 END),0) as totalGastos,
-			COALESCE(SUM(CASE WHEN monto > 0 THEN monto ELSE 0 END),0) as totalIngresos,
+			COALESCE(SUM(CASE 
+				WHEN monto > 0 AND tipo_movimiento = 'VENTA'
+				AND EXISTS (SELECT 1 FROM ventas v WHERE v.idVenta = referencia AND v.estado = 'completada')
+				THEN monto
+				WHEN monto > 0 AND tipo_movimiento != 'VENTA'
+				THEN monto ELSE 0 END),0) as totalIngresos,
 			COALESCE(SUM(CASE WHEN monto < 0 THEN ABS(monto) ELSE 0 END),0) as totalEgresos,
-			COALESCE(SUM(monto),0) as totalNeto
+			COALESCE(SUM(CASE 
+				WHEN tipo_movimiento = 'VENTA'
+				AND EXISTS (SELECT 1 FROM ventas v WHERE v.idVenta = referencia AND v.estado = 'completada')
+				THEN monto
+				WHEN tipo_movimiento != 'VENTA'
+				THEN monto ELSE 0 END),0) as totalNeto
 			FROM movimientos_caja WHERE idCaja = ?";
 		$stmtMov = $this->db->prepare($sqlMov);
 		$stmtMov->execute([$idCaja]);

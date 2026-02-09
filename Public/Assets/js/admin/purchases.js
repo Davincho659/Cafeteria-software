@@ -109,7 +109,7 @@ function renderProducts(filter = '') {
         col.className = 'col-md-6 mb-2';
         
         col.innerHTML = `
-            <div class="card h-100 product-card" style="cursor: pointer;" onclick="addProductToPurchase(${product.idProducto})">
+            <div class="card h-100 product-card" onclick="addProductToPurchase(${product.idProducto})">
                 <div class="card-body p-2">
                     <div class="d-flex align-items-center">
                         <div class="flex-grow-1">
@@ -285,8 +285,8 @@ async function saveQuickPurchase(e) {
     const descripcion = document.getElementById('quickDescription').value.trim();
     const total = parseFloat(document.getElementById('quickTotal').value);
     
-    if (!idProveedor || !descripcion || !total) {
-        showAlert('Todos los campos son requeridos', 'warning');
+    if ( !descripcion || !total) {
+        showAlert('Los campos son requeridos', 'warning');
         return;
     }
     

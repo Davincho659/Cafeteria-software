@@ -122,27 +122,33 @@ class SalesController {
             }
 
             // Crear o obtener venta para la mesa
-            $idVenta = $this->salesModel->getOrCreateTableSale($idMesa, $idUsuario);
+            $idVenta = $this->salesModel->createPendingSale($idMesa, $idUsuario);
+            
+            // Actualizar estado de la mesa a ocupada
+            $this->tablesModel->updateState($idMesa, 'ocupada');
             
             $productosAgregados = [];
             
             // Si hay productos, agregarlos a la venta
             if ($tieneProductos) {
                 foreach ($productos as $producto) {
-                    $idProducto = intval($producto['idProducto']);
+                    $idProducto = isset($producto['idProducto']) ? intval($producto['idProducto']) : null;
                     $cantidad = intval($producto['cantidad']);
                     $precioUnitario = floatval($producto['precioUnitario']);
 
-                    // Validar que el producto exista
-                    $productoData = $this->productModel->getById($idProducto);
-                    if (!$productoData) {
-                        throw new Exception("Producto no encontrado: ID {$idProducto}");
-                    }
+                    // Validar que el producto exista (si no es NULL)
+                    $productoData = null;
+                    if ($idProducto !== null) {
+                        $productoData = $this->productModel->getById($idProducto);
+                        if (!$productoData) {
+                            throw new Exception("Producto no encontrado: ID {$idProducto}");
+                        }
 
-                    // Validar stock si el producto lo maneja
-                    if ($productoData['manejaStock']) {
-                        if (!$this->inventoryModel->verificarStock($idProducto, $cantidad)) {
-                            throw new Exception("Stock insuficiente para: " . $productoData['nombre']);
+                        // Validar stock si el producto lo maneja
+                        if ($productoData['manejaStock']) {
+                            if (!$this->inventoryModel->verificarStock($idProducto, $cantidad)) {
+                                throw new Exception("Stock insuficiente para: " . $productoData['nombre']);
+                            }
                         }
                     }
 
@@ -158,7 +164,7 @@ class SalesController {
                     $productosAgregados[] = [
                         'idDetalle' => $idDetalle,
                         'idProducto' => $idProducto,
-                        'nombre' => $productoData['nombre'],
+                        'nombre' => $productoData ? $productoData['nombre'] : null,
                         'cantidad' => $cantidad,
                         'precioUnitario' => $precioUnitario
                     ];
@@ -195,40 +201,8 @@ class SalesController {
         }
     }
 
-    public function openTableSale() {
-        header('Content-Type: application/json; charset=utf-8');
-        try {
-            $data = json_decode(file_get_contents('php://input'), true);
-            
-            if (empty($data['idMesa'])) {
-                throw new Exception('El ID de la mesa es requerido');
-            }
-            
-            $idMesa = intval($data['idMesa']);
-            $idUsuario = $data['idUsuario'] ?? $_SESSION['usuario_id'] ?? null;
 
-            $idVenta = $this->salesModel->getOrCreateTableSale($idMesa, $idUsuario);
-            
-            $venta = $this->salesModel->getSaleById($idVenta);
-            $detalles = $this->salesModel->getSaleDetails($idVenta);
-
-            echo json_encode([
-                'success' => true,
-                'data' => [
-                    'idVenta' => $idVenta,
-                    'venta' => $venta,
-                    'productos' => $detalles
-                ]
-            ]);
-        } catch (Exception $e) {
-            echo json_encode([
-                'success' => false,
-                'error' => $e->getMessage()
-            ]);
-        }
-    }
-
-    public function addProductToTableSale() {
+    public function addProductToSale() {
         header('Content-Type: application/json; charset=utf-8');
         try {
             $data = json_decode(file_get_contents('php://input'), true);
@@ -236,20 +210,24 @@ class SalesController {
             if (empty($data['idVenta'])) {
                 throw new Exception('El ID de la venta es requerido');
             }
-            if (empty($data['idProducto'])) {
-                throw new Exception('El ID del producto es requerido');
-            }
             
+            // idProducto puede ser null para productos manuales (montos manuales)
             $idVenta = intval($data['idVenta']);
-            $idProducto = intval($data['idProducto']);
+            $idProducto = isset($data['idProducto']) && $data['idProducto'] !== '' ? intval($data['idProducto']) : null;
             $cantidad = intval($data['cantidad'] ?? 1);
             $precioUnitario = floatval($data['precioUnitario']);
             $idUsuario = $data['idUsuario'] ?? $_SESSION['usuario_id'] ?? null;
 
-            $producto = $this->productModel->getById($idProducto);
-            if ($producto && $producto['manejaStock']) {
-                if (!$this->inventoryModel->verificarStock($idProducto, $cantidad)) {
-                    throw new Exception("Stock insuficiente para: " . $producto['nombre']);
+            // Validar producto solo si no es NULL (monto manual)
+            if ($idProducto !== null) {
+                $producto = $this->productModel->getById($idProducto);
+                if (!$producto) {
+                    throw new Exception("Producto no encontrado: ID {$idProducto}");
+                }
+                if ($producto['manejaStock']) {
+                    if (!$this->inventoryModel->verificarStock($idProducto, $cantidad)) {
+                        throw new Exception("Stock insuficiente para: " . $producto['nombre']);
+                    }
                 }
             }
 
@@ -338,7 +316,10 @@ class SalesController {
             ]);
         }
     }
-
+    /**
+     * Completar venta de mesa (heredado, mantener para compatibilidad)
+     * Busca la venta pendiente por mesa y la completa
+     */
     public function completeTableSale() {
         header('Content-Type: application/json; charset=utf-8');
         try {
@@ -351,12 +332,23 @@ class SalesController {
             $idMesa = intval($data['idMesa']);
             $metodoPago = $data['metodoPago'] ?? 'efectivo';
 
-            $idVenta = $this->salesModel->completeTableSale($idMesa, $metodoPago);
+            // Obtener el idVenta de la mesa que tenga venta pendiente
+            $idVenta = $this->salesModel->getVentaByMesa($idMesa);
+            
+            if (!$idVenta) {
+                throw new Exception('No hay venta pendiente para esta mesa');
+            }
 
+            // Completar la venta
+            $idVentaCompletada = $this->salesModel->completeSale($idVenta, $metodoPago);
+            
+            // Actualizar estado de la mesa a libre
+            $this->tablesModel->updateState($idMesa, 'libre');
+            
             echo json_encode([
                 'success' => true,
-                'message' => 'Venta completada exitosamente',
-                'saleId' => $idVenta
+                'message' => 'Venta completada correctamente',
+                'saleId' => $idVentaCompletada
             ]);
         } catch (Exception $e) {
             echo json_encode([
@@ -365,19 +357,40 @@ class SalesController {
             ]);
         }
     }
-
-    public function cancelTableSale() {
+    /**
+     * CANCELAR una venta PENDIENTE/TEMPORAL (ELIMINA completamente de BD)
+     * 
+     * Diferencia importante:
+     * - CancelSale: Venta PENDIENTE → ELIMINA de BD (no deja rastro)
+     * - cancelSaleByInvoice: Venta COMPLETADA → MARCA como cancelada (mantiene registro)
+     * 
+     * GENÉRICO para mesas y mostrador/carrito
+     * Elimina la venta y todos sus detalles de la BD
+     */
+    public function CancelSale() {
         header('Content-Type: application/json; charset=utf-8');
         try {
             $data = json_decode(file_get_contents('php://input'), true);
             
-            if (empty($data['idMesa'])) {
-                throw new Exception('El ID de la mesa es requerido');
+            if (empty($data['idVenta'])) {
+                throw new Exception('El ID de la venta es requerido');
             }
             
-            $idMesa = intval($data['idMesa']);
+            $idVenta = intval($data['idVenta']);
 
-            $this->salesModel->cancelTableSale($idMesa);
+            // Obtener la venta para saber si es de mesa
+            $venta = $this->salesModel->getSaleById($idVenta);
+            if (!$venta) {
+                throw new Exception('Venta no encontrada');
+            }
+
+            // Cancelar la venta
+            $this->salesModel->cancelSale($idVenta);
+            
+            // Si es una mesa, marcar como libre
+            if ($venta['idMesa'] !== null && $venta['idMesa'] !== 0) {
+                $this->tablesModel->updateState($venta['idMesa'], 'libre');
+            }
 
             echo json_encode([
                 'success' => true,
@@ -394,27 +407,67 @@ class SalesController {
     public function CreateSale() {
         header('Content-Type: application/json; charset=utf-8');
         try {
-            $salesData = json_decode(file_get_contents('php://input'), true);
+            $data = json_decode(file_get_contents('php://input'), true);
             
-            $idMesa = $salesData['tableId'] ?? null;
-            $metodoPago = $salesData['metodoPago'];
-            $idUsuario = $salesData['idUsuario'];
-            $productos = $salesData['productos'];
+            $metodoPago = $data['metodoPago'] ?? 'efectivo';
+            $idUsuario = $data['idUsuario'] ?? $_SESSION['usuario_id'] ?? null;
+            $idMesa = $data['tableId'] ?? null;  // Opcional
+            $productos = $data['productos'] ?? [];  // Puede estar vacío
 
-            $sale = $this->salesModel->createSaleWithDetails(
-                $metodoPago,
-                $productos,
-                $idUsuario,
-                $idMesa,
-                'detallada',
-                null
-            );
+            // 1. Crear venta pendiente (siempre)
+            $idVenta = $this->salesModel->createPendingSale($idMesa, $idUsuario);
             
-            echo json_encode([
-                'success' => true,
-                'message' => 'Venta creada exitosamente',
-                'saleId' => $sale
-            ]);
+            // 2. Si hay productos, agregarlos todos
+            if (!empty($productos) && is_array($productos)) {
+                foreach ($productos as $producto) {
+                    $idProducto = isset($producto['idProducto']) ? intval($producto['idProducto']) : null;
+                    $cantidad = intval($producto['cantidad'] ?? 1);
+                    $precioUnitario = floatval($producto['precioUnitario']);
+
+                    // Validar producto solo si no es NULL (monto manual)
+                    if ($idProducto !== null) {
+                        $productoData = $this->productModel->getById($idProducto);
+                        if (!$productoData) {
+                            throw new Exception("Producto no encontrado: ID {$idProducto}");
+                        }
+                        if ($productoData['manejaStock']) {
+                            if (!$this->inventoryModel->verificarStock($idProducto, $cantidad)) {
+                                throw new Exception("Stock insuficiente para: " . $productoData['nombre']);
+                            }
+                        }
+                    }
+
+                    // Agregar a la venta
+                    $this->salesModel->addOrUpdateProductToSale(
+                        $idVenta,
+                        $idProducto,
+                        $cantidad,
+                        $precioUnitario,
+                        $idUsuario
+                    );
+                }
+                
+                // 3. Si hay productos, completar la venta
+                $idVentaCompletada = $this->salesModel->completeSale($idVenta, $metodoPago);
+                
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Venta creada y completada exitosamente',
+                    'idVenta' => $idVentaCompletada
+                ]);
+            } else {
+                // Si NO hay productos, solo devolver la venta pendiente (carrito vacío)
+                echo json_encode([
+                    'success' => true,
+                    'message' => 'Venta pendiente creada correctamente',
+                    'data' => [
+                        'idVenta' => $idVenta,
+                        'estado' => 'pendiente',
+                        'total' => 0,
+                        'productos' => []
+                    ]
+                ]);
+            }
         } catch (Exception $e) {
             echo json_encode([
                 'success' => false,
@@ -465,6 +518,10 @@ class SalesController {
         }
     }
 
+    /**
+     * WARNING: metodo todavia no usuado en el front-end
+     */
+
     public function checkStock() {
         header('Content-Type: application/json; charset=utf-8');
         try {
@@ -498,6 +555,101 @@ class SalesController {
                 'stockActual' => $stockActual,
                 'cantidadSolicitada' => $cantidad,
                 'disponible' => $disponible
+            ]);
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * ANULAR una venta COMPLETADA (MARCA como cancelada, mantiene registro)
+     * 
+     * Diferencia importante:
+     * - CancelSale: Venta PENDIENTE → ELIMINA de BD (no deja rastro)
+     * - cancelSaleByInvoice: Venta COMPLETADA → MARCA como cancelada (mantiene para auditoría)
+     * 
+     * Usado en reportes para anular facturas completadas
+     * El estado cambia de 'completada' a 'cancelada'
+     */
+    public function cancelSaleByInvoice() {
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
+            
+            if (empty($data['idVenta'])) {
+                throw new Exception('El ID de la venta es requerido');
+            }
+
+            $idVenta = intval($data['idVenta']);
+            $observacion = isset($data['observacion']) ? trim($data['observacion']) : null;
+
+            // Obtener venta para verificar que exista
+            $venta = $this->salesModel->getSaleById($idVenta);
+            if (!$venta) {
+                throw new Exception('Venta no encontrada');
+            }
+
+            // Solo se pueden cancelar ventas completadas
+            if ($venta['estado'] !== 'completada') {
+                throw new Exception('Solo se pueden cancelar ventas completadas');
+            }
+
+            // Marcar como cancelada usando el método existente
+            $this->salesModel->cancelInvoice($idVenta, $observacion);
+
+            echo json_encode([
+                'success' => true,
+                'message' => 'Venta cancelada correctamente',
+                'saleId' => $idVenta
+            ]);
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    public function LoadActiveSales() {
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            $activeSales = $this->salesModel->getActiveSales();
+            echo json_encode([
+                'success' => true,
+                'data' => $activeSales
+            ]);
+        } catch (Exception $e) {
+            echo json_encode([
+                'success' => false,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Completar una venta (genérico para mesas y mostrador)
+     */
+    public function CompleteSale() {
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
+            
+            if (empty($data['idVenta'])) {
+                throw new Exception('El ID de la venta es requerido');
+            }
+            
+            $idVenta = intval($data['idVenta']);
+            $metodoPago = $data['metodoPago'] ?? 'efectivo';
+            
+            $idVentaCompletada = $this->salesModel->completeSale($idVenta, $metodoPago);
+            
+            echo json_encode([
+                'success' => true,
+                'message' => 'Venta completada exitosamente',
+                'saleId' => $idVentaCompletada
             ]);
         } catch (Exception $e) {
             echo json_encode([

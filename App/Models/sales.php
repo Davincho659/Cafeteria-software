@@ -14,133 +14,9 @@ class Sales {
         $this->cashRegister = new CashRegister();
     }
 
-    /**
-     * Crear venta rápida/detallada con sus detalles en una sola transacción
-     */
-    public function createSaleWithDetails($metodoPago, array $productos, $idUsuario, $idMesa = null, $tipoVenta = 'detallada', $descripcion = null) {
-        try {
-            $this->db->beginTransaction();
+    // ELIMINADO: createSaleWithDetails - Reemplazado por flujo: createPendingSale() + addOrUpdateProductToSale() + completeSale()
 
-            // Validar caja activa
-            $cajaActiva = $this->cashRegister->getCajaActiva();
-            if (!$cajaActiva) {
-                throw new Exception('No hay caja abierta. Abra la caja antes de registrar ventas.');
-            }
-
-            // Calcular total servidor-side y validar stock
-            $total = 0;
-            foreach ($productos as $item) {
-                $cantidad = isset($item['cantidad']) ? (float)$item['cantidad'] : 0;
-                $precio = isset($item['precioUnitario']) ? (float)$item['precioUnitario'] : 0;
-                if ($cantidad <= 0) {
-                    throw new Exception('Cantidad inválida para un producto');
-                }
-                if ($precio < 0) {
-                    throw new Exception('Precio inválido para un producto');
-                }
-                $total += $cantidad * $precio;
-
-                // Validar stock si aplica
-                $sqlProd = "SELECT manejaStock, nombre FROM productos WHERE idProducto = ?";
-                $stmtProd = $this->db->prepare($sqlProd);
-                $stmtProd->execute([$item['idProducto']]);
-                $producto = $stmtProd->fetch(PDO::FETCH_ASSOC);
-                if ($producto && $producto['manejaStock']) {
-                    if (!$this->inventoryModel->verificarStock($item['idProducto'], $cantidad)) {
-                        throw new Exception('Stock insuficiente para: ' . $producto['nombre']);
-                    }
-                }
-            }
-
-            if ($total <= 0) {
-                throw new Exception('El total calculado es inválido');
-            }
-
-            // Insertar venta
-            $sqlVenta = "INSERT INTO ventas (idMesa, estado, metodoPago, total, idUsuario, tipoVenta, descripcion, idCaja) 
-                         VALUES (?, 'completada', ?, ?, ?, ?, ?, ?)";
-            $stmtVenta = $this->db->prepare($sqlVenta);
-            $stmtVenta->execute([$idMesa, $metodoPago, $total, $idUsuario, $tipoVenta, $descripcion, $cajaActiva['idCaja']]);
-            $idVenta = $this->db->lastInsertId();
-
-            // Movimiento de caja
-            $this->cashRegister->registrarIngresoVenta((int)$idVenta, (float)$total, $idUsuario);
-
-            // Detalles + inventario (sin abrir transacción interna)
-            foreach ($productos as $item) {
-                $this->createSalesDetailInternal(
-                    $idVenta,
-                    null,
-                    $item['idProducto'],
-                    (float)$item['cantidad'],
-                    (float)$item['precioUnitario'],
-                    $idUsuario,
-                    false // no iniciar transacción nueva
-                );
-            }
-
-            $this->db->commit();
-            return $idVenta;
-        } catch (Exception $e) {
-            $this->db->rollBack();
-            throw $e;
-        }
-    }
-
-    /**
-     * Crear detalle de venta Y actualizar inventario
-     */
-    public function createSalesDetail($idVenta, $idDetalleVenta, $idProducto, $cantidad, $precioUnitario, $idUsuario = null) {
-        // Método público si se requiere uso aislado; maneja su propia transacción.
-        return $this->createSalesDetailInternal($idVenta, $idDetalleVenta, $idProducto, $cantidad, $precioUnitario, $idUsuario, true);
-    }
-
-    private function createSalesDetailInternal($idVenta, $idDetalleVenta, $idProducto, $cantidad, $precioUnitario, $idUsuario, $useTransaction) {
-        try {
-            if ($useTransaction) {
-                $this->db->beginTransaction();
-            }
-
-            $subtotal = $cantidad * $precioUnitario;
-
-            $sql = "INSERT INTO detalle_venta (idVenta, idDetalleVenta, idProducto, cantidad, precioUnitario, subTotal) 
-                    VALUES (?, ?, ?, ?, ?, ?)";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([$idVenta, $idDetalleVenta, $idProducto, $cantidad, $precioUnitario, $subtotal]);
-
-            $sqlCheck = "SELECT manejaStock, nombre FROM productos WHERE idProducto = ?";
-            $stmtCheck = $this->db->prepare($sqlCheck);
-            $stmtCheck->execute([$idProducto]);
-            $producto = $stmtCheck->fetch(PDO::FETCH_ASSOC);
-
-            if ($producto && $producto['manejaStock']) {
-                if (!$this->inventoryModel->verificarStock($idProducto, $cantidad)) {
-                    throw new Exception('Stock insuficiente para: ' . $producto['nombre']);
-                }
-
-                $this->inventoryModel->registrarMovimiento(
-                    $idProducto,
-                    'salida',
-                    $cantidad,
-                    $idVenta,
-                    'venta',
-                    "Venta #$idVenta",
-                    $idUsuario,
-                    false // no abrir nueva transacción
-                );
-            }
-
-            if ($useTransaction) {
-                $this->db->commit();
-            }
-            return $this->db->lastInsertId();
-        } catch (Exception $e) {
-            if ($useTransaction) {
-                $this->db->rollBack();
-            }
-            throw $e;
-        }
-    }
+    // ELIMINADO: createSalesDetail() - Lógica integrada en addOrUpdateProductToSale()
 
     public function getSaleById($idVenta) {
         $sql = "SELECT v.*, t.numero AS mesa_numero, u.nombre AS usuario_nombre 
@@ -154,7 +30,7 @@ class Sales {
     }
 
     public function getSaleDetails($idVenta) {
-        $sql = "SELECT dv.idDetalleVenta, dv.idProducto, p.nombre AS producto_nombre,
+        $sql = "SELECT dv.idDetalleVenta, dv.idProducto, COALESCE(p.nombre, 'Producto') AS producto_nombre,
                        p.imagen AS producto_imagen,
                        dv.cantidad, dv.precioUnitario, dv.subTotal
                 FROM detalle_venta dv
@@ -264,36 +140,44 @@ class Sales {
 
     
     // ============================================================================
-    // MÉTODOS CRÍTICOS PARA FLUJO DE MESAS (ANTES FALTABAN)
+    // FLUJO GENÉRICO DE VENTAS PENDIENTES (MESAS Y MOSTRADOR)
     // ============================================================================
 
     /**
-     * Obtener o crear venta para una mesa
-     * Si ya existe una venta pendiente para la mesa, la retorna
-     * Si no existe, crea una nueva
+     * Crear venta pendiente (vacía, sin productos)
+     * Reutilizable para:
+     * - Mesas: createPendingSale(idMesa=5, idUsuario=1)
+     * - Mostrador/normal: createPendingSale(idMesa=null, idUsuario=1)
+     * 
+     * Si ya existe venta pendiente para esa mesa, la retorna
      */
-    public function getOrCreateTableSale($idMesa, $idUsuario = null) {
+    public function createPendingSale($idMesa = null, $idUsuario = null) {
         try {
-            // Buscar si ya existe una venta pendiente para esta mesa
-            $sql = "SELECT idVenta FROM ventas 
-                    WHERE idMesa = ? AND estado = 'pendiente' 
-                    LIMIT 1";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute([$idMesa]);
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if ($result) {
-                return $result['idVenta'];
+            // Si es mesa, buscar si ya existe venta pendiente
+            if ($idMesa !== null) {
+                $sql = "SELECT idVenta FROM ventas 
+                        WHERE idMesa = ? AND estado = 'pendiente' 
+                        LIMIT 1";
+                $stmt = $this->db->prepare($sql);
+                $stmt->execute([$idMesa]);
+                $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                if ($existing) {
+                    return $existing['idVenta'];
+                }
             }
             
-            // Si no existe, crear una nueva venta
-            $sql = "INSERT INTO ventas (idMesa, estado, metodoPago, total, idUsuario, tipoVenta, fechaCreacion, fechaActualizacion) 
-                    VALUES (?, 'pendiente', '', 0, ?, 'mesa', NOW(), NOW())";
+            // Crear nueva venta pendiente
+            $tipoVenta = ($idMesa !== null) ? 'mesa' : 'venta';
+            $sql = "INSERT INTO ventas 
+                    (idMesa, estado, metodoPago, total, idUsuario, tipoVenta, fechaCreacion, fechaActualizacion) 
+                    VALUES (?, 'pendiente', '', 0, ?, ?, NOW(), NOW())";
             $stmt = $this->db->prepare($sql);
-            $stmt->execute([$idMesa, $idUsuario]);
+            $stmt->execute([$idMesa, $idUsuario, $tipoVenta]);
+            
             return $this->db->lastInsertId();
         } catch (Exception $e) {
-            throw new Exception("Error al crear/obtener venta de mesa: " . $e->getMessage());
+            throw new Exception("Error al crear venta pendiente: " . $e->getMessage());
         }
     }
 
@@ -319,15 +203,25 @@ class Sales {
             if ($existente) {
                 // Actualizar cantidad
                 $nuevaCantidad = $existente['cantidad'] + $cantidad;
-                $nuevoSubtotal = $nuevaCantidad * $precioUnitario;
                 
-                $sqlUpdate = "UPDATE detalle_venta 
-                              SET cantidad = ?, subTotal = ? 
-                              WHERE idDetalleVenta = ?";
-                $stmtUpdate = $this->db->prepare($sqlUpdate);
-                $stmtUpdate->execute([$nuevaCantidad, $nuevoSubtotal, $existente['idDetalleVenta']]);
-                
-                $idDetalleVenta = $existente['idDetalleVenta'];
+                // Si cantidad <= 0, eliminar el producto
+                if ($nuevaCantidad <= 0) {
+                    $sqlDelete = "DELETE FROM detalle_venta WHERE idDetalleVenta = ?";
+                    $stmtDelete = $this->db->prepare($sqlDelete);
+                    $stmtDelete->execute([$existente['idDetalleVenta']]);
+                    $idDetalleVenta = $existente['idDetalleVenta'];
+                } else {
+                    // Si cantidad > 0, actualizar
+                    $nuevoSubtotal = $nuevaCantidad * $precioUnitario;
+                    
+                    $sqlUpdate = "UPDATE detalle_venta 
+                                  SET cantidad = ?, subTotal = ? 
+                                  WHERE idDetalleVenta = ?";
+                    $stmtUpdate = $this->db->prepare($sqlUpdate);
+                    $stmtUpdate->execute([$nuevaCantidad, $nuevoSubtotal, $existente['idDetalleVenta']]);
+                    
+                    $idDetalleVenta = $existente['idDetalleVenta'];
+                }
             } else {
                 // Insertar nuevo producto
                 $sqlInsert = "INSERT INTO detalle_venta (idVenta, idProducto, cantidad, precioUnitario, subTotal) 
@@ -356,23 +250,23 @@ class Sales {
     }
 
     /**
-     * Completar venta de mesa
-     * Marca la venta como completada
+     * Completar una venta pendiente (GENÉRICO para mesas y mostrador)
+     * Valida stock, actualiza inventario, registra en caja, marca como completada
      */
-    public function completeTableSale($idMesa, $metodoPago = 'efectivo') {
+    public function completeSale($idVenta, $metodoPago = 'efectivo') {
         try {
             $this->db->beginTransaction();
             
-            // Obtener la venta pendiente de la mesa
-            $sqlGetSale = "SELECT idVenta, total, idUsuario FROM ventas 
-                           WHERE idMesa = ? AND estado = 'pendiente' 
+            // Obtener la venta
+            $sqlGetSale = "SELECT idVenta, idMesa, total, idUsuario FROM ventas 
+                           WHERE idVenta = ? AND estado = 'pendiente' 
                            LIMIT 1";
             $stmtGetSale = $this->db->prepare($sqlGetSale);
-            $stmtGetSale->execute([$idMesa]);
+            $stmtGetSale->execute([$idVenta]);
             $venta = $stmtGetSale->fetch(PDO::FETCH_ASSOC);
             
             if (!$venta) {
-                throw new Exception("No hay venta pendiente para esta mesa");
+                throw new Exception("Venta no encontrada o no está pendiente");
             }
             
             // Validar caja activa
@@ -381,9 +275,14 @@ class Sales {
                 throw new Exception('No hay caja abierta. Abra la caja antes de completar ventas.');
             }
 
-            // Traer detalles para afectar inventario y validar stock
+            // Obtener detalles y validar stock
             $detalles = $this->getSaleDetails($venta['idVenta']);
             foreach ($detalles as $det) {
+                // Si el producto es null (monto manual), no validar stock
+                if ($det['idProducto'] === null || $det['idProducto'] === '') {
+                    continue;
+                }
+                
                 $cantidad = (float)$det['cantidad'];
                 $sqlProd = "SELECT manejaStock, nombre FROM productos WHERE idProducto = ?";
                 $stmtProd = $this->db->prepare($sqlProd);
@@ -406,6 +305,11 @@ class Sales {
             
             // Registrar salida de inventario por cada detalle
             foreach ($detalles as $det) {
+                // Si el producto es null (monto manual), no afectar inventario
+                if ($det['idProducto'] === null || $det['idProducto'] === '') {
+                    continue;
+                }
+                
                 $cantidad = (float)$det['cantidad'];
                 $sqlProd = "SELECT manejaStock FROM productos WHERE idProducto = ?";
                 $stmtProd = $this->db->prepare($sqlProd);
@@ -426,12 +330,19 @@ class Sales {
                 }
             }
 
-            // Registrar ingreso en caja (movimiento VENTA)
+            // Registrar ingreso en caja
             $this->cashRegister->registrarIngresoVenta(
                 (int)$venta['idVenta'],
                 (float)$venta['total'],
                 isset($venta['idUsuario']) ? (int)$venta['idUsuario'] : null
             );
+            
+            // Si es mesa, marcar como libre
+            if ($venta['idMesa'] !== null && $venta['idMesa'] !== 0) {
+                $sqlUpdateMesa = "UPDATE mesas SET estado = 'libre' WHERE idMesa = ?";
+                $stmtUpdateMesa = $this->db->prepare($sqlUpdateMesa);
+                $stmtUpdateMesa->execute([$venta['idMesa']]);
+            }
             
             $this->db->commit();
             return $venta['idVenta'];
@@ -442,32 +353,39 @@ class Sales {
     }
 
     /**
-     * Cancelar venta de mesa
-     * Elimina la venta y sus detalles
+     * CANCELAR venta PENDIENTE/TEMPORAL (ELIMINA completamente de BD)
+     * 
+     * Usado cuando:
+     * - Usuario cancela venta ANTES de completarla
+     * - Venta está en estado 'pendiente' o 'temporal'
+     * - Se ELIMINA completamente (detalle_venta y ventas)
+     * - NO deja rastro en la BD
+     * 
+     * Diferente de cancelInvoice() que MARCA como cancelada
      */
-    public function cancelTableSale($idMesa) {
+    public function cancelSale($idVenta) {
         try {
             $this->db->beginTransaction();
             
-            // Obtener la venta pendiente
-            $sqlGetSale = "SELECT idVenta FROM ventas 
-                           WHERE idMesa = ? AND estado = 'pendiente' 
-                           LIMIT 1";
+            // Obtener la venta
+            $sqlGetSale = "SELECT idVenta FROM ventas WHERE idVenta = ?";
             $stmtGetSale = $this->db->prepare($sqlGetSale);
-            $stmtGetSale->execute([$idMesa]);
+            $stmtGetSale->execute([$idVenta]);
             $venta = $stmtGetSale->fetch(PDO::FETCH_ASSOC);
             
-            if ($venta) {
-                // Eliminar detalles de venta
-                $sqlDeleteDetalles = "DELETE FROM detalle_venta WHERE idVenta = ?";
-                $stmtDeleteDetalles = $this->db->prepare($sqlDeleteDetalles);
-                $stmtDeleteDetalles->execute([$venta['idVenta']]);
-                
-                // Eliminar venta
-                $sqlDeleteVenta = "DELETE FROM ventas WHERE idVenta = ?";
-                $stmtDeleteVenta = $this->db->prepare($sqlDeleteVenta);
-                $stmtDeleteVenta->execute([$venta['idVenta']]);
+            if (!$venta) {
+                throw new Exception("Venta no encontrada");
             }
+            
+            // Eliminar detalles de venta
+            $sqlDeleteDetalles = "DELETE FROM detalle_venta WHERE idVenta = ?";
+            $stmtDeleteDetalles = $this->db->prepare($sqlDeleteDetalles);
+            $stmtDeleteDetalles->execute([$idVenta]);
+            
+            // Eliminar venta
+            $sqlDeleteVenta = "DELETE FROM ventas WHERE idVenta = ?";
+            $stmtDeleteVenta = $this->db->prepare($sqlDeleteVenta);
+            $stmtDeleteVenta->execute([$idVenta]);
             
             $this->db->commit();
         } catch (Exception $e) {
@@ -553,5 +471,54 @@ class Sales {
             $this->db->rollBack();
             throw new Exception("Error al remover producto: " . $e->getMessage());
         }
+    }
+
+    public function getActiveSales() {
+        $sql = "SELECT v.* FROM ventas v WHERE v.estado = 'pendiente' AND v.idMesa IS NULL";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute();
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return $results;
+    }
+
+    /**
+     * Obtener idVenta para una mesa con venta pendiente
+     * Retorna idVenta o null si no hay venta pendiente
+     */
+    public function getVentaByMesa($idMesa) {
+        $sql = "SELECT idVenta FROM ventas WHERE idMesa = ? AND estado = 'pendiente' LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$idMesa]);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result ? $result['idVenta'] : null;
+    }
+
+    /**
+     * ANULAR venta COMPLETADA (MARCA como cancelada, mantiene registro)
+     * 
+     * Usado cuando:
+     * - Usuario ANULA venta DESPUÉS de completarla
+     * - Venta está en estado 'completada'
+     * - Se MARCA como 'cancelada' (UPDATE, no DELETE)
+     * - MANTIENE el registro para auditoría
+     * - Se muestra sello "ANULADO" en factura
+     * 
+     * Diferente de cancelSale() que ELIMINA completamente
+     */
+    public function cancelInvoice($idVenta, $observacion = null) {
+        $sql = "UPDATE ventas SET estado = 'cancelada'";
+        $params = [];
+        
+        // Si hay observación, guardarla en el campo descripción
+        if (!empty($observacion)) {
+            $sql .= ", descripcion = ?";
+            $params[] = $observacion;
+        }
+        
+        $sql .= " WHERE idVenta = ?";
+        $params[] = $idVenta;
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
     }
 }

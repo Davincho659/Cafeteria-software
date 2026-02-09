@@ -4,23 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?=esc(APP_NAME)?></title>
+    
+    <!-- Preload recursos críticos para evitar layout shift -->
+    <link rel="preload" href="assets/css/bootstrap.css" as="style">
+    <link rel="preload" href="assets/css/pos-theme.css" as="style">
+    <link rel="preload" href="assets/img/logo.jpg" as="image">
+    
+    <!-- Bootstrap y FontAwesome -->
     <link rel="stylesheet" href="assets/css/bootstrap.css">
     <link rel="stylesheet" href="assets/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/theme-safe.css">
+    <!-- Sistema de diseño único -->
+    <link rel="stylesheet" href="assets/css/pos-theme.css">
+    <!-- SweetAlert2 -->
     <link rel="stylesheet" href="assets/css/sweetalert2.min.css">
-    <!-- Dropzone (CDN) 
-    <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" />
-    <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>-->
     
 </head>
 
 <body>
 
+<?php $currentPg = $_GET['pg'] ?? ''; ?>
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="?pg=home">
-            <img src="assets/img/logo.jpg" alt="Logo" class="cafe-logo me-2"> La casa del pastel
+            <img src="assets/img/logo.jpg" alt="Logo" class="cafe-logo me-2" width="40" height="40" loading="eager"> La casa del pastel
         </a>
         
         <div class="collapse navbar-collapse" id="navbarNav">
@@ -28,60 +35,67 @@
                 
                 <!-- Home -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($pg ?? '') === 'home' ? 'active' : '' ?>" href="?pg=home">
+                    <a class="nav-link <?= ($currentPg === 'home') ? 'active' : '' ?>" href="?pg=home">
                         <i class="fa-solid fa-house"></i> Inicio
                     </a>
                 </li>
                 
                 <!-- Ventas -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($pg ?? '') === 'sales' ? 'active' : '' ?>" href="?pg=sales">
+                    <a class="nav-link <?= ($currentPg === 'sales') ? 'active' : '' ?>" href="?pg=sales">
                         <i class="fa-solid fa-cash-register"></i> Ventas
                     </a>
                 </li>
                 
                 <!-- Compras -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($pg ?? '') === 'purchases' ? 'active' : '' ?>" href="?pg=purchases">
+                    <a class="nav-link <?= ($currentPg === 'purchases') ? 'active' : '' ?>" href="?pg=purchases">
                         <i class="fa-solid fa-shopping-cart"></i> Compras
                     </a>
                 </li>
                 
                 <!-- Inventario -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($pg ?? '') === 'inventory' ? 'active' : '' ?>" href="?pg=inventory">
+                    <a class="nav-link <?= ($currentPg === 'inventory') ? 'active' : '' ?>" href="?pg=inventory">
                         <i class="fa-solid fa-boxes-stacked"></i> Inventario
                     </a>
                 </li>
 
                 <!-- Gastos -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($pg ?? '') === 'expenses' ? 'active' : '' ?>" href="?pg=expenses">
+                    <a class="nav-link <?= ($currentPg === 'expenses') ? 'active' : '' ?>" href="?pg=expenses">
                         <i class="fa-solid fa-money-bill-trend-up"></i> Gastos
                     </a>
                 </li>
                 
                 <!-- Productos -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($pg ?? '') === 'product' ? 'active' : '' ?>" href="?pg=product">
+                    <a class="nav-link <?= ($currentPg === 'product') ? 'active' : '' ?>" href="?pg=product">
                         <i class="fa-solid fa-box"></i> Productos
                     </a>
                 </li>
                 
                 <!-- Proveedores -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($pg ?? '') === 'suppliers' ? 'active' : '' ?>" href="?pg=suppliers">
+                    <a class="nav-link <?= ($currentPg === 'suppliers') ? 'active' : '' ?>" href="?pg=suppliers">
                         <i class="fa-solid fa-truck"></i> Proveedores
                     </a>
                 </li>
                 
+                <!-- Mesas -->
+                <li class="nav-item">
+                    <a class="nav-link <?= ($currentPg === 'tables') ? 'active' : '' ?>" href="?pg=tables">
+                        <i class="fa-solid fa-chair"></i> Mesas
+                    </a>
+                </li>
+                <?php if (isset($_SESSION['usuario_rol']) && $_SESSION['usuario_rol'] === 'admin'): ?>
                 <!-- Reportes -->
                 <li class="nav-item">
-                    <a class="nav-link <?= ($pg ?? '') === 'reports' ? 'active' : '' ?>" href="?pg=reports">
+                    <a class="nav-link <?= ($currentPg === 'reports') ? 'active' : '' ?>" href="?pg=reports">
                         <i class="fa-solid fa-chart-line"></i> Reportes
                     </a>
                 </li>
-                
+                <?php endif; ?>
             </ul>
             
             <!-- Usuario y Logout -->

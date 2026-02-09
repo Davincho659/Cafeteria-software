@@ -1,19 +1,5 @@
 
 <link rel="stylesheet" href="assets/css/bills.css">
-<style>
-    .kpi-row { margin-top: 1.5rem; }
-    .kpi-card {
-        background: #0f172a;
-        color: #f8fafc;
-        border-radius: 12px;
-        padding: 16px 18px;
-        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
-        height: 100%;
-    }
-    .kpi-label { font-size: 0.95rem; opacity: 0.85; letter-spacing: 0.3px; }
-    .kpi-value { font-size: 1.6rem; font-weight: 700; margin-top: 4px; }
-    @media (max-width: 576px) { .kpi-value { font-size: 1.35rem; } }
-</style>
 
 <div class="container-fluid">
 
@@ -125,13 +111,74 @@
         <div id="paginacion" class="mt-3"></div>
         <br>
     </div>
+    <!-- Modal de Detalles de Venta -->
+    <div id="saleDetailModalContainer">
+        <div class="modal fade" id="saleDetailModal" tabindex="-1" >
+            <div class="modal-dialog modal-xl modal-dialog-scrollable  modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            Detalles de la venta #<span id="saleDetailId"></span>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div id="saleDetailLoader" class="text-center py-4 d-none">
+                            <div class="spinner-border text-info" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Cargando detalles...</p>
+                        </div>
+
+                        <div id="saleDetailError" class="alert alert-danger d-none" role="alert"></div>
+
+                        <div id="saleDetailContent">
+                            <table class="table table-sm table-striped table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th class="text-center" style="width:120px">Cantidad</th>
+                                        <th style="width:180px">Precio unitario</th>
+                                        <th style="width:180px">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="saleDetailTableBody">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">Sin datos</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="d-flex justify-content-end mt-2">
+                                <div>
+                                    <strong>Total:</strong>
+                                    $<span id="saleDetailTotal">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-info" id="saleDetailPrintBtn">Imprimir factura</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
 
 
 <script>
 // ============================================================================
 // REPORTE DIARIO - SCRIPT AISLADO Y AUTÓNOMO
 // ============================================================================
+
+// Definir variable para evitar conflictos con reports.js
+const tipoReporte = 'daily';
+
+// Variable para almacenar la instancia de inicialización
+let dailyReportInitialized = false;
+
 (function() {
     'use strict';
     
@@ -142,6 +189,12 @@
     
     // Función principal de inicialización
     function initDailyReport() {
+        if (dailyReportInitialized) {
+            console.log('[DAILY REPORT] Ya está inicializado, recargando datos...');
+            cargarResultados();
+            return;
+        }
+        
         console.log('[DAILY REPORT] Iniciando configuración...');
         
         const fechasInput = document.getElementById('fechas');
@@ -207,12 +260,24 @@
             cargarResultados();
         });
         
+        dailyReportInitialized = true;
+        
         // Cargar resultados iniciales
         cargarResultados();
         
         console.log('[DAILY REPORT] Configuración completada');
     }
     
+    // Exponer función global INMEDIATAMENTE (antes de cualquier auto-inicialización)
+    window.cargarReporte = initDailyReport;
+    window.limpiarFiltros = function() {
+        const form = document.getElementById('filtrosReporte');
+        if (form) {
+            form.reset();
+            paginaActual = 1;
+            cargarResultados();
+        }
+    };    window.cargarResultados = cargarResultados;    
     // Función para cargar resultados
     function cargarResultados(page = paginaActual) {
         console.log('[DAILY REPORT] Cargando resultados página:', page);
@@ -221,7 +286,7 @@
         const data = new FormData(form);
         data.append('page', page);
 
-        fetch('index.php?pg=reports&action=daily&ajax=1', {
+        fetch('?pg=reports&action=Daily&ajax=1', {
             method: 'POST',
             body: data,
             headers: {
@@ -273,10 +338,20 @@
                             onclick="window.open('?pg=bill&id=${r.idVenta}','_blank','width=350,height=900')">
                             Ver factura
                         </button>
+                        <button class="btn btn-sm btn-info" 
+                            onclick= "detail(${r.idVenta})">
+                            Ver detalles
+                        </button>
+                        <button class="btn btn-sm btn-danger" 
+                            onclick="cancelarVenta(${r.idVenta})">
+                            Anular
+                        </button>
                     </td>
                 </tr>`;
         });
     }
+
+    
     
     // Función para renderizar paginación
     function renderPaginacion(total, actual) {
@@ -342,19 +417,6 @@
         container.appendChild(ul);
     }
     
-    // Función de limpiar filtros
-    window.limpiarFiltros = function() {
-        const form = document.getElementById('filtrosReporte');
-        if (form) {
-            form.reset();
-            paginaActual = 1;
-            cargarResultados();
-        }
-    };
-    
-    // Exponer función global para inicialización externa
-    window.cargarReporte = initDailyReport;
-    
     // Auto-inicializar si el DOM ya está listo
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initDailyReport);
@@ -364,4 +426,197 @@
     }
     
 })();
+
+// ========================
+// CANCELAR VENTA
+// ========================
+window.cancelarVenta = async function(idVenta) {
+    const result = await Swal.fire({
+        title: '¿Anular venta?',
+        text: 'Esta acción no se puede deshacer',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#808080',
+        confirmButtonText: 'Sí, anular',
+        cancelButtonText: 'Cancelar',
+        html: `
+            <div style="text-align: left; margin-top: 15px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600;">
+                    Observación (opcional):
+                </label>
+                <textarea 
+                    id="motivoCancelacion" 
+                    class="swal2-textarea"
+                    placeholder="Ej: Error del cliente, cambio de decisión, etc."
+                    style="width: 100%; height: 80px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit;">
+                </textarea>
+            </div>
+        `,
+        didOpen: () => {
+            const textarea = Swal.getHtmlContainer().querySelector('#motivoCancelacion');
+            if (textarea) textarea.focus();
+        },
+        preConfirm: () => {
+            const observacion = Swal.getHtmlContainer().querySelector('#motivoCancelacion').value;
+            return { observacion };
+        }
+    });
+
+    if (!result.isConfirmed) {
+        return;
+    }
+
+    const observacion = result.value.observacion;
+    
+    // Mostrar estado de carga
+    Swal.fire({
+        title: 'Anulando venta...',
+        icon: 'info',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    try {
+        const response = await fetch('?pg=sales&action=cancelSaleByInvoice', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ 
+                idVenta: idVenta,
+                observacion: observacion || null
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Mostrar éxito
+            Swal.fire({
+                icon: 'success',
+                title: '¡Venta Anulada!',
+                text: 'La venta ha sido cancelada correctamente',
+                timer: 1500,
+                showConfirmButton: false,
+            });
+            
+            // Recargar tabla
+            setTimeout(() => {
+                window.cargarResultados();
+            }, 1500);
+        } else {
+            // Mostrar error
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: data.error || 'No se pudo anular la venta'
+            });
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error en la comunicación con el servidor'
+        });
+    }
+};
+
+// ========================
+// MODAL: Detalles de venta
+// ========================
+window.detail = function(idVenta) {
+    try {
+        const modalEl = document.getElementById('saleDetailModal');
+        const saleIdEl = document.getElementById('saleDetailId');
+        const loaderEl = document.getElementById('saleDetailLoader');
+        const errorEl = document.getElementById('saleDetailError');
+        const tbodyEl = document.getElementById('saleDetailTableBody');
+        const totalEl = document.getElementById('saleDetailTotal');
+        const printBtn = document.getElementById('saleDetailPrintBtn');
+
+        if (!modalEl || !saleIdEl || !loaderEl || !errorEl || !tbodyEl || !totalEl || !printBtn) {
+            console.error('[DAILY REPORT] Elementos del modal no encontrados');
+            return;
+        }
+
+        // Preparar estado inicial
+        saleIdEl.textContent = String(idVenta);
+        loaderEl.classList.remove('d-none');
+        errorEl.classList.add('d-none');
+        tbodyEl.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Cargando...</td></tr>';
+        totalEl.textContent = '0';
+        printBtn.onclick = () => window.open('?pg=bill&id=' + idVenta, '_blank', 'width=350,height=900');
+
+        // Mostrar modal (Bootstrap si está disponible)
+        try {
+            const bs = window.bootstrap;
+            if (bs && typeof bs.Modal === 'function') {
+                bs.Modal.getOrCreateInstance(modalEl).show();
+            } else {
+                // Fallback muy básico
+                modalEl.classList.add('show');
+                modalEl.style.display = 'block';
+                document.body.classList.add('modal-open');
+            }
+        } catch (e) {
+            console.warn('[DAILY REPORT] No se pudo abrir modal con Bootstrap:', e);
+            modalEl.classList.add('show');
+            modalEl.style.display = 'block';
+        }
+
+        // Fetch de detalles de la venta
+        fetch('?pg=sales&action=GetSale&id=' + encodeURIComponent(idVenta), {
+            method: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
+        .then(data => {
+            const detalles = data?.data?.detalles || data?.detalles || data?.data?.productos || [];
+            tbodyEl.innerHTML = '';
+
+            if (!Array.isArray(detalles) || detalles.length === 0) {
+                tbodyEl.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Sin productos</td></tr>';
+                return;
+            }
+
+            let total = 0;
+            detalles.forEach(d => {
+                const nombre = d.producto_nombre || d.nombre || 'Producto';
+                const qty = parseInt(d.cantidad || 0, 10);
+                const unit = parseFloat((d.precioUnitario ?? d.precioVenta ?? d.precio ?? 0));
+                const subtotal = parseFloat((d.subTotal ?? d.precioTotal ?? (qty * unit)));
+                total += (isNaN(subtotal) ? 0 : subtotal);
+
+                tbodyEl.innerHTML += `
+                    <tr>
+                        <td>${nombre}</td>
+                        <td class="text-center">${isNaN(qty) ? 0 : qty}</td>
+                        <td>$${Number(isNaN(unit) ? 0 : unit).toLocaleString('es-CO')}</td>
+                        <td>$${Number(isNaN(subtotal) ? 0 : subtotal).toLocaleString('es-CO')}</td>
+                    </tr>`;
+            });
+            totalEl.textContent = Number(total).toLocaleString('es-CO');
+        })
+        .catch(err => {
+            console.error('[DAILY REPORT] Error detalles:', err);
+            errorEl.textContent = 'No se pudieron cargar los detalles: ' + err.message;
+            errorEl.classList.remove('d-none');
+            tbodyEl.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error cargando detalles</td></tr>';
+        })
+        .finally(() => {
+            loaderEl.classList.add('d-none');
+        });
+    } catch (error) {
+        console.error('[DAILY REPORT] Error mostrando detalles:', error);
+    }
+};
 </script>

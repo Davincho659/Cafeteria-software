@@ -4,7 +4,7 @@
 <div class="d-flex inline-block tab-container" data-user-id="<?= $_SESSION['usuario_id']  ?>" >
     <ul class="nav nav-tabs" id="ventasTabs">
         <li class="nav-item">
-            <a class="nav-link active" data-bs-toggle="tab" href="#venta1">Venta 1</a>
+            <a class="nav-link active" data-bs-toggle="tab" href="#venta1" id="">Venta 1</a>
         </li>
         <!-- botón fijo para agregar nueva pestaña; siempre debe quedar al final -->
         <li class="nav-item" id="addTabItem">
@@ -21,30 +21,27 @@
 
 <div class="container-fluid app-root">
   <div class="row d-flex h-100" >
-        <div class="col-auto border-end mt-3"
+        <div class="col-2 border-end mt-3"
      id="categorias"
      style="
         height: 90vh;
         overflow-y: auto;
         max-width: 280px;
      ">
-            <h2>Categorías</h2>
+            <h2 class="mt-2 mb-5">Categorías</h2>
             <nav class="categorias-nav" id="categoriasNav">
                 <!-- Las categorías se cargan dinámicamente aquí -->
             </nav>
         </div>
-        <div class="col mt-3"
-     id="productos"
-     style="
-        height: 100%;">
+        <div class="col-7 p-0" id="productos" style="height: 100%;">
             <div class="input-group mb-3 mt-3">
-                <h4 id="prueba">Productos</h4>
+                <h2 class="mt-2" id="prueba">Productos</h2>
                 <input type="text" class="form-control ms-4"  placeholder="Buscar" id="search" style="max-width: 700px;">
                 <button class="btn btn-outline-secondary" type="submit" id="button-addon2">
                 <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-magnifying-glass"></i></span></button>
             </div>
             <div class="d-flex "> 
-                <div id="productosContainer" class="productos-grid">
+                <div id="productosContainer" class="productosContainer">
                     <h5>cargando productos...</h5>
                 </div>
             </div>
@@ -75,10 +72,39 @@
         </div>
         <div id="tableOverlay" class="table-overlay" onclick="closeTable(event)">
             <div class="table-popup" onclick="event.stopPropagation()">
-                <h2>Mesas</h2>
-                <i onclick="closeTable()" class="fa-solid fa-circle-xmark fa-xl" style="color: #ff0000; margin-left: 8px;"></i>
+                <div class="table-popup-header">
+                    <h2>Mesas</h2>
+                    <i onclick="closeTable()" class="fa-solid fa-circle-xmark fa-xl" style="color: #ff0000; cursor: pointer;"></i>
+                </div>
                 <div class="tableContainer" id="tableContainer">
 
+                </div>
+            </div>
+        </div>
+        <!-- Modal Monto Manual -->
+        <div id="manualAmountOverlay" class="calculator-overlay" onclick="closeManualAmount(event)">
+            <div class="calculator-popup" onclick="event.stopPropagation()">
+                <div class="manual-amount-header">
+                    <h5>💰 Agregar Monto Manual</h5>
+                </div>
+                <div class="calculator-display" id="manualAmountDisplay">$0</div>
+                <div class="calculator-grid">
+                    <button class="calc-btn" onclick="addManualDigit('1')">1</button>
+                    <button class="calc-btn" onclick="addManualDigit('2')">2</button>
+                    <button class="calc-btn" onclick="addManualDigit('3')">3</button>
+                    <button class="calc-btn" onclick="addManualDigit('4')">4</button>
+                    <button class="calc-btn" onclick="addManualDigit('5')">5</button>
+                    <button class="calc-btn" onclick="addManualDigit('6')">6</button>
+                    <button class="calc-btn" onclick="addManualDigit('7')">7</button>
+                    <button class="calc-btn" onclick="addManualDigit('8')">8</button>
+                    <button class="calc-btn" onclick="addManualDigit('9')">9</button>
+                    <button class="calc-btn zero" onclick="addManualDigit('0')">0</button>
+                    <button class="calc-btn" onclick="deleteManualDigit()"><i class="fa-solid fa-left-long fa-lg"></i></button>
+                </div>
+                <div class="calc-actions">
+                    <button class="calc-action-btn borrar" onclick="clearManualAmount()">Borrar</button>
+                    <button class="calc-action-btn cancelar" onclick="closeManualAmount()">Cancelar</button>
+                    <button class="calc-action-btn confirmar" onclick="confirmManualAmount()">OK</button>
                 </div>
             </div>
         </div>
@@ -111,8 +137,8 @@
                 </div>
             </div>
         </div>
-        <div class="col-auto border-start bg-light ps-1" 
-            style=" top: 20; right: 0; min-width: 510px; height: 98vh; display: flex; flex-direction: column; z-index: 100;">
+        <div class="col-3 border-start bg-light ps-1" 
+            style=" top: 20; right: 0; min-width: 580px; height: 98vh; display: flex; flex-direction: column; z-index: 100;">
             
             <!-- Carritos por pestaña -->
             <div id="ventasContent" class="tab-content">
@@ -130,7 +156,7 @@
                         <!-- Total y botones fijos abajo -->
                         <div style="flex-shrink: 0; padding: 1rem 0;">
                             <div id="total-carrito-venta1">
-                                <h4>Total: $<span id="total-venta1">0.00</span></h4>
+                                <center><h1>Total: <strong>$<span id="total-venta1">0.00</span></strong></h1></center>
                             </div>
                             <button id="btn-procesar-venta-venta1" class="btn btn-primary btn-lg w-100 mb-2" 
                                     onclick="saleConfirmationModal('venta1', null)" role="button">
@@ -173,6 +199,12 @@
     </div>
 </div>
 
-
-  <script src="assets/js/Sales.js"></script>
+    <script src="assets/js/sales/products.js" defer></script>
+    <script src="assets/js/sales/cart.js" defer></script>
+    <script src="assets/js/sales/tabs.js" defer></script>
+    <script src="assets/js/sales/tables.js" defer></script>
+    <script src="assets/js/sales/Sales.js" defer></script>
+    
+    <!-- SortableJS: Librería para drag & drop de tabs -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 <?php require loadView('Layouts/Footer'); ?>

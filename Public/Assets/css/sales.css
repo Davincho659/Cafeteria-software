@@ -1,7 +1,11 @@
+/* ============================================================================
+   SALES.CSS - Vista de ventas (refactorizado para Design System)
+   ============================================================================ */
+
 .categorias, #categorias {
   width: 220px !important;
   max-width: 220px !important;
-  border-right: 1px solid rgba(0,0,0,0.06);
+  border-right: 1px solid var(--border);
   overflow-y: auto;
 }
 
@@ -10,6 +14,7 @@ html, body {
     margin: 0;
     overflow: hidden;
 }
+
 .app-root {
     height: 100vh;
     overflow: hidden;
@@ -32,6 +37,7 @@ html, body {
   text-align: left;
   border-left: 3px solid transparent;
   font-size: 0.9375rem;
+  color: var(--text);
 }
 
 .categoria-item:hover {
@@ -45,12 +51,11 @@ html, body {
   font-weight: 700;
 }
 
-.product-img {
-  width: 100px;
-  height: 100px;
-  object-fit: cover;
-  border-radius: 8px;
+.categorias::-webkit-scrollbar-thumb:hover {
+  background: rgba(91, 52, 17, 0.3);
 }
+
+/* Im\u00e1genes de productos - primera instancia REMOVIDA */
 
 .categoria-icon {
   font-size: 1.5rem;
@@ -62,10 +67,12 @@ html, body {
   background: rgba(191,165,148,0.08);
   border-radius: 8px;
   flex-shrink: 0;
+  color: var(--brown-mid);
 }
 
 .categoria-item.active .categoria-icon {
   background: rgba(91,52,17,0.12);
+  color: var(--brown-dark);
 }
 
 .categoria-nombre {
@@ -85,7 +92,7 @@ html, body {
 
 .producto-categoria {
   font-size: 17px;
-  color: #495057;
+  color: var(--muted);
 }
 
 .producto-img-container {
@@ -111,7 +118,7 @@ html, body {
   position: absolute;
   top: 10px;
   right: 10px;
-  background: var(--accent);
+  background: var(--success);
   color: var(--white);
   width: 32px;
   height: 32px;
@@ -119,14 +126,14 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+  box-shadow: var(--shadow-sm);
   animation: fadeIn 0.28s ease-in-out;
   z-index: 10;
 }
 
 .added-overlay i {
   font-size: 16px;
-  color: white !important;
+  color: var(--white) !important;
   line-height: 1;
   display: flex;
   align-items: center;
@@ -153,32 +160,94 @@ html, body {
 }
 
 .productosContainer {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0px;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 200px));
+  gap: 12px;
+  width: 100%;
+  padding: 10px;
+  height: calc(100vh - 215px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  align-content: start;
+  justify-items: start;
+  justify-content: flex-start;
+  min-height: 0;
+}
+
+.productosContainer::-webkit-scrollbar {
+  width: 10px;
+}
+
+.productosContainer::-webkit-scrollbar-track {
+  background: var(--bg-light);
+  border-radius: 10px;
+}
+
+.productosContainer::-webkit-scrollbar-thumb {
+  background: var(--muted);
+  border-radius: 10px;
+}
+
+.productosContainer::-webkit-scrollbar-thumb:hover {
+  background: var(--brown-mid);
 }
 
 
 .producto-card {
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.128);
+  box-shadow: var(--shadow-sm);
   transition: all 0.3s ease;
   cursor: pointer;
-  border-radius: 12px;
-  background-color: white;
-  padding: 2px;
-  padding-bottom: 4px;
+  border-radius: var(--radius);
+  background-color: var(--white);
   border: none;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 260px;
+  padding: 10px;
+  width: 100%;
+  max-width: 200px;
+}
+
+.manual-card {
+  border: 1px dashed var(--brown-mid);
+  background: linear-gradient(135deg, rgba(91,52,17,0.04), rgba(91,52,17,0.09));
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.manual-card .manual-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--white);
+  color: var(--brown-dark);
+  box-shadow: var(--shadow-sm);
+  border: 2px solid var(--brown-mid);
+  font-size: 30px;
+}
+
+.manual-card .manual-hint {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.producto-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .cart-product {
-  background: white;
+  background: var(--white);
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
   transition: box-shadow 0.2s;
 }
 
@@ -189,7 +258,7 @@ html, body {
   border-radius: 8px;
 }
 
-.product-name {
+.product-nombre {
   font-size: 0.95rem;
   font-weight: 600;
   margin-bottom: 2px;
@@ -220,11 +289,11 @@ html, body {
   width: 32px;
   height: 32px;
   border: none;
-  background: white;
+  background: var(--white);
   border-radius: 6px;
   font-size: 16px;
   font-weight: 600;
-  color: #495057;
+  color: var(--text);
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
@@ -233,8 +302,8 @@ html, body {
 }
 
 .quantity-control button:hover {
-  background: #e9ecef;
-  color: #212529;
+  background: var(--bg-light);
+  color: var(--brown-dark);
 }
 
 .quantity-control input {
@@ -244,7 +313,7 @@ html, body {
   border: none;
   background: transparent;
   font-weight: 600;
-  color: #212529;
+  color: var(--brown-dark);
   font-size: 14px;
 }
 
@@ -260,28 +329,31 @@ html, body {
 .price {
   font-size: 20px;
   font-weight: 700;
-  color: #212529;
+  color: var(--brown-dark);
   margin: 0;
 }
 
 .remove-btn {
   border: none;
-  background: #fff5f5;
+  background: rgba(192, 57, 43, 0.08);
   border-radius: 8px;
-  color: #dc3545;
+  color: var(--error);
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
+}
 
+.remove-btn:hover {
+  background: rgba(192, 57, 43, 0.15);
 }
 
 .cart-summary {
-  background: white;
+  background: var(--white);
   border-radius: 8px;
   padding: 15px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-sm);
 }
 
 .summary-row {
@@ -311,8 +383,8 @@ html, body {
   height: 32px;
   border: none;
   border-radius: 6px;
-  background: #3498db;
-  color: white;
+  background: var(--brown-dark);
+  color: var(--white);
   font-size: 16px;
   font-weight: 600;
   display: flex;
@@ -323,7 +395,7 @@ html, body {
 }
 
 .cantidad-btn:hover {
-  background: #2980b9;
+  background: var(--brown-mid);
   transform: scale(1.05);
 }
 
@@ -336,24 +408,20 @@ html, body {
   text-align: center;
   font-size: 16px;
   font-weight: 600;
-  color: #2c3e50;
-  background: #e1e4e5;
+  color: var(--brown-dark);
+  background: var(--bg-light);
   padding: 6px;
   border-radius: 6px;
 }
 
 .cantidad-display:hover {
-.btn-agregar {
-  transition: transform .12s,box-shadow .12s,opacity .12s;
-  box-shadow: 0 6px 14px rgba(43,33,30,0.04);
+  background: var(--border);
+  cursor: pointer;
 }
 
-.btn-agregar:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(43,33,30,0.06);
-}
-  background: #a3a3a3;
-  cursor: pointer;
+.btn-agregar {
+  transition: transform .12s,box-shadow .12s,opacity .12s;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-agregar {
@@ -361,8 +429,8 @@ html, body {
   padding: 8px;
   border: none;
   border-radius: 6px;
-  background: #27ae60;
-  color: white;
+  background: var(--success);
+  color: var(--white);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -371,7 +439,9 @@ html, body {
 }
 
 .btn-agregar:hover {
-  background: #229954;
+  background: #247732;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .calculator-overlay {
@@ -392,23 +462,24 @@ html, body {
 }
 
 .calculator-popup {
-  background: white;
-  border-radius: 12px;
+  background: var(--white);
+  border-radius: var(--radius);
   padding: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-lg);
   width: 280px;
 }
 
 .calculator-display {
-  background: #ecf0f1;
+  background: var(--bg-light);
   padding: 15px;
   border-radius: 8px;
   text-align: right;
   font-size: 24px;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--brown-dark);
   margin-bottom: 15px;
   min-height: 50px;
+  border: 2px solid var(--border);
 }
 
 .calculator-grid {
@@ -422,16 +493,17 @@ html, body {
   padding: 15px;
   border: none;
   border-radius: 8px;
-  background: #3498db;
-  color: white;
+  background: var(--brown-dark);
+  color: var(--white);
   font-size: 18px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
 }
 
 .calc-btn:hover {
-  background: #2980b9;
+  background: var(--brown-mid);
   transform: scale(1.05);
 }
 
@@ -461,30 +533,30 @@ html, body {
 }
 
 .calc-action-btn.borrar {
-  background: #e74c3c;
-  color: white;
+  background: var(--error);
+  color: var(--white);
 }
 
 .calc-action-btn.borrar:hover {
-  background: #c0392b;
+  background: #A93226;
 }
 
 .calc-action-btn.confirmar {
-  background: #27ae60;
-  color: white;
+  background: var(--success);
+  color: var(--white);
 }
 
 .calc-action-btn.confirmar:hover {
-  background: #229954;
+  background: #247732;
 }
 
 .calc-action-btn.cancelar {
-  background: #95a5a6;
-  color: white;
+  background: var(--muted);
+  color: var(--white);
 }
 
 .calc-action-btn.cancelar:hover {
-  background: #7f8c8d;
+  background: #A68B7C;
 }
 
 
@@ -510,16 +582,16 @@ html, body {
   align-items: center;
   font-size: 1.1rem;
   font-weight: 600;
-  color: #495057;
+  color: var(--text);
   border-bottom: 4px solid transparent;
   transition: all 0.3s;
   white-space: nowrap;
 }
 
 .tab-container .nav-link:hover {
-  color: #212529;
-  border-bottom-color: #dee2e6;
-  background: #f8f9fa;
+  color: var(--brown-dark);
+  border-bottom-color: var(--border);
+  background: var(--bg-light);
 }
 
 .tab-container .nav-link.active {
@@ -533,7 +605,19 @@ html, body {
 }
 
 .btn-info {
-    background: #10b981;
+    background: var(--info);
+    color: var(--white);
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-danger  {
+    background: #ef4444;
     color: white;
     border: none;
     padding: 10px 24px;
@@ -541,6 +625,12 @@ html, body {
     font-weight: 500;
     cursor: pointer;
     transition: background 0.2s;
+}
+
+.btn-info:hover {
+    background: #2471A3;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
 }
 
 .table-overlay {
@@ -563,20 +653,87 @@ html, body {
 }
 
 .table-popup {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  width: auto;
-  height: 450px;
-  width: 400px;
+  background: var(--white);
+  border-radius: var(--radius);
+  padding: 9px;
+  box-shadow: var(--shadow-lg);
+  min-height: 450px;
+  min-width: 400px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.table-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 2px solid #ddd;
+  flex-shrink: 0;
+  background: var(--brown-dark);
+  position: relative;
+}
+
+.table-popup-header h2 {
+  margin: 0;
+  flex: 1;
+  text-align: center;
+  color: var(--white);
+}
+
+.table-popup-header i {
+  position: absolute;
+  right: 24px;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.manual-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  min-width: 500px;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 3000;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.manual-overlay.active {
+  display: flex;
+}
+
+.manual-popup {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  width: 280px;
+}
+
+.manual-amount-header {
+  padding: 12px 0;
+  text-align: center;
+  border-bottom: 2px solid #ddd;
+  margin-bottom: 12px;
+}
+
+.manual-amount-header h5 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
 }
 
 /* Estilos específicos para el pop-up del reporte diario */
 .daily-report-popup {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
   width: 95vw;
   max-width: 1400px;
   height: 90vh;
@@ -590,9 +747,14 @@ html, body {
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 2px solid var(--border);
   flex-shrink: 0;
-  background: white;
+  background: var(--brown-dark);
+  color: var(--white);
+}
+
+.daily-report-header h2 {
+  color: var(--white);
 }
 
 .daily-report-body {
@@ -600,7 +762,7 @@ html, body {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 20px 24px;
-  background: #f8f9fa;
+  background: var(--bg-light);
 }
 
 /* Scroll personalizado para el contenido del reporte */
@@ -609,39 +771,52 @@ html, body {
 }
 
 .daily-report-body::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--bg-light);
   border-radius: 10px;
 }
 
 .daily-report-body::-webkit-scrollbar-thumb {
-  background: #888;
+  background: var(--muted);
   border-radius: 10px;
 }
 
 .daily-report-body::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: var(--brown-mid);
 }
 .table-card {
   overflow: hidden;
   width: 150px;
   height: 150px;
-  box-shadow: 0 4px 14px rgba(43,33,30,0.06);
+  box-shadow: var(--shadow-sm);
   transition: transform 0.18s ease,box-shadow 0.18s ease;
   cursor: pointer;
-  border-radius: 12px;
+  border-radius: var(--radius);
   background-color: var(--white);
   padding: 6px;
   position: relative;
 }
 
+.table-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
 .table-card.disabled {
-  opacity: 2.2;
-  background-color: #f82323b1;
+  opacity: 0.6;
+  background-color: rgba(192, 57, 43, 0.1);
+  border: 2px solid var(--error);
 }
 
 .tableContainer {
   width: 100%;
-  height: 400px;
+  padding: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 10px;
 }
 
 .table-img {
@@ -653,7 +828,7 @@ html, body {
 }
 
 .tab-content {
-  background-color: #F7F3EE;
+  background-color: var(--bg-light);
 }
 
 /* ============================================================================
@@ -678,8 +853,8 @@ html, body {
 
 .sale-confirmation-modal {
   background: var(--white);
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
   max-width: 500px;
   width: 90%;
   padding: 0;
@@ -766,14 +941,14 @@ html, body {
 .payment-btn {
   flex: 1;
   padding: 12px 16px;
-  border: 2px solid #ddd;
+  border: 2px solid var(--border);
   background: var(--white);
   border-radius: 8px;
   cursor: pointer;
   font-weight: 600;
   font-size: 0.9rem;
   transition: all 0.3s ease;
-  color: var(--brown-mid);
+  color: var(--brown-dark);
 }
 
 .payment-btn:hover {
@@ -782,9 +957,10 @@ html, body {
 }
 
 .payment-btn.active {
-  background: linear-gradient(135deg, #5B3411 0%, #8B5A2B 100%);
-  color: var(--white);
-  border-color: var(--brown-dark);
+  background: var(--brown-dark) !important;
+  color: var(--white) !important;
+  border-color: var(--brown-dark) !important;
+  box-shadow: var(--shadow-sm);
 }
 
 .sale-actions {
@@ -808,32 +984,164 @@ html, body {
 }
 
 .sale-btn-confirm {
-  background: linear-gradient(135deg, #26c418 0%, #1aa810 100%);
+  background: var(--success);
   color: var(--white);
 }
 
 .sale-btn-confirm:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(38, 196, 24, 0.3);
+  box-shadow: var(--shadow-md);
+  background: #247732;
 }
 
 .sale-btn-print {
-  background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
+  background: var(--info);
   color: var(--white);
   margin-bottom: 10px;
 }
 
 .sale-btn-print:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 102, 204, 0.3);
+  box-shadow: var(--shadow-md);
+  background: #2471A3;
 }
 
 .sale-btn-cancel {
-  background: #e9ecef;
+  background: var(--bg-light);
   color: var(--brown-dark);
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--border);
 }
 
 .sale-btn-cancel:hover {
-  background: #dee2e6;
+  background: var(--border);
+}
+
+/* ============================================================================
+   UTILIDADES PARA JS
+   ============================================================================ */
+
+/* Iconos de categoría e imágenes */
+.categoria-icon {
+  width: 30px;
+  height: 30px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-right: 6px;
+}
+
+.product-img {
+  width: 80px;
+  height: 80px;
+  min-width: 80px;
+  min-height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+
+.product-img-sm {
+  width: 60px;
+  height: 60px;
+  min-width: 60px;
+  min-height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+}
+
+/* Iconos de acción con colores */
+.icon-delete {
+  color: var(--error);
+}
+
+.icon-close {
+  color: var(--error);
+  margin-left: 8px;
+  cursor: pointer;
+}
+
+/* Estados de mesa */
+.mesa-status-occupied {
+  color: var(--error);
+}
+
+.mesa-status-available {
+  color: var(--success);
+}
+
+/* Estilos inline para padding/spacing */
+.py-1rem {
+  padding: 1rem 0;
+}
+
+.cart-scroll {
+  height: calc(85vh - 200px);
+  overflow-y: auto;
+}
+
+/* ============================================================================
+   SORTABLE: Estilos para Drag & Drop de Tabs
+   ============================================================================ */
+
+/* Contenedor de tabs con soporte drag & drop */
+#ventasTabs {
+  position: relative;
+  flex-wrap: nowrap;
+  scroll-behavior: smooth;
+}
+
+/* Tab siendo arrastrado */
+.sortable-drag {
+  opacity: 0.5;
+  background-color: rgba(38, 196, 24, 0.1);
+}
+
+/* Posición fantasma mientras se arrastra */
+.sortable-ghost {
+  opacity: 0.3;
+  background: linear-gradient(90deg, #26c418 0%, transparent 100%);
+  border-radius: 4px;
+}
+
+/* Tab item con animación suave */
+.tab-container .nav-item {
+  transition: all 0.15s ease-in-out;
+  cursor: grab;
+  position: relative;
+}
+
+/* Línea gris corta y centrada a la izquierda */
+.tab-container .nav-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1px;
+  height: 60%;
+  background-color: #d4d4d4;
+}
+.tab-container .nav-item:active {
+  cursor: grabbing;
+}
+
+/* Hover en tab para indicar que se puede arrastrar */
+.tab-container .nav-item:hover a.nav-link {
+  transition: all 0.2s ease;
+}
+
+/* Feedback visual mientras se arrastra sobre otro tab */
+.tab-container .nav-tabs .tab-item:not(.sortable-ghost) {
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Shadow al arrastrar */
+.sortable-drag {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+/* SweetAlert2 por encima de todos los modales */
+.swal2-container {
+  z-index: 10000 !important;
 }

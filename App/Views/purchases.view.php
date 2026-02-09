@@ -22,12 +22,15 @@
                 ⚡ Compra Rápida
             </button>
         </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="history-tab" data-bs-toggle="tab" 
-                    data-bs-target="#history" type="button" role="tab">
-                📊 Historial
-            </button>
-        </li>
+        <?php if (isset($_SESSION['usuario_rol']) && $_SESSION['usuario_rol'] === 'admin'): ?>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="history-tab" data-bs-toggle="tab" 
+                        data-bs-target="#history" type="button" role="tab">
+                    📊 Historial
+                </button>
+            </li>
+        <?php endif; ?>
+        
     </ul>
 
     <div class="tab-content">
@@ -119,7 +122,7 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-semibold">Proveedor
                                     </label>
-                                    <select id="quickSupplierSelect" class="form-select" required>
+                                    <select id="quickSupplierSelect" class="form-select" >
                                         <option value="">Seleccione...</option>
                                     </select>
                                 </div>
