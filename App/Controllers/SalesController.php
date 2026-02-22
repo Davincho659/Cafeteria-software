@@ -42,7 +42,10 @@ class SalesController {
             $idCategory = $_GET['idCategory'] ?? null;
             
             if ($idCategory == null) {
-                $products = $this->productModel->getAll();
+                $products = $this->productModel->getAll([
+                    'estado' => 1,
+                    'tipo' => 'venta'
+                ]);
             } else {
                 $products = $this->productModel->getByCategory($idCategory);
             }

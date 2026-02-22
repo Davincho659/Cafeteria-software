@@ -7,7 +7,27 @@ document.addEventListener('DOMContentLoaded', function() {
     loadMovements();
     loadAlerts();
     initializeEventListeners();
+    updateInventoryAlertBadge();
 });
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat('es-CO').format(value);
+}
+
+function formatQuantity(value, unidadTipo) {
+    // Los datos ya vienen correctamente formateados desde la BD
+    // Solo necesitamos convertir a número y aplicar locale si es necesario
+    const numValue = parseFloat(value);
+    
+    if (!isFinite(numValue)) {
+        return '0';
+    }
+
+    return numValue.toLocaleString('es-CO', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 3
+    });
+}
 
 function initializeEventListeners() {
     // Refresh
@@ -51,6 +71,8 @@ async function loadStock() {
     }
 }
 
+
+
 function renderStock(filter = '') {
     const tbody = document.getElementById('stockTable');
     tbody.innerHTML = '';
@@ -69,15 +91,16 @@ function renderStock(filter = '') {
         const tr = document.createElement('tr');
         
         const valorTotal = item.stockActual * item.precioVenta;
-        const stockClass = item.stockActual < 10 ? 'text-danger fw-bold' : 'text-success';
-        
+        const stockClass = item.stockActual < 0 ? 'text-danger fw-bold' : 'text-success fw-bold';
+        const alertIcon = item.stockActual < 0 ? ' <i class="fa-solid fa-triangle-exclamation text-danger" title="¡Stock negativo!"></i>' : '';
+
         tr.innerHTML = `
             <td>${item.producto}</td>
             <td>${item.categoria}</td>
-            <td class="text-center ${stockClass}">${item.stockActual}</td>
-            <td class="text-end">$${parseFloat(item.precioCompra || 0).toFixed(2)}</td>
-            <td class="text-end">$${parseFloat(item.precioVenta || 0).toFixed(2)}</td>
-            <td class="text-end fw-bold">$${valorTotal.toFixed(2)}</td>
+            <td class="text-center ${stockClass}">${formatQuantity(item.stockActual, item.unidadTipo)}${alertIcon}</td>
+            <td class="text-end">$${formatCurrency(item.precioCompra || 0)}</td>
+            <td class="text-end">$${formatCurrency(item.precioVenta || 0)}</td>
+            <td class="text-end fw-bold">$${formatCurrency(valorTotal)}</td>
             <td class="text-center">
                 <button class="btn btn-sm btn-outline-primary" onclick="openAdjustModal(${item.idProducto}, '${item.producto}', ${item.stockActual})" title="Ajustar stock">
                     <i class="fa-solid fa-pen-to-square"></i>
@@ -107,9 +130,9 @@ async function loadInventoryValue() {
             const { valorCompra, valorVenta } = data.data;
             const ganancia = valorVenta - valorCompra;
             
-            document.getElementById('totalValueCost').textContent = parseFloat(valorCompra || 0).toFixed(2);
-            document.getElementById('totalValueSale').textContent = parseFloat(valorVenta || 0).toFixed(2);
-            document.getElementById('potentialProfit').textContent = parseFloat(ganancia || 0).toFixed(2);
+            document.getElementById('totalValueCost').textContent = formatCurrency(valorCompra || 0);
+            document.getElementById('totalValueSale').textContent = formatCurrency(valorVenta || 0);
+            document.getElementById('potentialProfit').textContent = formatCurrency(ganancia || 0);
         }
     } catch (error) {
         console.error('Error loading inventory value:', error);
@@ -181,9 +204,9 @@ function renderMovements(movements) {
                     <i class="fa-solid fa-${tipoIcon}"></i> ${mov.tipoMovimiento}
                 </span>
             </td>
-            <td class="text-center">${mov.cantidad}</td>
-            <td class="text-center">${mov.stockAnterior}</td>
-            <td class="text-center fw-bold">${mov.stockActual}</td>
+            <td class="text-center">${formatQuantity(mov.cantidad, mov.unidadTipo)}</td>
+            <td class="text-center">${formatQuantity(mov.stockAnterior, mov.unidadTipo)}</td>
+            <td class="text-center fw-bold">${formatQuantity(mov.stockActual, mov.unidadTipo)}</td>
             <td><small>${mov.descripcion || mov.referencia || '-'}</small></td>
             <td><small>${mov.usuario || '-'}</small></td>
         `;
@@ -210,7 +233,7 @@ async function saveStockAdjustment(e) {
     
     const adjustData = {
         idProducto: parseInt(document.getElementById('adjustProductId').value),
-        nuevoStock: parseInt(document.getElementById('adjustNewStock').value),
+        nuevoStock: parseFloat(document.getElementById('adjustNewStock').value),
         descripcion: document.getElementById('adjustDescription').value.trim(),
         idUsuario: getUserId()
     };
@@ -289,9 +312,9 @@ async function viewProductHistory(idProducto, nombre) {
                         <tr>
                             <td><small>${fecha.toLocaleString()}</small></td>
                             <td><span class="badge bg-${tipoClass}">${mov.tipoMovimiento}</span></td>
-                            <td class="text-center">${mov.cantidad}</td>
-                            <td class="text-center">${mov.stockAnterior}</td>
-                            <td class="text-center fw-bold">${mov.stockActual}</td>
+                            <td class="text-center">${formatQuantity(mov.cantidad, mov.unidadTipo)}</td>
+                            <td class="text-center">${formatQuantity(mov.stockAnterior, mov.unidadTipo)}</td>
+                            <td class="text-center fw-bold">${formatQuantity(mov.stockActual, mov.unidadTipo)}</td>
                         </tr>
                     `;
                 });
@@ -344,22 +367,22 @@ function renderAlerts(alerts) {
     tbody.innerHTML = '';
 
     if (!alerts || alerts.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No hay alertas registradas</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center text-success"><i class="fa-solid fa-circle-check me-2"></i>No hay productos con stock negativo</td></tr>';
         return;
     }
 
     alerts.forEach(a => {
         const tr = document.createElement('tr');
         const fecha = new Date(a.fechaMovimiento);
-        const tipoClass = a.tipoMovimiento === 'salida' ? 'danger' : (a.tipoMovimiento === 'ajuste' ? 'warning' : 'secondary');
+        const tipoClass = a.tipoMovimiento === 'salida' ? 'danger' : (a.tipoMovimiento === 'ajuste' ? 'warning' : 'info');
         tr.innerHTML = `
             <td>${fecha.toLocaleString()}</td>
             <td>${a.producto}</td>
-            <td><span class="badge bg-${tipoClass}">${a.tipoMovimiento}</span></td>
-            <td class="text-center">${a.cantidad}</td>
-            <td class="text-center">${a.stockAnterior}</td>
-            <td class="text-center fw-bold text-danger">${a.stockActual}</td>
-            <td><small>${a.descripcion || a.referencia || '-'}</small></td>
+            <td><span class="badge bg-${tipoClass}">${a.tipoMovimiento || '-'}</span></td>
+            <td class="text-center">${formatQuantity(a.cantidad, a.unidadTipo)}</td>
+            <td class="text-center">${formatQuantity(a.stockAnterior, a.unidadTipo)}</td>
+            <td class="text-center fw-bold text-danger">${formatQuantity(a.stockActual, a.unidadTipo)}</td>
+            <td><small>${a.descripcion || a.referencia || 'Stock agotado'}</small></td>
             <td><small>${a.usuario || '-'}</small></td>
         `;
         tbody.appendChild(tr);

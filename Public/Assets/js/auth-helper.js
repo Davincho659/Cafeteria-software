@@ -1,7 +1,13 @@
 // =====================================================
 // AUTH HELPER - Funciones de autenticación globales
 // =====================================================
-
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        updateInventoryAlertBadge();
+    });
+} else {
+    updateInventoryAlertBadge();
+}
 /**
  * Obtener ID del usuario actual desde sesión
  */
@@ -131,3 +137,40 @@ function formatDateTime(dateString) {
         minute: '2-digit'
     });
 }
+
+// =====================================================
+// ALERTAS DE INVENTARIO EN HEADER
+// =====================================================
+
+async function updateInventoryAlertBadge() {
+    const headerBadge = document.getElementById('headerInventoryAlertBadge');
+    if (!headerBadge) return;
+
+    try {
+        const response = await fetch('index.php?pg=inventory&action=getAlertas&limit=100');
+        const data = await response.json();
+
+        if (data.success && Array.isArray(data.data)) {
+            const count = data.data.length;
+            if (count > 0) {
+                headerBadge.textContent = count;
+                headerBadge.style.display = 'inline-block';
+            } else {
+                headerBadge.textContent = '';
+                headerBadge.style.display = 'none';
+            }
+        } else {
+            headerBadge.textContent = '';
+            headerBadge.style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Error loading inventory alert badge:', error);
+        headerBadge.textContent = '';
+        headerBadge.style.display = 'none';
+    }
+}
+
+
+
+
+

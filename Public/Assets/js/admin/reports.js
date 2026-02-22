@@ -75,6 +75,10 @@ if (formFiltros) {
     });
 }
 
+function formatCurrency(value) {
+  return new Intl.NumberFormat('es-CO').format(value);
+}
+
 function cargarResultados(page = paginaActual) {
     const tipo = typeof tipoReporte !== 'undefined' ? tipoReporte : 'sales';
 
@@ -87,8 +91,7 @@ function cargarResultados(page = paginaActual) {
         cargarCaja();
         return;
     }
-    if (tipo === 'inventoryReport') {
-        cargarInventario();
+    if (tipo === 'inventory') {
         return;
     }
     if (tipo === 'topProducts') {
@@ -190,7 +193,7 @@ function renderTabla(rows, tipo = 'sales') {
                     <td>${r.idGasto}</td>
                     <td>${tipoLabel}</td>
                     <td>${r.descripcion || '-'}</td>
-                    <td>${new Date(r.fechaGasto).toLocaleString()}</td>
+                    <td>${new Date(r.fechaRegistro).toLocaleString()}</td>
                     <td>$${Number(r.monto).toLocaleString()}</td>
                 </tr>`;
         });
@@ -543,67 +546,6 @@ function cargarCaja() {
     })
     .catch(err => {
         console.error('Error cargando caja:', err);
-        document.getElementById('loading-message').innerHTML = '<p class="text-danger">Error al cargar el reporte</p>';
-    });
-}
-
-function cargarInventario() {
-    fetch('index.php?pg=reports&action=inventoryReport&ajax=1', {
-        method: 'POST'
-    })
-    .then(r => r.json())
-    .then(data => {
-        document.getElementById('loading-message').classList.add('d-none');
-
-        const alertas = data.alertas || [];
-        const stockBajo = data.stockBajo || [];
-        const valorInventario = data.valorInventario || {};
-
-        // KPIs
-        document.getElementById('kpi-container').style.display = 'flex';
-        document.getElementById('kpi-alertas').textContent = alertas.length;
-        document.getElementById('kpi-stock-bajo').textContent = stockBajo.length;
-        
-        const valorCompra = Number(valorInventario.valorCompra || 0);
-        const valorVenta = Number(valorInventario.valorVenta || 0);
-        document.getElementById('kpi-valor-inventario').textContent = `$${valorCompra.toLocaleString('es-CL')}`;
-
-        // Tabla alertas críticas
-        const tbodyAlertas = document.getElementById('tabla-alertas');
-        document.getElementById('alertas-section').style.display = 'block';
-        
-        if (alertas.length === 0) {
-            tbodyAlertas.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Sin alertas críticas</td></tr>';
-        } else {
-            tbodyAlertas.innerHTML = alertas.map(a => `
-                <tr>
-                    <td>${a.producto}</td>
-                    <td class="text-danger"><strong>${a.stockActual}</strong></td>
-                    <td>${new Date(a.fechaMovimiento).toLocaleString()}</td>
-                    <td><span class="alert-badge alert-critical">⚠️ Stock Negativo</span></td>
-                </tr>
-            `).join('');
-        }
-
-        // Tabla stock bajo
-        const tbodyStockBajo = document.getElementById('tabla-stock-bajo');
-        document.getElementById('stock-bajo-section').style.display = 'block';
-        
-        if (stockBajo.length === 0) {
-            tbodyStockBajo.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Todos los productos con stock adecuado</td></tr>';
-        } else {
-            tbodyStockBajo.innerHTML = stockBajo.map(p => `
-                <tr>
-                    <td>${p.producto}</td>
-                    <td class="text-warning"><strong>${p.stockActual}</strong></td>
-                    <td>${p.stockMinimo || 'No definido'}</td>
-                    <td><span class="alert-badge alert-warning">⚠️ Stock Bajo</span></td>
-                </tr>
-            `).join('');
-        }
-    })
-    .catch(err => {
-        console.error('Error cargando inventario:', err);
         document.getElementById('loading-message').innerHTML = '<p class="text-danger">Error al cargar el reporte</p>';
     });
 }

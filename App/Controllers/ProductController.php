@@ -30,11 +30,14 @@ class ProductController {
             if (empty($_POST['categoria'])) throw new Exception('La categoría es requerida');
             if (empty($_POST['nombre'])) throw new Exception('El nombre es requerido');
             if (empty($_POST['tipo'])) throw new Exception('El tipo es requerido');
+            
 
             // Preparar datos
             $idCategoria = $_POST['categoria'];
             $nombre = trim($_POST['nombre']);
             $tipo = $_POST['tipo'];
+            $manejaStock = isset($_POST['manejaStock']) ? (int)$_POST['manejaStock'] : 0;
+            $idUnidadBase = !empty($_POST['idUnidadBase']) ? (int)$_POST['idUnidadBase'] : null;
             $precioCompra = !empty($_POST['precioCompra']) ? floatval($_POST['precioCompra']) : null;
             $precioVenta = !empty($_POST['precioVenta']) ? floatval($_POST['precioVenta']) : null;
 
@@ -44,7 +47,7 @@ class ProductController {
                 $imageTipe = $_FILES['imagen']['type'] ? explode('/', $_FILES['imagen']['type'])[1] : null;
                 
                 // Crear producto primero sin imagen
-                $idProducto = $this->productsModel->create($idCategoria, $nombre, $tipo, $precioVenta, $precioCompra, 'default.png', 1, 0, 1);
+                $idProducto = $this->productsModel->create($idCategoria, $nombre, $tipo, $precioVenta, $precioCompra, 'default.png', $idUnidadBase, $manejaStock, 1);
                 
                 // Procesar imagen
                 $image = $idProducto.".".$imageTipe;
@@ -60,14 +63,14 @@ class ProductController {
                         'precioCompra' => $precioCompra,
                         'precioVenta' => $precioVenta,
                         'imagen' => $image,
-                        'idUnidadBase' => 1,
-                        'manejaStock' => 0,
+                        'idUnidadBase' => $idUnidadBase,
+                        'manejaStock' => $manejaStock,
                         'estado' => 1
                     ]);
                 }
             } else {
                 $image = 'default.png';
-                $idProducto = $this->productsModel->create($idCategoria, $nombre, $tipo, $precioVenta, $precioCompra, $image, 1, 0, 1);
+                $idProducto = $this->productsModel->create($idCategoria, $nombre, $tipo, $precioVenta, $precioCompra, $image, $idUnidadBase, $manejaStock, 1);
             }
 
             echo json_encode([
@@ -146,6 +149,15 @@ class ProductController {
             if (empty($_POST['nombre'])) throw new Exception('El nombre es requerido');
             if (empty($_POST['tipo'])) throw new Exception('El tipo es requerido');
 
+            // Preparar datos comunes
+            $idCategoria = $_POST['categoria'];
+            $nombre = trim($_POST['nombre']);
+            $tipo = $_POST['tipo'];
+            $manejaStock = isset($_POST['manejaStock']) ? (int)$_POST['manejaStock'] : 0;
+            $idUnidadBase = !empty($_POST['idUnidadBase']) ? (int)$_POST['idUnidadBase'] : ($currentProduct['idUnidadBase'] ?? null);
+            $precioCompra = !empty($_POST['precioCompra']) ? floatval($_POST['precioCompra']) : null;
+            $precioVenta = !empty($_POST['precioVenta']) ? floatval($_POST['precioVenta']) : null;
+
             $path = __DIR__ . '/../../Public/Assets/img/products';
 
             if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
@@ -171,14 +183,14 @@ class ProductController {
                 // Mover nueva imagen
                 if (move_uploaded_file($file, $fullPath)) {
                     $success = $this->productsModel->update($idProducto, [
-                        'idCategoria' => $_POST['categoria'],
-                        'nombre' => trim($_POST['nombre']),
-                        'tipo' => $_POST['tipo'],
-                        'precioCompra' => !empty($_POST['precioCompra']) ? floatval($_POST['precioCompra']) : null,
-                        'precioVenta' => !empty($_POST['precioVenta']) ? floatval($_POST['precioVenta']) : null,
+                        'idCategoria' => $idCategoria,
+                        'nombre' => $nombre,
+                        'tipo' => $tipo,
+                        'precioCompra' => $precioCompra,
+                        'precioVenta' => $precioVenta,
                         'imagen' => $image,
-                        'idUnidadBase' => $currentProduct['idUnidadBase'] ?? 1,
-                        'manejaStock' => $currentProduct['manejaStock'] ?? 0,
+                        'idUnidadBase' => $idUnidadBase,
+                        'manejaStock' => $manejaStock,
                         'estado' => $currentProduct['estado'] ?? 1
                     ]);
                 } else {
@@ -186,14 +198,14 @@ class ProductController {
                 }
             } else {
                 $success = $this->productsModel->update($idProducto, [
-                    'idCategoria' => $_POST['categoria'],
-                    'nombre' => trim($_POST['nombre']),
-                    'tipo' => $_POST['tipo'],
-                    'precioCompra' => !empty($_POST['precioCompra']) ? floatval($_POST['precioCompra']) : null,
-                    'precioVenta' => !empty($_POST['precioVenta']) ? floatval($_POST['precioVenta']) : null,
+                    'idCategoria' => $idCategoria,
+                    'nombre' => $nombre,
+                    'tipo' => $tipo,
+                    'precioCompra' => $precioCompra,
+                    'precioVenta' => $precioVenta,
                     'imagen' => $currentProduct['imagen'],
-                    'idUnidadBase' => $currentProduct['idUnidadBase'] ?? 1,
-                    'manejaStock' => $currentProduct['manejaStock'] ?? 0,
+                    'idUnidadBase' => $idUnidadBase,
+                    'manejaStock' => $manejaStock,
                     'estado' => $currentProduct['estado'] ?? 1
                 ]);
             }

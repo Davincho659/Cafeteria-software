@@ -55,11 +55,16 @@
                 </li>
                 
                 <!-- Inventario -->
-                <li class="nav-item">
-                    <a class="nav-link <?= ($currentPg === 'inventory') ? 'active' : '' ?>" href="?pg=inventory">
-                        <i class="fa-solid fa-boxes-stacked"></i> Inventario
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?= ($currentPg === 'inventory') ? 'active' : '' ?>" href="?pg=inventory">
+                            
+                            <span class="position-relative ms-1">
+                                <i class="fa-solid fa-boxes-stacked"></i>
+                                <span id="headerInventoryAlertBadge" class="position-absolute top-0 start-0 translate-middle badge rounded-pill bg-danger" style="display:none;"></span>
+                                Inventario
+                            </span>
+                        </a>
+                    </li>
 
                 <!-- Gastos -->
                 <li class="nav-item">

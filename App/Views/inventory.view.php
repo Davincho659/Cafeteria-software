@@ -73,16 +73,12 @@
                 📦 Stock Actual
             </button>
         </li>
+        
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="movements-tab" data-bs-toggle="tab" 
-                    data-bs-target="#movements" type="button" role="tab">
-                📋 Movimientos
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="alerts-tab" data-bs-toggle="tab" 
+            <button class="nav-link position-relative" id="alerts-tab" data-bs-toggle="tab" 
                     data-bs-target="#alerts" type="button" role="tab">
                 ⚠️ Alertas
+                <span id="inventoryAlertBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;"></span>
             </button>
         </li>
     </ul>
@@ -125,59 +121,6 @@
                                 </tr>
                             </thead>
                             <tbody id="stockTable">
-                                <!-- Se llena con JS -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ============== MOVIMIENTOS ============== -->
-        <div class="tab-pane fade" id="movements" role="tabpanel">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="fw-bold mb-3">Historial de Movimientos</h5>
-
-                    <!-- Filtros -->
-                    <div class="row mb-3">
-                        <div class="col-md-3">
-                            <select id="filterMovementType" class="form-select form-select-sm">
-                                <option value="">Todos los tipos</option>
-                                <option value="entrada">Entrada</option>
-                                <option value="salida">Salida</option>
-                                <option value="ajuste">Ajuste</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <input type="date" id="filterMovementDateFrom" class="form-control form-control-sm">
-                        </div>
-                        <div class="col-md-3">
-                            <input type="date" id="filterMovementDateTo" class="form-control form-control-sm">
-                        </div>
-                        <div class="col-md-3">
-                            <button id="btnFilterMovements" class="btn btn-sm btn-primary w-100">
-                                <i class="fa-solid fa-filter"></i> Filtrar
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Tabla -->
-                    <div class="table-responsive">
-                        <table class="table table-hover table-sm">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Producto</th>
-                                    <th>Tipo</th>
-                                    <th class="text-center">Cantidad</th>
-                                    <th class="text-center">Stock Anterior</th>
-                                    <th class="text-center">Stock Actual</th>
-                                    <th>Referencia</th>
-                                    <th>Usuario</th>
-                                </tr>
-                            </thead>
-                            <tbody id="movementsTable">
                                 <!-- Se llena con JS -->
                             </tbody>
                         </table>

@@ -208,7 +208,17 @@
                                 Unidad de medida
                             </label>
                             <select id="prod_unidad" name="idUnidadBase" class="form-select">
-                                <option value="1">Seleccione...</option>
+                                <option value="">Seleccione...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">
+                                ¿Producto maneja inventario?
+                            </label>
+                            <select id="prod_stock" name="manejaStock" class="form-select">
+                                <option value="">Seleccione...</option>
+                                <option value="1">Sí, maneja inventario</option>
+                                <option value="0">No, no maneja inventario</option>
                             </select>
                         </div>
 

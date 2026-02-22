@@ -264,6 +264,16 @@ class Purchases {
             $params[] = $filtros['fechaHasta'];
         }
 
+        if (!empty($filtros['precioDesde'])) {
+            $sql .= " AND c.total >= ?";
+            $params[] = $filtros['precioDesde'];
+        }
+
+        if (!empty($filtros['precioHasta'])) {
+            $sql .= " AND c.total <= ?";
+            $params[] = $filtros['precioHasta'];
+        }
+
         $sql .= " ORDER BY c.fechaCompra DESC";
 
         $stmt = $this->db->prepare($sql);

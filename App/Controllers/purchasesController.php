@@ -46,7 +46,10 @@ class PurchasesController {
     public function getProducts() {
         header('Content-Type: application/json; charset=utf-8');
         try {
-            $products = $this->productsModel->getAll();
+            $products = $this->productsModel->getAll([
+                'estado' => 1,
+                'manejaStock' => 1
+            ]);
             echo json_encode([
                 'success' => true,
                 'data' => $products

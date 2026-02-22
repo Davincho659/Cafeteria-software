@@ -58,6 +58,23 @@
                         <option value="custom" id="custom-option">Rango personalizado</option>
                     </select>
                 </div>
+
+                <!-- Precio desde -->
+                <div class="col-md-3">
+                    <div class="filter-group">
+                        <label class="filter-label">Precio desde</label>
+                        <input type="number" name="precioDesde" class="filter-input" placeholder="$0">
+                    </div>
+                </div>
+
+                <!-- Precio hasta -->
+                <div class="col-md-3">
+                    <div class="filter-group">
+                        <label class="filter-label">Precio hasta</label>
+                        <input type="number" name="precioHasta" class="filter-input" placeholder="$999999">
+                    </div>
+                </div>
+
             </div>
 
             <!-- BOTONES -->

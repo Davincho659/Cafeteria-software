@@ -23,8 +23,8 @@
                 <ul class="section-links">
                     <li><a href="?pg=reports&action=sales" class="<?= ($_GET['action'] ?? '') === 'sales' ? 'active' : '' ?>">Ventas</a></li>
                     <li><a href="?pg=reports&action=salesProduct" class="<?= ($_GET['action'] ?? '') === 'salesProduct' ? 'active' : '' ?>">Ventas por producto</a></li>
-                    <li><a href="?pg=reports&action=ventas-anuales">Ventas Anuales</a></li>
-                    <li><a href="?pg=reports&action=ventas-por-producto">Por Producto</a></li>
+                    <!--<li><a href="?pg=reports&action=ventas-anuales">Ventas Anuales</a></li>
+                    <li><a href="?pg=reports&action=ventas-por-producto">Por Producto</a></li>-->
                 </ul>
             </div>
 
@@ -39,7 +39,7 @@
                 </h3>
                 <ul class="section-links">
                     <li><a href="?pg=reports&action=purchases" class="<?= ($_GET['action'] ?? '') === 'purchases' ? 'active' : '' ?>">Compras</a></li>
-                    <li><a href="?pg=reports&action=compras-por-proveedor">Por Proveedor</a></li>
+                    <!-- <li><a href="?pg=reports&action=compras-por-proveedor">Por Proveedor</a></li> -->
                 </ul>
             </div>
 
@@ -52,12 +52,11 @@
                     Inventario
                 </h3>
                 <ul class="section-links">
-                    <li><a href="?pg=reports&action=stock-actual">Stock Actual</a></li>
+                    <li><a href="?pg=reports&action=inventory"class="<?= ($_GET['action'] ?? '') === 'inventory' ? 'active' : '' ?>">Inventario</a></li>
+                    <!-- 
                     <li><a href="?pg=reports&action=productos-mas-vendidos">Más Vendidos</a></li>
-                    <li><a href="?pg=reports&action=productos-menos-vendidos">Menos Vendidos</a></li>
+                    <li><a href="?pg=reports&action=productos-menos-vendidos">Menos Vendidos</a></li> -->
                     <li><a href="?pg=reports&action=alertas-stock">Alertas de Stock</a></li>
-                    <li><a href="?pg=reports&action=valoracion-inventario">Valoración</a></li>
-                    <li><a href="?pg=reports&action=inventoryReport" class="<?= ($_GET['action'] ?? '') === 'inventoryReport' ? 'active' : '' ?>">Alertas y Stock Bajo (nuevo)</a></li>
                 </ul>
             </div>
 
@@ -70,13 +69,10 @@
                     Finanzas
                 </h3>
                 <ul class="section-links">
-                    <li><a href="?pg=reports&action=ingresos-gastos">Ingresos vs Gastos</a></li>
-                    <li><a href="?pg=reports&action=utilidad-neta">Utilidad Neta</a></li>
                     <li><a href="?pg=reports&action=flujo-caja">Flujo de Caja</a></li>
-                    <li><a href="?pg=reports&action=punto-equilibrio">Punto de Equilibrio</a></li>
-                    <li><a href="?pg=reports&action=expenses" class="<?= ($_GET['action'] ?? '') === 'expenses' ? 'active' : '' ?>">Gastos (nuevo)</a></li>
-                    <li><a href="?pg=reports&action=profitability" class="<?= ($_GET['action'] ?? '') === 'profitability' ? 'active' : '' ?>">Rentabilidad (nuevo)</a></li>
-                    <li><a href="?pg=reports&action=cashRegister" class="<?= ($_GET['action'] ?? '') === 'cashRegister' ? 'active' : '' ?>">Flujo de Caja (nuevo)</a></li>
+                    <li><a href="?pg=reports&action=expenses" class="<?= ($_GET['action'] ?? '') === 'expenses' ? 'active' : '' ?>">Gastos</a></li>
+                    <li><a href="?pg=reports&action=profitability" class="<?= ($_GET['action'] ?? '') === 'profitability' ? 'active' : '' ?>">Rentabilidad</a></li>
+                    <li><a href="?pg=reports&action=cashRegister" class="<?= ($_GET['action'] ?? '') === 'cashRegister' ? 'active' : '' ?>">Flujo de Caja</a></li>
                 </ul>
             </div>
 

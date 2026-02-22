@@ -119,7 +119,8 @@ switch ($pg) {
                 'getMovements',
                 'adjustStock',
                 'getInventoryValue',
-                'getLowStock'
+                'getLowStock',
+                'getAlertas'
             ];
             
             if (in_array($action, $validActions) && method_exists($controller, $action)) {

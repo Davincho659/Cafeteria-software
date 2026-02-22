@@ -122,7 +122,7 @@ class InventoryController {
                 throw new Exception('La descripción es requerida');
             }
 
-            $idUsuario = $data['idUsuario'] ?? null;
+            $idUsuario = $_SESSION['usuario_id'];
 
             $this->inventoryModel->ajustarStock(
                 $data['idProducto'],

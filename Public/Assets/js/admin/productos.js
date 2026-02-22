@@ -28,6 +28,7 @@ function openProductModal() {
     document.getElementById('prod_nombre').value = '';
     document.getElementById('prod_categoria').value = '';
     document.getElementById('prod_unidad').value = '';
+    document.getElementById('prod_stock').value = '';
     document.getElementById('prod_tipo').value = '';
     document.getElementById('prod_precioCompra').value = '';
     document.getElementById('prod_precioVenta').value = '';
@@ -72,6 +73,7 @@ function openEditProduct(id) {
             document.getElementById('prod_nombre').value = p.nombre;
             document.getElementById('prod_categoria').value = p.idCategoria;
             document.getElementById('prod_unidad').value = p.idUnidadBase;
+            document.getElementById('prod_stock').value = p.manejaStock;
             document.getElementById('prod_tipo').value = p.tipo;
             document.getElementById('prod_precioCompra').value = p.precioCompra;
             document.getElementById('prod_precioVenta').value = p.precioVenta;

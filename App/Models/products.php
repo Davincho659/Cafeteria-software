@@ -9,16 +9,23 @@ class Products {
         $this->db = Database::getConnection();
     }
     
-    public function getAll($soloActivos = false){
+    public function getAll(array $filters = []) {
         $query="SELECT p.idCategoria, p.idProducto, p.nombre, p.precioCompra, p.precioVenta, p.tipo, p.idUnidadBase, p.imagen, p.manejaStock, COALESCE(p.estado,1) AS estado,
             c.nombre AS categoria, c.imagen AS categoria_imagen,
             u.nombre AS unidadNombre, u.abreviatura AS unidadAbreviatura
             FROM productos p 
             INNER JOIN categorias c ON p.idCategoria = c.idCategoria
-            LEFT JOIN unidades_medida u ON p.idUnidadBase = u.idUnidad";
+            LEFT JOIN unidades_medida u ON p.idUnidadBase = u.idUnidad
+            Where 1=1";
 
-        if ($soloActivos) {
-            $query .= " WHERE p.estado = 1";
+        if (isset($filters['estado'])) {
+            $query .= " AND p.estado = " . (int)$filters['estado'];
+        }
+        if (isset($filters['manejaStock'])) {
+            $query .= " AND p.manejaStock = " . (int)$filters['manejaStock'];
+        }
+        if (isset($filters['tipo'])) {
+            $query .= " AND p.tipo = '" . $filters['tipo'] . "'";
         }
 
         $strm= $this->db->query($query);
@@ -43,7 +50,7 @@ class Products {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function create($idCategoria,$nombre,$tipo,$precioVenta = null,$precioCompra = null , $imagen, $idUnidadBase = 1, $manejaStock = 0, $estado = 1) {
+    public function create($idCategoria, $nombre, $tipo, $precioVenta = null, $precioCompra = null, $imagen = 'default.png', $idUnidadBase = null, $manejaStock = 0, $estado = 1) {
         $query = "INSERT INTO productos (idCategoria, nombre, tipo, precioVenta, precioCompra, imagen, idUnidadBase, manejaStock, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->db->prepare($query);
         $stmt->execute([$idCategoria, $nombre, $tipo, $precioVenta, $precioCompra, $imagen, $idUnidadBase, $manejaStock, $estado]);

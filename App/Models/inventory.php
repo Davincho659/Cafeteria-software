@@ -17,21 +17,39 @@ class Inventory {
                 $this->db->beginTransaction();
             }
 
+            // Obtener tipo de unidad del producto
+            $sqlUnidad = "SELECT um.tipo FROM productos p 
+                         JOIN unidades_medida um ON p.idUnidadBase = um.idUnidad 
+                         WHERE p.idProducto = ?";
+            $stmtUnidad = $this->db->prepare($sqlUnidad);
+            $stmtUnidad->execute([$idProducto]);
+            $unidad = $stmtUnidad->fetch(PDO::FETCH_ASSOC);
+            $tipoUnidad = $unidad ? $unidad['tipo'] : 'unidad';
+
+            // Formatear cantidad según tipo de unidad
+            $cantidadFormato = $this->formatearCantidad($cantidad, $tipoUnidad);
+
             // Obtener stock actual
             $stockAnterior = $this->obtenerStockActual($idProducto);
 
             // Calcular nuevo stock
             if ($tipoMovimiento === 'entrada') {
-                $stockActual = $stockAnterior + $cantidad;
+                $stockActual = $stockAnterior + $cantidadFormato;
+                $tieneAlerta = 0;
             } elseif ($tipoMovimiento === 'salida') {
-                $stockActual = $stockAnterior - $cantidad;
-                // NO bloquear si queda negativo; lo registramos con alerta
+                // Permitir stock negativo - restar cantidad completa
+                $stockActual = $stockAnterior - $cantidadFormato;
+
+                // Alerta cuando el stock llega a 0 o menos
+                $tieneAlerta = ($stockActual < 0) ? 1 : 0;
             } else { // ajuste
-                $stockActual = $cantidad; // En ajuste, la cantidad ES el nuevo stock
+                $stockActual = $cantidadFormato; // En ajuste, la cantidad ES el nuevo stock
+                $tieneAlerta = $stockActual < 0 ? 1 : 0;
             }
 
-            // Flag si resultó stock negativo
-            $tieneAlerta = $stockActual < 0 ? 1 : 0;
+            // Formatear también el stock para mantener consistencia
+            $stockActualFormato = $this->formatearCantidad($stockActual, $tipoUnidad);
+            $stockAnteriorFormato = $this->formatearCantidad($stockAnterior, $tipoUnidad);
 
             // Insertar movimiento (con flag de alerta si es negativo)
             $sql = "INSERT INTO inventario (idProducto, tipoMovimiento, cantidad, stockAnterior, stockActual, referencia, tipoReferencia, descripcion, idUsuario, tieneAlerta) 
@@ -40,15 +58,22 @@ class Inventory {
             $stmt->execute([
                 $idProducto,
                 $tipoMovimiento,
-                $cantidad,
-                $stockAnterior,
-                $stockActual,
+                $cantidadFormato,
+                $stockAnteriorFormato,
+                $stockActualFormato,
                 $referencia,
                 $tipoReferencia,
                 $descripcion,
                 $idUsuario,
                 $tieneAlerta
             ]);
+
+            // Si el stock vuelve a ser positivo, eliminar registros de alerta anteriores
+            if ($stockActualFormato > 0) {
+                $sqlClear = "DELETE FROM inventario WHERE idProducto = ? AND tieneAlerta = 1";
+                $stmtClear = $this->db->prepare($sqlClear);
+                $stmtClear->execute([$idProducto]);
+            }
 
             if ($useTransaction) {
                 $this->db->commit();
@@ -59,6 +84,24 @@ class Inventory {
                 $this->db->rollBack();
             }
             throw $e;
+        }
+    }
+
+    /**
+     * Formatear cantidad según tipo de unidad
+     * Unidades → entero
+     * Peso/Volumen → decimal (máximo 2 decimales)
+     */
+    private function formatearCantidad($cantidad, $tipoUnidad) {
+        $normalizado = is_string($cantidad) ? str_replace(',', '.', $cantidad) : $cantidad;
+        $numero = (float)$normalizado;
+        
+        if ($tipoUnidad === 'unidad') {
+            // Redondear a entero
+            return round($numero, 0);
+        } else {
+            // Peso/Volumen: redondear a 2 decimales
+            return round($numero, 2);
         }
     }
 
@@ -106,14 +149,17 @@ class Inventory {
      * Obtener historial de movimientos de un producto
      */
     public function obtenerHistorialProducto($idProducto, $limit = 50) {
-        $sql = "SELECT i.*, u.nombre AS usuario 
+        $limit = max(1, (int)$limit);
+        $sql = "SELECT i.*, u.nombre AS usuario, p.idUnidadBase, um.tipo AS unidadTipo
                 FROM inventario i
                 LEFT JOIN usuarios u ON i.idUsuario = u.idUsuario
+                LEFT JOIN productos p ON i.idProducto = p.idProducto
+                LEFT JOIN unidades_medida um ON p.idUnidadBase = um.idUnidad
                 WHERE i.idProducto = ?
                 ORDER BY i.fechaMovimiento DESC, i.idInventario DESC
-                LIMIT ?";
+            LIMIT $limit";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$idProducto, $limit]);
+        $stmt->execute([$idProducto]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -121,10 +167,11 @@ class Inventory {
      * Obtener todos los movimientos (con filtros opcionales)
      */
     public function obtenerMovimientos($filtros = []) {
-        $sql = "SELECT i.*, p.nombre AS producto, u.nombre AS usuario
+        $sql = "SELECT i.*, p.nombre AS producto, u.nombre AS usuario, p.idUnidadBase, um.tipo AS unidadTipo
                 FROM inventario i
                 INNER JOIN productos p ON i.idProducto = p.idProducto
                 LEFT JOIN usuarios u ON i.idUsuario = u.idUsuario
+                LEFT JOIN unidades_medida um ON p.idUnidadBase = um.idUnidad
                 WHERE 1=1";
         
         $params = [];
@@ -197,18 +244,40 @@ class Inventory {
     }
 
     /**
-     * Obtener alertas de stock (movimientos con stock negativo)
+     * Obtener alertas de stock (productos con stock actual < 0) - TIEMPO REAL
+     * Solo muestra productos que AHORA tienen stock negativo
      */
     public function obtenerAlertas($limit = 100) {
-        $sql = "SELECT i.*, p.nombre AS producto, u.nombre AS usuario
-                FROM inventario i
-                INNER JOIN productos p ON i.idProducto = p.idProducto
+        $limit = max(1, (int)$limit);
+        $sql = "SELECT 
+                    v.idProducto,
+                    v.producto,
+                    v.categoria,
+                    v.stockActual,
+                    v.unidadTipo,
+                    v.fechaUltimoMovimiento AS fechaMovimiento,
+                    v.precioCompra,
+                    v.precioVenta,
+                    i.cantidad,
+                    i.stockAnterior,
+                    i.tipoMovimiento,
+                    i.descripcion,
+                    i.referencia,
+                    u.nombre AS usuario
+                FROM vista_stock_actual v
+                LEFT JOIN inventario i ON i.idInventario = (
+                    SELECT i2.idInventario
+                    FROM inventario i2
+                    WHERE i2.idProducto = v.idProducto
+                    ORDER BY i2.fechaMovimiento DESC, i2.idInventario DESC
+                    LIMIT 1
+                )
                 LEFT JOIN usuarios u ON i.idUsuario = u.idUsuario
-                WHERE i.tieneAlerta = 1
-                ORDER BY i.fechaMovimiento DESC, i.idInventario DESC
-                LIMIT ?";
+                WHERE v.stockActual < 0
+                ORDER BY v.stockActual ASC, v.fechaUltimoMovimiento DESC
+                LIMIT $limit";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$limit]);
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

@@ -168,11 +168,6 @@ class Expenses {
             $params[] = $filtros['tipo'];
         }
 
-        if (!empty($filtros['idProducto'])) {
-            $sql .= " AND g.idProducto = ?";
-            $params[] = $filtros['idProducto'];
-        }
-
         if (!empty($filtros['fechaDesde'])) {
             $sql .= " AND DATE(g.fechaRegistro) >= ?";
             $params[] = $filtros['fechaDesde'];
@@ -183,10 +178,16 @@ class Expenses {
             $params[] = $filtros['fechaHasta'];
         }
 
-        if (!empty($filtros['idUsuario'])) {
-            $sql .= " AND g.idUsuario = ?";
-            $params[] = $filtros['idUsuario'];
+        if (!empty($filtros['precioDesde'])) {
+            $sql .= " AND g.monto >= ?";
+            $params[] = $filtros['precioDesde'];
         }
+
+        if (!empty($filtros['precioHasta'])) {
+            $sql .= " AND g.monto <= ?";
+            $params[] = $filtros['precioHasta'];
+        }
+
 
         $sql .= " ORDER BY g.fechaRegistro DESC";
 

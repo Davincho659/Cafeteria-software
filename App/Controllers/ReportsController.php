@@ -118,9 +118,7 @@ class ReportsController {
             }
             
             error_log('Query generado: ' . $query);
-
-            $resultados = $this->salesModel->getWithPagination($query, $offset, $limit);
-            $total = $this->salesModel->countWithFilters($query);
+ountWithFilters($query);
             $totalPaginas = ceil($total / $limit);
 
             echo json_encode([
@@ -153,8 +151,9 @@ class ReportsController {
             
             $filtros = [];
             if (!empty($_POST['idProveedor'])) $filtros['idProveedor'] = $_POST['idProveedor'];
-            if (!empty($_POST['tipoCompra'])) $filtros['tipoCompra'] = $_POST['tipoCompra'];
-            
+            if (!empty($_POST['precioDesde'])) $filtros['precioDesde'] = floatval($_POST['precioDesde']);
+            if (!empty($_POST['precioHasta'])) $filtros['precioHasta'] = floatval($_POST['precioHasta']);
+            if (!empty($_POST['tipoCompra'])) $filtros['tipoCompra'] = $_POST['tipoCompra'];            
             if (!empty($_POST['fecha'])) {
                 $partes = explode(" - ", $_POST['fecha']);
                 $filtros['fechaDesde'] = DateTime::createFromFormat('d/m/Y', trim($partes[0]))->format('Y-m-d');
@@ -193,6 +192,14 @@ class ReportsController {
                 $partes = explode(" - ", $_POST['fecha']);
                 $filtros['fechaDesde'] = DateTime::createFromFormat('d/m/Y', trim($partes[0]))->format('Y-m-d');
                 $filtros['fechaHasta'] = DateTime::createFromFormat('d/m/Y', trim($partes[1]))->format('Y-m-d');
+            }
+
+            if (!empty($_POST['precioDesde'])) {
+                $filtros['precioDesde'] = floatval($_POST['precioDesde']);
+            }
+
+            if (!empty($_POST['precioHasta'])) {
+                $filtros['precioHasta'] = floatval($_POST['precioHasta']);
             }
 
             $resultados = $this->expensesModel->getFiltered($filtros);
@@ -288,17 +295,13 @@ class ReportsController {
     /**
      * Reporte de Inventario (Alertas y Stock Bajo)
      */
-    public function inventoryReport() {
+    public function inventory() {
         if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
             header('Content-Type: application/json');
             
-            $alertas = $this->inventoryModel->obtenerAlertas(50);
-            $stockBajo = $this->inventoryModel->obtenerStockBajo(10);
             $valorInventario = $this->inventoryModel->obtenerValorInventario();
 
             echo json_encode([
-                'alertas' => $alertas,
-                'stockBajo' => $stockBajo,
                 'valorInventario' => $valorInventario
             ]);
             exit;

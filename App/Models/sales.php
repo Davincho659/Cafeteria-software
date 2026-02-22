@@ -266,7 +266,7 @@ class Sales {
             $venta = $stmtGetSale->fetch(PDO::FETCH_ASSOC);
             
             if (!$venta) {
-                throw new Exception("Venta no encontrada o no está pendiente");
+                throw new Exception("Venta no encontrada o no está pendiente/temporal");
             }
             
             // Validar caja activa
@@ -353,11 +353,11 @@ class Sales {
     }
 
     /**
-     * CANCELAR venta PENDIENTE/TEMPORAL (ELIMINA completamente de BD)
+     * CANCELAR venta PENDIENTE (ELIMINA completamente de BD)
      * 
      * Usado cuando:
      * - Usuario cancela venta ANTES de completarla
-     * - Venta está en estado 'pendiente' o 'temporal'
+     * - Venta está en estado 'pendiente'
      * - Se ELIMINA completamente (detalle_venta y ventas)
      * - NO deja rastro en la BD
      * 
