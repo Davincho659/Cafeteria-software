@@ -143,10 +143,10 @@ function renderStock(filter = '') {
             <td class="text-end">$${formatCurrency(item.precioVenta || 0)}</td>
             <td class="text-end fw-bold">$${formatCurrency(valorTotal)}</td>
             <td class="text-center">
-                <button class="btn btn-sm btn-outline-warning" onclick="openConsumptionModal(${item.idProducto}, '${nombreSeguro}', ${item.stockActual}, '${item.unidadAbreviatura || 'u'}', ${item.precioCompra || 0})" title="Registrar consumo">
+                <button class="btn btn-sm btn-outline-warning" onclick="openConsumptionModal(${item.idProducto}, '${nombreSeguro}', ${item.stockActual}, '${item.unidadAbreviatura || 'u'}', ${item.precioCompra || 0}, '${item.unidadTipo || ''}')" title="Registrar consumo">
                     <i class="fa-solid fa-utensils"></i>
                 </button>
-                <button class="btn btn-sm btn-outline-primary" onclick="openAdjustModal(${item.idProducto}, '${nombreSeguro}', ${item.stockActual})" title="Ajustar stock">
+                <button class="btn btn-sm btn-outline-primary" onclick="openAdjustModal(${item.idProducto}, '${nombreSeguro}', ${item.stockActual}, '${item.unidadTipo || ''}', '${item.unidadAbreviatura || 'u'}')" title="Ajustar stock">
                     <i class="fa-solid fa-pen-to-square"></i>
                 </button>
                 <button class="btn btn-sm btn-outline-info" onclick="viewProductHistory(${item.idProducto}, '${nombreSeguro}')" title="Ver historial">
@@ -170,12 +170,24 @@ function filterStock(search) {
 
 let consumeCostoUnitario = 0;
 
-function openConsumptionModal(id, nombre, stockActual, unidad, precioCompra) {
+function openConsumptionModal(id, nombre, stockActual, unidad, precioCompra, unidadTipo) {
+    const producto = { unidadTipo: unidadTipo, unidadAbreviatura: unidad };
+
     document.getElementById('consumeProductId').value = id;
     document.getElementById('consumeProductName').value = nombre;
-    document.getElementById('consumeCurrentStock').value = stockActual + ' ' + (unidad || 'u');
+    document.getElementById('consumeCurrentStock').value =
+        (typeof formatearCantidadUnidad === 'function')
+            ? formatearCantidadUnidad(stockActual, producto)
+            : stockActual + ' ' + (unidad || 'u');
     document.getElementById('consumeUnit').textContent = unidad || 'u';
-    document.getElementById('consumeQuantity').value = '';
+
+    // Medio kilo de café es válido; media empanada no.
+    const inputCant = document.getElementById('consumeQuantity');
+    if (typeof aplicarUnidadAlCampo === 'function') {
+        aplicarUnidadAlCampo(inputCant, producto, null);
+    }
+
+    inputCant.value = '';
     document.getElementById('consumeDescription').value = '';
 
     consumeCostoUnitario = parseFloat(precioCompra) || 0;
@@ -329,13 +341,39 @@ function renderMovements(movements) {
 
 // ============ AJUSTAR STOCK ============
 
-function openAdjustModal(idProducto, nombre, stockActual) {
+function openAdjustModal(idProducto, nombre, stockActual, unidadTipo, unidadAbreviatura) {
     document.getElementById('adjustProductId').value = idProducto;
     document.getElementById('adjustProductName').value = nombre;
-    document.getElementById('adjustCurrentStock').value = stockActual;
-    document.getElementById('adjustNewStock').value = stockActual;
+
+    // El stock actual se muestra con su unidad: "50.5 kg" en vez de un número
+    // suelto que no dice si son kilos, litros o piezas.
+    const producto = { unidadTipo: unidadTipo, unidadAbreviatura: unidadAbreviatura };
+    document.getElementById('adjustCurrentStock').value =
+        (typeof formatearCantidadUnidad === 'function')
+            ? formatearCantidadUnidad(stockActual, producto)
+            : stockActual;
+
+    const input = document.getElementById('adjustNewStock');
+    const label = document.getElementById('adjustNewStockLabel');
+    const hint = document.getElementById('adjustUnidadHint');
+
+    // El campo acepta decimales solo si el producto se mide por peso o volumen.
+    let regla = null;
+    if (typeof aplicarUnidadAlCampo === 'function') {
+        input.dataset.permiteCero = 'true'; // un ajuste puede dejar el stock en 0
+        regla = aplicarUnidadAlCampo(input, producto, label, 'Nuevo Stock');
+    }
+
+    input.value = regla && !regla.decimales ? Math.round(stockActual) : stockActual;
+
+    if (hint) {
+        hint.textContent = regla && regla.decimales
+            ? `Se admiten decimales (ej: 50.5 ${regla.abreviatura})`
+            : 'Solo números enteros';
+    }
+
     document.getElementById('adjustDescription').value = '';
-    
+
     const modal = new bootstrap.Modal(document.getElementById('modalAdjustStock'));
     modal.show();
 }

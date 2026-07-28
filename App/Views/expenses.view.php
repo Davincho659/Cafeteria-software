@@ -41,8 +41,11 @@
                             <select id="expenseProductSelect" class="form-select" required></select>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label fw-semibold">Cantidad *</label>
+                            <!-- La etiqueta y los decimales se ajustan solos a la unidad
+                                 del producto elegido (ver unidades.js) -->
+                            <label class="form-label fw-semibold" id="expenseCantidadLabel">Cantidad *</label>
                             <input type="number" id="expenseCantidad" class="form-control" min="0.001" step="0.001" required>
+                            <small class="text-muted" id="expenseUnidadHint"></small>
                         </div>
                         <div class="col-md-3">
                             <label class="form-label fw-semibold">Motivo *</label>
@@ -144,4 +147,5 @@
 </div>
 
 <?php require loadView('Layouts/footer'); ?>
+<script src="<?= asset('assets/js/unidades.js') ?>"></script>
 <script src="<?= asset('assets/js/admin/expenses.js') ?>"></script>

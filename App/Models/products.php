@@ -10,10 +10,13 @@ class Products {
     }
     
     public function getAll(array $filters = []) {
+        // unidadTipo ('unidad' | 'peso' | 'volumen') viaja al front para que los
+        // formularios sepan si deben aceptar decimales: 50,5 kg es válido, pero
+        // 50,5 gaseosas no.
         $query="SELECT p.idCategoria, p.idProducto, p.nombre, p.codigoBarras, p.precioCompra, p.precioVenta, p.tipo, p.idUnidadBase, p.imagen, p.manejaStock, COALESCE(p.estado,1) AS estado,
             c.nombre AS categoria, c.imagen AS categoria_imagen,
-            u.nombre AS unidadNombre, u.abreviatura AS unidadAbreviatura
-            FROM productos p 
+            u.nombre AS unidadNombre, u.abreviatura AS unidadAbreviatura, u.tipo AS unidadTipo
+            FROM productos p
             INNER JOIN categorias c ON p.idCategoria = c.idCategoria
             LEFT JOIN unidades_medida u ON p.idUnidadBase = u.idUnidad
             Where 1=1";
@@ -40,8 +43,8 @@ class Products {
     public function getByCategory($id, $soloActivos = false) {
         $query = 'SELECT p.idCategoria, p.idProducto, p.nombre, p.precioCompra, p.precioVenta, p.tipo, p.idUnidadBase, p.manejaStock, p.imagen, COALESCE(p.estado,1) AS estado,
                 c.nombre AS categoria, c.imagen AS categoria_imagen,
-                u.nombre AS unidadNombre, u.abreviatura AS unidadAbreviatura
-                FROM productos AS p 
+                u.nombre AS unidadNombre, u.abreviatura AS unidadAbreviatura, u.tipo AS unidadTipo
+                FROM productos AS p
                 INNER JOIN categorias AS c ON p.idCategoria = c.idCategoria
                 LEFT JOIN unidades_medida u ON p.idUnidadBase = u.idUnidad
                 WHERE p.idCategoria = ?';

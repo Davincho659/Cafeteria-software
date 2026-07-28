@@ -149,7 +149,12 @@ function addProductToPurchase(idProducto) {
             idProducto: product.idProducto,
             nombre: product.nombre,
             cantidad: 1,
-            precioUnitario: parseFloat(product.precioCompra) || 0
+            precioUnitario: parseFloat(product.precioCompra) || 0,
+            // Se conserva la unidad para saber si la cantidad admite decimales
+            // (50.5 kg de maíz) o debe ser entera (12 gaseosas).
+            unidadTipo: product.unidadTipo,
+            unidadAbreviatura: product.unidadAbreviatura,
+            unidadNombre: product.unidadNombre
         });
     }
     
@@ -170,7 +175,12 @@ function renderSelectedProducts() {
     selectedProducts.forEach((product, index) => {
         const div = document.createElement('div');
         div.className = 'border rounded p-2 mb-2';
-        
+
+        // Kilos y litros admiten decimales; las unidades contables, no.
+        const reglaCompra = (typeof reglaDeUnidad === 'function')
+            ? reglaDeUnidad(product)
+            : { decimales: false, paso: '1', minimo: '1', abreviatura: 'u' };
+
         div.innerHTML = `
             <div class="d-flex justify-content-between align-items-start mb-2">
                 <strong class="small">${product.nombre}</strong>
@@ -180,14 +190,16 @@ function renderSelectedProducts() {
             </div>
             <div class="row g-2">
                 <div class="col-6">
-                    <label class="form-label small mb-1">Cantidad</label>
-                    <input type="number" class="form-control form-control-sm" 
-                           value="${product.cantidad}" min="1" 
+                    <!-- La cantidad se adapta a la unidad: un bulto de maíz se
+                         compra por kilos (50.5 kg), no en unidades enteras. -->
+                    <label class="form-label small mb-1">Cantidad (${reglaCompra.abreviatura})</label>
+                    <input type="number" class="form-control form-control-sm"
+                           value="${product.cantidad}" min="${reglaCompra.minimo}" step="${reglaCompra.paso}"
                            onchange="updateProductQuantity(${index}, this.value)">
                 </div>
                 <div class="col-6">
-                    <label class="form-label small mb-1">Precio</label>
-                    <input type="number" class="form-control form-control-sm" 
+                    <label class="form-label small mb-1">Precio por ${reglaCompra.abreviatura}</label>
+                    <input type="number" class="form-control form-control-sm"
                            value="${product.precioUnitario}" min="0" step="0.01"
                            onchange="updateProductPrice(${index}, this.value)">
                 </div>
@@ -206,7 +218,20 @@ function renderSelectedProducts() {
 }
 
 function updateProductQuantity(index, value) {
-    selectedProducts[index].cantidad = parseInt(value) || 1;
+    // parseInt truncaba los decimales: al comprar 50.5 kg de maíz se guardaban
+    // 50 y el inventario quedaba corto medio kilo en cada compra.
+    const producto = selectedProducts[index];
+    const regla = (typeof reglaDeUnidad === 'function')
+        ? reglaDeUnidad(producto)
+        : { decimales: false };
+
+    const n = parseFloat(value);
+    if (isNaN(n) || n <= 0) {
+        producto.cantidad = regla.decimales ? 0.001 : 1;
+    } else {
+        producto.cantidad = regla.decimales ? n : Math.round(n);
+    }
+
     updateTotal();
 }
 

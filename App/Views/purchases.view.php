@@ -225,4 +225,5 @@
 </div>
 
 <?php require loadView('Layouts/footer'); ?>
+<script src="<?= asset('assets/js/unidades.js') ?>"></script>
 <script src="<?= asset('assets/js/admin/purchases.js') ?>"></script>

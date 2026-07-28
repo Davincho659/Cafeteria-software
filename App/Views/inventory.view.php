@@ -210,9 +210,13 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Nuevo Stock *</label>
-                        <input type="number" id="adjustNewStock" class="form-control" 
-                               min="0" required>
+                        <!-- Sin step, el navegador solo aceptaba enteros: era imposible
+                             ajustar un insumo a 50,5 kg. Ahora el campo se adapta a la
+                             unidad del producto (ver unidades.js). -->
+                        <label class="form-label fw-semibold" id="adjustNewStockLabel">Nuevo Stock *</label>
+                        <input type="number" id="adjustNewStock" class="form-control"
+                               min="0" step="0.001" data-permite-cero="true" required>
+                        <small class="text-muted" id="adjustUnidadHint"></small>
                     </div>
 
                     <div class="mb-3">
@@ -308,4 +312,5 @@
 </div>
 
 <?php require loadView('Layouts/footer'); ?>
+<script src="<?= asset('assets/js/unidades.js') ?>"></script>
 <script src="<?= asset('assets/js/admin/inventory.js') ?>"></script>

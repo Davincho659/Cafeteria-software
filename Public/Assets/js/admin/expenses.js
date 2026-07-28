@@ -36,9 +36,49 @@ function renderExpenseProductSelect() {
     productsCache.forEach(p => {
         const opt = document.createElement('option');
         opt.value = p.idProducto;
-        opt.textContent = `${p.nombre} (${p.categoria})`;
+        // Se muestra la unidad en la propia lista: así se sabe de antemano si
+        // ese producto se descuenta por kilos, litros o unidades.
+        const unidad = p.unidadAbreviatura ? ` — ${p.unidadAbreviatura}` : '';
+        opt.textContent = `${p.nombre} (${p.categoria})${unidad}`;
         select.appendChild(opt);
     });
+
+    // Al elegir producto, el campo de cantidad se adapta a su unidad.
+    if (!select.dataset.unidadEnlazada) {
+        select.dataset.unidadEnlazada = '1';
+        select.addEventListener('change', ajustarCampoCantidadGasto);
+    }
+    ajustarCampoCantidadGasto();
+}
+
+/**
+ * Adapta el campo "Cantidad" del gasto a la unidad del producto seleccionado:
+ * kilos y litros admiten decimales (0,5 kg de merma); las unidades, no.
+ */
+function ajustarCampoCantidadGasto() {
+    const select = document.getElementById('expenseProductSelect');
+    const input = document.getElementById('expenseCantidad');
+    const label = document.getElementById('expenseCantidadLabel');
+    const hint = document.getElementById('expenseUnidadHint');
+    if (!select || !input) return;
+
+    const producto = productsCache.find(p => String(p.idProducto) === String(select.value));
+
+    if (!producto) {
+        input.step = '0.001';
+        input.min = '0.001';
+        input.placeholder = '';
+        if (label) label.textContent = 'Cantidad *';
+        if (hint) hint.textContent = '';
+        return;
+    }
+
+    const regla = aplicarUnidadAlCampo(input, producto, label, 'Cantidad');
+    if (hint && regla) {
+        hint.textContent = regla.decimales
+            ? `Se admiten decimales (ej: 0.5 ${regla.abreviatura})`
+            : `Solo números enteros`;
+    }
 }
 
 // ============ GUARDAR GASTO PRODUCTO ============
