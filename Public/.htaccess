@@ -1,0 +1,18 @@
+RewriteEngine On
+RewriteBase /
+
+# 1) Si el recurso físico existe, servirlo directo y no pasar por Index.php
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# 2) Compatibilidad Linux (case-sensitive) para recursos estáticos
+RewriteRule ^assets/css/home\.css$ Assets/css/Home.css [L,NC]
+RewriteRule ^assets/css/login\.css$ Assets/css/Login.css [L,NC]
+RewriteRule ^assets/(.*)$ Assets/$1 [L,NC]
+
+# Si la URL es vacía (entra al home), redirigir al login
+RewriteRule ^$ Index.php?pg=login [L,QSA]
+
+# 3) Todo lo demás pasa por el front controller
+RewriteRule ^(.*)$ Index.php [L,QSA]

@@ -1,0 +1,167 @@
+/* ============================================================================
+   SETTINGS.CSS - Configuración del negocio
+   ============================================================================ */
+.settings-page {
+    padding: 24px;
+    overflow-y: auto;
+}
+
+.settings-wrap {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.settings-head {
+    margin-bottom: 20px;
+}
+
+.settings-head h1 {
+    font-size: 1.7rem;
+    margin-bottom: 4px;
+}
+
+.settings-head p {
+    color: var(--muted);
+    margin: 0;
+}
+
+.settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.settings-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    box-shadow: var(--shadow-sm);
+}
+
+.settings-card h3 {
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--bg-light);
+}
+
+.settings-short {
+    max-width: 120px;
+}
+
+.logo-uploader {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.logo-uploader img {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 12px;
+    border: 2px solid var(--border);
+    background: var(--bg-light);
+    flex-shrink: 0;
+}
+
+.logo-uploader > div {
+    flex: 1;
+    min-width: 0;
+}
+
+/* --- Colores --- */
+.color-field {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--bg-light);
+}
+
+.color-name {
+    font-weight: 600;
+    color: var(--brown-dark);
+}
+
+.color-field input[type="color"] {
+    width: 54px;
+    height: 40px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2px;
+    cursor: pointer;
+    background: var(--white);
+    flex-shrink: 0;
+}
+
+/* --- Vista previa del tema --- */
+.theme-preview {
+    margin-top: 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.tp-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    color: #fff;
+    font-weight: 600;
+    transition: background 0.2s ease;
+}
+
+.tp-bar img {
+    width: 28px;
+    height: 28px;
+    object-fit: cover;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.tp-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 14px;
+    background: var(--bg-light);
+}
+
+.tp-btn-primary {
+    border: none;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: default;
+    transition: background 0.2s ease;
+}
+
+.tp-accent {
+    font-weight: 700;
+    transition: color 0.2s ease;
+}
+
+.settings-actions {
+    margin-top: 22px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+    .settings-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Scroll natural de la página en móvil */
+    .settings-page {
+        overflow: visible;
+        height: auto;
+        min-height: 0;
+    }
+}

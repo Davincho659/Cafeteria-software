@@ -1,0 +1,113 @@
+===========================================================
+        SISTEMA POS - LA CASA DEL PASTEL
+        Guia rapida
+===========================================================
+
+
+COMO ABRIR EL SISTEMA
+---------------------
+
+  Doble click en el icono  "ABRIR POS"  del escritorio.
+
+  Espera unos segundos. Se abre solo, a pantalla completa.
+
+  Entra con:
+      Usuario:  admin
+      PIN:      1234
+
+  *** CAMBIA ESE PIN EL PRIMER DIA ***
+  Menu Usuarios -> editar admin -> PIN nuevo.
+  El 1234 lo sabe cualquiera que lea esta hoja.
+
+
+COMO CERRAR EL SISTEMA
+----------------------
+
+  Doble click en  "CERRAR POS"  del escritorio.
+
+  Hazlo SIEMPRE antes de apagar el computador.
+  Asi se guarda todo correctamente.
+
+
+===========================================================
+   POR DONDE EMPEZAR A CARGAR LOS PRODUCTOS
+===========================================================
+
+Sigue este orden. Es importante:
+
+  1) CATEGORIAS
+     Menu Productos -> pestana Categorias
+     Ejemplos: Fritos, Bebidas, Postres, Panaderia
+
+  2) PRODUCTOS
+     Menu Productos -> Nuevo producto
+
+     - "Producto de venta" = lo que el cliente compra
+     - "Insumo"            = materia prima (maiz, cafe, aceite)
+                             no se vende suelto
+
+     - Precio de venta  = a como lo vendes
+     - Precio de compra = a como te cuesta
+
+  3) PROVEEDORES
+     Menu Proveedores
+
+  4) COMPRAS
+     Menu Compras
+     Aqui registras lo que compras. Esto sube el inventario
+     y permite saber cuanto ganas de verdad en cada producto.
+
+     >> Si no registras las compras, los reportes de
+        ganancias no van a servir. <<
+
+  5) MESAS  (si atiendes en mesas)
+     Menu Mesas -> Organizar salon
+
+
+===========================================================
+   RESPALDO - LO MAS IMPORTANTE DE TODO
+===========================================================
+
+El sistema guarda una copia de seguridad SOLO, cada vez que
+lo abres y cada vez que lo cierras. No tienes que hacer nada.
+
+PERO, una vez por semana:
+
+  1) Abre la carpeta:  C:\POS-LaCasaDelPastel\RESPALDOS
+  2) Copia el archivo mas reciente a una memoria USB
+     o subelo a Google Drive / WhatsApp.
+
+  POR QUE: si este computador se dana o se lo roban,
+  esa copia es lo unico que salva todo el trabajo de
+  cargar los productos. Sin ella, se pierde todo.
+
+
+===========================================================
+   SI ALGO NO FUNCIONA
+===========================================================
+
+  "No abre" o "no carga"
+      -> Cierra todo con "CERRAR POS"
+      -> Espera 10 segundos
+      -> Abre otra vez con "ABRIR POS"
+
+  "Se ve muy grande o muy pequeno"
+      -> Dentro del sistema: Ctrl y la tecla +  o  Ctrl y -
+
+  "Se cerro la ventana negra"
+      -> No pasa nada. Vuelve a abrir con "ABRIR POS"
+
+  Cualquier otra cosa:
+      -> Llama a David
+
+
+===========================================================
+   NO BORRES NI MUEVAS
+===========================================================
+
+  La carpeta  C:\POS-LaCasaDelPastel  completa.
+  Ahi vive todo el sistema y todos los datos.
+
+  Si la borras, se pierde todo lo cargado.
+
+===========================================================

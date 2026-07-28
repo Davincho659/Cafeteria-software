@@ -1,0 +1,353 @@
+ .reports-container {
+            display: flex;
+            height: calc(100vh - 80px); /* Ajusta según la altura de tu header */
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+        .flatpickr-hidden {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            height: 0;
+        }
+       
+        /* Sidebar fijo */
+        .reports-sidebar {
+            width: 280px;
+            height: 100%;
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            color: #e2e8f0;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+ 
+        /* Contenido principal con scroll */
+        .reports-content {
+            flex: 1;
+            height: 100%;
+            background: #f1f5f9;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+ 
+        /* Header del sidebar */
+        .sidebar-header {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+ 
+        .sidebar-header h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+            margin: 0 0 4px 0;
+        }
+ 
+        .sidebar-header p {
+            font-size: 12px;
+            color: #94a3b8;
+            margin: 0;
+        }
+ 
+        /* Navegación compacta */
+        .sidebar-nav {
+            padding: 12px 0;
+        }
+ 
+        .nav-section {
+            margin-bottom: 4px;
+        }
+ 
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+ 
+        .section-title svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+        }
+ 
+        .section-links {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+ 
+        .section-links li {
+            margin: 0;
+        }
+ 
+        .section-links a {
+            display: block;
+            padding: 8px 16px 8px 40px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 13px;
+            transition: all 0.15s ease;
+            border-left: 3px solid transparent;
+        }
+ 
+        .section-links a:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            border-left-color: #3b82f6;
+        }
+ 
+        .section-links a.active {
+            background: rgba(59, 130, 246, 0.15);
+            color: #60a5fa;
+            border-left-color: #3b82f6;
+            font-weight: 600;
+        }
+ 
+        /* Scrollbar personalizado sidebar */
+        .reports-sidebar::-webkit-scrollbar {
+            width: 5px;
+        }
+ 
+        .reports-sidebar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+ 
+        .reports-sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+ 
+        /* Scrollbar contenido */
+        .reports-content::-webkit-scrollbar {
+            width: 8px;
+        }
+ 
+        .reports-content::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+ 
+        .reports-content::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+ 
+        .reports-content::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+/* Títulos */
+.report-container h4 {
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* ============================
+   FORMULARIO DE FILTROS
+   ============================ */
+#filtrosReporte .form-label {
+    font-weight: 600;
+    color: #444;
+}
+
+#filtrosReporte input,
+#filtrosReporte select {
+    border-radius: 8px;
+    border: 1px solid #c9ccd1 !important;
+}
+
+#filtrosReporte input:focus,
+#filtrosReporte select:focus {
+    border-color: #0d6efd !important;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.25);
+}
+
+/* Botones */
+#filtrosReporte .btn-primary {
+    padding: 8px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+}
+
+#filtrosReporte .btn-secondary {
+    padding: 8px 22px;
+    border-radius: 8px;
+}
+
+/* ============================
+   TABLA DE RESULTADOS
+   ============================ */
+.table {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table thead {
+    background: #0d6efd;
+    color: white;
+    font-weight: 600;
+}
+
+.table tbody tr:hover {
+    background: #f4f7ff;
+    transition: 0.2s;
+}
+
+
+
+/* Mensaje sin resultados */
+.table td.text-muted {
+    font-size: 15px;
+    padding: 25px 0;
+}
+
+/* ============================
+   SOMBRA SUAVE PARA SECCIONES
+   ============================ */
+.card-section {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+    margin-top: 20px;
+}
+
+.filter-card {
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.filter-section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.filter-group {
+    margin-bottom: 16px;
+}
+
+.filter-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 6px;
+    display: block;
+}
+
+.filter-input, .filter-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.filter-input:focus, .filter-select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.btn-search {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-search:hover {
+    background: #2563eb;
+}
+
+.btn-success {
+    background: #223bc5;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.without {
+    display: flex; justify-content: center; align-items: center;
+    color: #6b7280;
+}
+
+.btn-info {
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+
+
+.btn-clear {
+    background: #6b7280;
+    color: white;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-left: 8px;
+}
+
+.btn-clear:hover {
+    background: #4b5563;
+}
+
+.active-filters {
+    background: #eff6ff;
+    border-left: 4px solid #3b82f6;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
+.active-filters-title {
+    font-weight: 600;
+    color: #1e40af;
+    margin-bottom: 8px;
+}
+
+.filter-badge {
+    display: inline-block;
+    background: #3b82f6;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    margin-right: 8px;
+    margin-bottom: 4px;
+}

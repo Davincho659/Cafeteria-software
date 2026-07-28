@@ -1,0 +1,217 @@
+/* ============================================================================
+   LOGIN.CSS - Login view (refactorizado para Design System)
+   ============================================================================
+   Nota: Poppins ya se carga en theme.css y pos-theme.css
+   ============================================================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 16px;
+  overflow: hidden;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--white);
+}
+
+.wrapper {
+  width: min(380px, 100%);
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+
+.wrapper .title {
+  font-size: 30px;
+  font-weight: 700;
+  text-align: center;
+  line-height: 72px;
+  padding-top: 5px;
+  color: var(--white);
+  user-select: none;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: linear-gradient(135deg, var(--brown-dark), var(--brown-mid));
+}
+
+.wrapper form {
+  padding: 10px 30px 50px 30px;
+}
+
+.wrapper form .field {
+  height: 50px;
+  width: 100%;
+  margin-top: 20px;
+  position: relative;
+}
+
+.wrapper form .field input,
+.wrapper form .field select {
+  height: 100%;
+  width: 100%;
+  outline: none;
+  font-size: 17px;
+  padding-left: 20px;
+  border: 1px solid var(--border);
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  background: var(--white);
+}
+
+.wrapper form .field select {
+  appearance: none;
+  cursor: pointer;
+}
+
+.wrapper form .field input:focus,
+.wrapper form .field select:focus,
+form .field input:valid {
+  border-color: var(--accent);
+}
+
+.wrapper form .field label {
+  position: absolute;
+  top: 50%;
+  left: 20px;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 17px;
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition: all 0.3s ease;
+  background: var(--white);
+  padding: 0 5px;
+}
+
+form .field input:focus ~ label,
+form .field input:valid ~ label,
+form .field select:focus ~ label,
+form .field select:valid ~ label {
+  top: 0%;
+  font-size: 16px;
+  color: var(--accent);
+}
+
+form .content {
+  display: flex;
+  width: 100%;
+  height: 50px;
+  font-size: 16px;
+  align-items: center;
+  justify-content: space-around;
+}
+
+form .content .checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+form .content input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+}
+
+form .content label {
+  color: var(--text);
+  user-select: none;
+  padding-left: 5px;
+}
+
+form .field input[type="submit"] {
+  color: var(--white);
+  border: none;
+  padding-left: 0;
+  margin-top: -10px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--brown-dark), var(--brown-mid));
+  transition: all 0.18s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+form .field input[type="submit"]:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+form .field input[type="submit"]:active {
+  transform: scale(0.98);
+}
+
+form .signup-link {
+  color: var(--text);
+  margin-top: 20px;
+  text-align: center;
+}
+
+form .pass-link a,
+form .signup-link a {
+  color: var(--brown-mid);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+form .pass-link a:hover,
+form .signup-link a:hover {
+  text-decoration: underline;
+  color: var(--accent);
+}
+
+form .field select option {
+  padding: 10px;
+}
+.header {
+    background: #fff;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.header h1 {
+    font-size: 24px;
+    margin: 0;
+}
+.header a {
+    text-decoration: none;
+    color: #4158d0;
+}
+.header a:hover {
+    text-decoration: underline;
+}
+.user-list {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 5px 10px rgba(0,0,0,0.1);
+}
+.user-list h2 {
+    margin-bottom: 20px;
+}
+.user-list table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.user-list table, .user-list th, .user-list td {
+    border: 1px solid #ddd;
+}
+.user-list th, .user-list td {
+    padding: 10px;
+    text-align: left;
+}
+.user-list th {
+    background: #4158d0;
+    color: #fff;
+}

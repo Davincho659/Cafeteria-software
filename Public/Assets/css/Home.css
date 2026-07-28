@@ -1,0 +1,74 @@
+/* ============================================================================
+   HOME.CSS - Dashboard cards (refactorizado para Design System)
+   ============================================================================ */
+
+.menu-card {
+  border: none;
+  color: var(--white);
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 18px;
+  height: 200px !important;
+}
+
+.menu-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Gradientes coherentes usando paleta */
+.card-productos {
+  height: 200px;
+  background: linear-gradient(135deg, var(--brown-dark), var(--brown-mid));
+}
+
+.card-clientes {
+  height: 200px;
+  background: linear-gradient(135deg, var(--mustard), var(--accent));
+  color: var(--brown-dark);
+}
+
+.card-ventas {
+  height: 200px;
+  background: linear-gradient(135deg, var(--brown-mid), var(--accent));
+}
+
+.card-inventario {
+  height: 150px;
+  background: linear-gradient(135deg, var(--brown-mid), var(--mustard));
+}
+
+.card-facturas {
+  height: 150px;
+  background: linear-gradient(135deg, var(--accent), #E8A65D);
+}
+
+.card-configuracion {
+  height: 150px;
+  background: linear-gradient(135deg, var(--mustard), var(--accent));
+  color: var(--brown-dark);
+}
+
+/* Títulos dentro de las cards */
+.menu-card h5 {
+  font-size: 1.15rem;
+  margin: 8px 0 0;
+  font-weight: 700;
+}
+
+.menu-card p.small {
+  margin: 0;
+  color: rgba(255,255,255,0.9);
+}
+
+/* Espaciado del grid */
+.home-grid {
+  gap: 20px;
+}
+

@@ -1,0 +1,169 @@
+/* ============================================================================
+   CLOSINGS.CSS - Cierres diario / mensual / anual
+   Pensado también para imprimir: el cierre se archiva en papel a diario.
+   ============================================================================ */
+
+.closing-report {
+    padding-bottom: 2rem;
+}
+
+.closing-print-title {
+    display: none;
+}
+
+/* --- KPIs --- */
+.closing-report .kpi-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+}
+
+.mini-kpi {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-light);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+}
+
+.mini-kpi-label {
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.mini-kpi-value {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--brown-dark);
+}
+
+/* --- Tablas del cierre --- */
+.closing-table td,
+.closing-table th {
+    vertical-align: middle;
+}
+
+.closing-table .closing-note td {
+    border-top: 2px dashed var(--border);
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.closing-scroll {
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+/* --- Barra de proporción de pagos --- */
+.closing-bar {
+    height: 10px;
+    background: var(--info);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.closing-bar-fill {
+    height: 100%;
+    background: var(--success);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+/* --- Serie temporal (barras horizontales, sin librerías externas) --- */
+.closing-serie {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+}
+
+.serie-row {
+    display: grid;
+    grid-template-columns: 90px 1fr 110px 60px;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+}
+
+.serie-label {
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+}
+
+.serie-track {
+    background: var(--bg-light);
+    border-radius: 999px;
+    height: 14px;
+    overflow: hidden;
+}
+
+.serie-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--mustard), var(--accent));
+    border-radius: 999px;
+}
+
+.serie-value {
+    text-align: right;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.serie-count {
+    text-align: right;
+    font-size: 11px;
+    color: var(--muted);
+}
+
+@media (max-width: 768px) {
+    .serie-row {
+        grid-template-columns: 70px 1fr 90px;
+    }
+
+    .serie-count {
+        display: none;
+    }
+}
+
+/* ============================================================================
+   IMPRESIÓN: el cierre debe caber limpio en una hoja carta
+   ============================================================================ */
+@media print {
+    .no-print,
+    .reports-sidebar,
+    .navbar,
+    .tab-container {
+        display: none !important;
+    }
+
+    .reports-content,
+    .reports-container {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .closing-print-title {
+        display: block;
+        font-size: 18px;
+        margin-bottom: 12px;
+        text-align: center;
+    }
+
+    body {
+        zoom: 1 !important;
+        background: #fff !important;
+    }
+
+    .card,
+    .kpi-card,
+    .closing-serie {
+        break-inside: avoid;
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+    }
+}

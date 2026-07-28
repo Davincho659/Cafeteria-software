@@ -1,0 +1,254 @@
+/* ============================================================================
+   TABLES-BOARD.CSS - Tablero/plano del salón (mesas)
+   Se usa en dos modos:
+     · Editable  (vista Mesas): se arrastran las mesas para ubicarlas.
+     · Navegador (vista Ventas): solo se ven y se tocan para abrir su carrito.
+   Las posiciones se guardan en % del tablero, así se ve igual en cualquier
+   tamaño de pantalla.
+   ============================================================================ */
+
+.board-canvas {
+    position: relative;
+    width: 100%;
+    height: 66vh;
+    min-height: 380px;
+    /* Piso del salón: madera cálida con una rejilla sutil */
+    background-color: #e9dccb;
+    background-image:
+        linear-gradient(rgba(91, 52, 17, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(91, 52, 17, 0.05) 1px, transparent 1px);
+    background-size: 44px 44px;
+    border: 3px solid #d7c4aa;
+    border-radius: 16px;
+    box-shadow: inset 0 0 40px rgba(91, 52, 17, 0.08);
+    overflow: hidden;
+    touch-action: none; /* necesario para arrastre con pointer en móvil */
+}
+
+.board-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted, #9b8577);
+    font-size: 0.95rem;
+    text-align: center;
+    padding: 20px;
+}
+
+/* --- Ficha (mesa o barra) --- */
+.board-table {
+    position: absolute;
+    transform: translate(-50%, -50%); /* posX/posY = centro */
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 8px 6px;
+    color: #fff;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+    border: 3px solid rgba(255, 255, 255, 0.55);
+    user-select: none;
+    text-align: center;
+    transition: box-shadow 0.15s ease, transform 0.08s ease, filter 0.15s ease;
+}
+
+/* Mesa: cuadrada y grande */
+.board-mesa {
+    width: 118px;
+    height: 118px;
+}
+
+/* Barra: rectángulo ancho (mostrador) */
+.board-barra {
+    width: 200px;
+    height: 104px;
+    border-radius: 14px;
+}
+
+.board-table.libre {
+    background: linear-gradient(135deg, #3ec97a 0%, #27ae60 100%);
+}
+
+.board-table.ocupada {
+    background: linear-gradient(135deg, #e67e22 0%, #c0392b 100%);
+}
+
+.board-table .bt-head {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    max-width: 100%;
+    line-height: 1;
+}
+
+.board-table .bt-num {
+    font-size: 1.15rem;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+
+.board-table .bt-name {
+    font-size: 0.72rem;
+    font-weight: 600;
+    opacity: 0.95;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.board-table .bt-icon {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.board-table .bt-svg {
+    width: 46px;
+    height: 46px;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.25));
+}
+
+.board-barra .bt-svg-barra {
+    width: 116px;
+    height: 46px;
+}
+
+.board-table .bt-foot {
+    line-height: 1;
+}
+
+.board-table .bt-total {
+    font-size: 0.82rem;
+    font-weight: 800;
+    background: rgba(0, 0, 0, 0.22);
+    padding: 3px 10px;
+    border-radius: 999px;
+}
+
+.board-table .bt-libre {
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.9;
+}
+
+/* Modo editable: cursor de arrastre y realce */
+.board-table.editable {
+    cursor: grab;
+}
+
+.board-table.editable:hover {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+.board-table.dragging {
+    cursor: grabbing;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+    transform: translate(-50%, -50%) scale(1.06);
+    z-index: 10;
+}
+
+/* Modo navegador: clic para abrir la mesa */
+.board-table.clickable {
+    cursor: pointer;
+}
+
+.board-table.clickable:hover {
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.32);
+    transform: translate(-50%, -50%) scale(1.05);
+}
+
+/* --- Contenedores de los popups del tablero --- */
+.board-popup {
+    background: var(--white, #fff);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg, 0 8px 24px rgba(43, 33, 30, 0.16));
+    width: 92vw;
+    max-width: 1000px;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.board-popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, var(--brown-dark, #5B3411) 0%, var(--brown-mid, #6B3E1A) 100%);
+    color: #fff;
+}
+
+.board-popup-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #fff;
+}
+
+.board-popup-header .board-close {
+    cursor: pointer;
+    font-size: 1.3rem;
+    opacity: 0.85;
+}
+
+.board-popup-header .board-close:hover {
+    opacity: 1;
+}
+
+.board-popup-body {
+    padding: 16px 20px;
+    overflow: auto;
+}
+
+.board-popup-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 20px;
+    border-top: 1px solid var(--border, #bfa594);
+    background: var(--bg-light, #f5ede3);
+}
+
+.board-legend {
+    display: flex;
+    gap: 16px;
+    font-size: 0.85rem;
+    color: var(--muted, #9b8577);
+}
+
+.board-legend .dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 4px;
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+.board-legend .dot-libre { background: #27ae60; }
+.board-legend .dot-ocupada { background: #c0392b; }
+
+@media (max-width: 768px) {
+    .board-mesa {
+        width: 92px;
+        height: 92px;
+    }
+    .board-barra {
+        width: 150px;
+        height: 88px;
+    }
+    .board-table .bt-svg { width: 36px; height: 36px; }
+    .board-barra .bt-svg-barra { width: 92px; height: 36px; }
+    .board-table .bt-num { font-size: 1rem; }
+    .board-table .bt-name { font-size: 0.65rem; }
+    .board-canvas { height: 60vh; }
+}

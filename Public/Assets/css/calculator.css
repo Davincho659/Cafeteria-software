@@ -1,0 +1,125 @@
+/* ============================================================================
+   CALCULADORA TÁCTIL (componente reutilizable)
+   ----------------------------------------------------------------------------
+   Mismos estilos que la calculadora de la vista de Ventas, extraídos aquí para
+   poder usarla también en el cierre de caja (contar el efectivo) sin tener que
+   cargar todo sales.css, que trae estilos propios del POS.
+
+   Las medidas van en px/% (nunca vh/vw) porque la app se escala con
+   `zoom: var(--app-zoom)` y el zoom calcula mal las unidades de viewport.
+   ============================================================================ */
+
+.calculator-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.calculator-overlay.active {
+  display: flex;
+}
+
+.calculator-popup {
+  background: var(--white, #fff);
+  border-radius: var(--radius, 12px);
+  padding: 20px;
+  box-shadow: var(--shadow-lg, 0 10px 30px rgba(0, 0, 0, .25));
+  width: 300px;
+  max-width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.calculator-display {
+  background: var(--bg-light, #f5f5f5);
+  padding: 15px;
+  border-radius: 8px;
+  text-align: right;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--brown-dark, #5B3411);
+  margin-bottom: 15px;
+  min-height: 50px;
+  border: 2px solid var(--border, #ddd);
+}
+
+.calculator-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.calc-btn {
+  padding: 15px;
+  border: none;
+  border-radius: 8px;
+  background: var(--brown-dark, #5B3411);
+  color: var(--white, #fff);
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, .2));
+}
+
+.calc-btn:hover { background: var(--brown-mid, #6B3E1A); transform: scale(1.05); }
+.calc-btn:active { transform: scale(0.95); }
+.calc-btn.zero { grid-column: span 2; }
+
+.calc-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.calc-action-btn {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.calc-action-btn.borrar { background: var(--error, #C0392B); color: var(--white, #fff); }
+.calc-action-btn.borrar:hover { background: #A93226; }
+.calc-action-btn.confirmar { background: var(--success, #2E9E43); color: var(--white, #fff); }
+.calc-action-btn.confirmar:hover { background: #247732; }
+.calc-action-btn.cancelar { background: var(--muted, #6c757d); color: var(--white, #fff); }
+
+/* Accesos rápidos con los billetes colombianos más comunes: en el cierre se
+   cuenta por denominación, así se suma sin teclear cifra por cifra. */
+.calc-quick {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.calc-quick-btn {
+  padding: 8px 4px;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--brown-dark, #5B3411);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.calc-quick-btn:hover { background: var(--bg-light, #f5f5f5); }
+.calc-quick-btn:active { transform: scale(0.95); }
+
+/* La calculadora del cierre vive dentro de un modal de Bootstrap (z-index
+   1055), así que debe ir por encima para poder tocarla. */
+.calculator-overlay.above-modal { z-index: 2100; }

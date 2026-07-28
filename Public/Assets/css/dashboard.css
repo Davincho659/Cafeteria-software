@@ -1,0 +1,465 @@
+/* ============================================================================
+   DASHBOARD.CSS - Panel administrativo
+   Gráficos hechos con CSS puro (sin librerías externas, funciona offline).
+   ============================================================================ */
+.dashboard-page {
+    padding: 22px;
+    overflow-y: auto;
+    background: var(--bg-cream);
+}
+
+.dash-wrap {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.dash-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.dash-head h1 {
+    font-size: 1.8rem;
+    margin: 0;
+}
+
+.dash-head p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+/* --- Estado de caja --- */
+.dash-caja {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    border-radius: 12px;
+    margin-bottom: 18px;
+    font-size: 0.95rem;
+}
+
+.dash-caja strong { margin-left: auto; }
+
+.caja-abierta {
+    background: rgba(43, 138, 62, 0.12);
+    border: 1px solid rgba(43, 138, 62, 0.35);
+    color: var(--success);
+}
+
+.caja-cerrada {
+    background: rgba(192, 57, 43, 0.10);
+    border: 1px solid rgba(192, 57, 43, 0.3);
+    color: var(--error);
+}
+
+/* --- KPIs --- */
+.dash-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.dash-kpi {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--white);
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+}
+
+.dash-kpi::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 5px;
+}
+
+.kpi-ventas::before  { background: var(--success); }
+.kpi-tickets::before { background: var(--info); }
+.kpi-mes::before     { background: var(--mustard); }
+.kpi-util::before    { background: var(--accent); }
+
+.dash-kpi-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.kpi-ventas .dash-kpi-icon  { background: var(--success); }
+.kpi-tickets .dash-kpi-icon { background: var(--info); }
+.kpi-mes .dash-kpi-icon     { background: var(--mustard); }
+.kpi-util .dash-kpi-icon    { background: var(--accent); }
+
+.dash-kpi-body { display: flex; flex-direction: column; min-width: 0; }
+
+.dash-kpi-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.dash-kpi-value {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: var(--brown-dark);
+    line-height: 1.1;
+}
+
+.dash-kpi-delta {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-top: 2px;
+}
+
+.delta-up   { color: var(--success); font-weight: 600; }
+.delta-down { color: var(--error); font-weight: 600; }
+
+/* --- Filas y tarjetas --- */
+.dash-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.dash-col-2 { grid-column: span 2; }
+
+.dash-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: var(--shadow-sm);
+    min-width: 0;
+}
+
+.dash-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.dash-card-head h3 {
+    font-size: 1.05rem;
+    margin: 0;
+}
+
+.dash-link {
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.dash-link:hover { text-decoration: underline; }
+
+/* --- Barras verticales (7 días) --- */
+.dash-bars {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 8px;
+    height: 200px;
+}
+
+.dash-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+}
+
+.dash-bar-value {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    height: 14px;
+}
+
+.dash-bar-track {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.dash-bar-fill {
+    width: 70%;
+    max-width: 46px;
+    background: linear-gradient(180deg, var(--mustard), var(--brown-mid));
+    border-radius: 6px 6px 0 0;
+    min-height: 3px;
+    transition: height 0.4s ease;
+}
+
+.dash-bar-fill.is-today {
+    background: linear-gradient(180deg, var(--accent), #b85a1e);
+}
+
+.dash-bar-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 6px;
+    line-height: 1.1;
+}
+
+/* --- Donut métodos de pago --- */
+.dash-donut-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.dash-donut {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.dash-donut::after {
+    content: '';
+    position: absolute;
+    width: 92px;
+    height: 92px;
+    background: var(--white);
+    border-radius: 50%;
+}
+
+.dash-donut-center {
+    position: relative;
+    z-index: 1;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--brown-dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1;
+}
+
+.dash-donut-center small { font-size: 0.65rem; color: var(--muted); font-weight: 500; }
+
+.dash-donut-legend {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.dash-donut-legend > div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dash-donut-legend strong { margin-left: auto; }
+
+.dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+.dot-efectivo { background: var(--success); }
+.dot-transfer { background: var(--info); }
+
+/* --- Top productos --- */
+.dash-top-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+}
+
+.dash-top-rank {
+    width: 26px;
+    height: 26px;
+    background: var(--brown-dark);
+    color: #fff;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.dash-top-info { flex: 1; min-width: 0; }
+
+.dash-top-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dash-top-track {
+    height: 6px;
+    background: var(--bg-light);
+    border-radius: 999px;
+    margin-top: 4px;
+    overflow: hidden;
+}
+
+.dash-top-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--mustard), var(--accent));
+    border-radius: 999px;
+}
+
+.dash-top-val {
+    text-align: right;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--brown-dark);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.dash-top-val small { font-size: 0.7rem; color: var(--muted); font-weight: 500; }
+
+/* --- Horas --- */
+.dash-hours {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 160px;
+}
+
+.dash-hour-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+}
+
+.dash-hour-track {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.dash-hour-fill {
+    width: 100%;
+    max-width: 22px;
+    background: var(--info);
+    border-radius: 4px 4px 0 0;
+    min-height: 2px;
+    transition: height 0.4s ease;
+}
+
+.dash-hour-label {
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 4px;
+}
+
+/* --- Tabla recientes --- */
+.dash-table th {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 2px solid var(--bg-light);
+}
+
+.dash-table td { vertical-align: middle; font-size: 0.9rem; }
+
+.dash-pago {
+    font-size: 0.75rem;
+    padding: 2px 10px;
+    border-radius: 999px;
+    text-transform: capitalize;
+}
+
+.dash-pago-efectivo { background: rgba(43,138,62,0.15); color: var(--success); }
+.dash-pago-transferencia { background: rgba(46,134,193,0.15); color: var(--info); }
+.dash-pago-bancolombia { background: rgba(255,204,0,0.18); color: #a07a00; }
+.dash-pago-nequi { background: rgba(130,0,120,0.14); color: #7a0072; }
+
+.dot-banco { background: #f5c518; }
+.dot-nequi { background: #820072; }
+.dash-donut-legend .leg-sub { font-size: 0.8rem; color: var(--muted); padding-left: 4px; }
+
+/* --- Stock --- */
+.dash-stock-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.dash-stock-kpis > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--bg-light);
+    border-radius: 10px;
+    padding: 10px 6px;
+}
+
+.dash-stock-kpis span {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--brown-dark);
+}
+
+.dash-stock-kpis small { font-size: 0.72rem; color: var(--muted); }
+
+.dash-reponer-title { font-weight: 600; font-size: 0.85rem; margin-bottom: 6px; }
+
+.dash-reponer-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--bg-light);
+}
+
+/* --- Responsive --- */
+@media (max-width: 1100px) {
+    .dash-kpis { grid-template-columns: repeat(2, 1fr); }
+    .dash-row { grid-template-columns: 1fr; }
+    .dash-col-2 { grid-column: span 1; }
+}
+
+/* En móvil la página hace scroll natural (sin scroll interno del contenedor) */
+@media (max-width: 768px) {
+    .dashboard-page {
+        overflow: visible;
+        height: auto;
+        min-height: 0;
+    }
+}
+
+@media (max-width: 576px) {
+    .dash-kpis { grid-template-columns: 1fr; }
+}

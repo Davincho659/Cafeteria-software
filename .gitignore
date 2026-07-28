@@ -1,0 +1,36 @@
+# Editores
+/.idea/
+/.vscode/
+*.swp
+
+# Datos en tiempo de ejecución: NUNCA deben versionarse.
+# Las sesiones contienen datos de usuarios conectados y los logs pueden
+# contener rutas internas y detalles de errores.
+/storage/sessions/*
+/storage/logs/*
+!/storage/sessions/.gitignore
+!/storage/logs/.gitignore
+
+# Respaldos y volcados de base de datos: contienen las ventas reales del
+# negocio. Se guardan aparte, nunca en el repositorio.
+/RESPALDOS/
+/PARA-EL-SERVIDOR/
+*.sql.gz
+
+# Credenciales locales
+.env
+.env.*
+!.env.example
+
+# Imágenes con los permisos de Windows corruptos: el sistema operativo niega su
+# lectura incluso al dueño del archivo, así que git no puede indexarlas. Se
+# excluyen para no bloquear los commits; hay que volver a subirlas desde la app.
+/Public/Assets/img/categories/20.jpg
+/Public/Assets/img/products/18.jpg
+/Public/Assets/img/products/21.jpg
+/Public/Assets/img/products/27.webp
+
+# Sistema operativo
+Thumbs.db
+desktop.ini
+.DS_Store
