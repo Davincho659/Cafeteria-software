@@ -58,7 +58,32 @@ class Products {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * ¿Ya hay un producto con ese nombre en la misma categoría?
+     *
+     * Se permite repetir el nombre entre categorías distintas (puede haber un
+     * "Jugo" en Bebidas y otro en Desayunos), pero no dentro de la misma: eso
+     * siempre es un registro duplicado por error.
+     */
+    public function nameInUse($nombre, $idCategoria, $exceptoId = null) {
+        $query = "SELECT idProducto FROM productos
+                  WHERE LOWER(TRIM(nombre)) = LOWER(TRIM(?)) AND idCategoria = ?";
+        $params = [$nombre, $idCategoria];
+        if ($exceptoId !== null) {
+            $query .= " AND idProducto <> ?";
+            $params[] = $exceptoId;
+        }
+        $stmt = $this->db->prepare($query);
+        $stmt->execute($params);
+        return (bool) $stmt->fetch();
+    }
+
     public function create($idCategoria, $nombre, $tipo, $precioVenta = null, $precioCompra = null, $imagen = 'default.png', $idUnidadBase = null, $manejaStock = 0, $estado = 1, $codigoBarras = null) {
+        if ($this->nameInUse($nombre, $idCategoria)) {
+            throw new Exception('Ya existe un producto con ese nombre en esa categoría');
+        }
+        $nombre = trim($nombre);
+
         $query = "INSERT INTO productos (idCategoria, nombre, codigoBarras, tipo, precioVenta, precioCompra, imagen, idUnidadBase, manejaStock, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->db->prepare($query);
         $stmt->execute([$idCategoria, $nombre, $codigoBarras, $tipo, $precioVenta, $precioCompra, $imagen, $idUnidadBase, $manejaStock, $estado]);

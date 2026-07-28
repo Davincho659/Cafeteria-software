@@ -238,7 +238,12 @@ class Sales {
      * Obtener productos más vendidos del día
      */
     public function getTopProductsToday($limit = 10) {
-        $sql = "SELECT 
+        // El límite se interpola como entero, no como parámetro: PDO envía los
+        // parámetros como texto y MariaDB rechaza LIMIT '10' con un error de
+        // sintaxis, que dejaba el reporte de más vendidos caído por completo.
+        $limit = max(1, min(100, (int) $limit));
+
+        $sql = "SELECT
                     p.idProducto,
                     p.nombre,
                     c.nombre as categoria,
@@ -251,9 +256,9 @@ class Sales {
                 WHERE DATE(v.fechaVenta) = CURDATE() AND v.estado = 'completada'
                 GROUP BY p.idProducto, p.nombre, c.nombre
                 ORDER BY totalVendido DESC
-                LIMIT ?";
+                LIMIT {$limit}";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$limit]);
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

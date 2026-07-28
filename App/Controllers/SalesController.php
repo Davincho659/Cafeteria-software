@@ -23,9 +23,23 @@ class SalesController {
         $this->inventoryModel = new Inventory();
     }
 
-    /** Normaliza el método de pago recibido; por defecto 'efectivo'. */
+    /**
+     * Valida el método de pago recibido.
+     *
+     * Si no se envía ninguno se asume efectivo (venta rápida de mostrador),
+     * pero un valor desconocido se RECHAZA en vez de convertirse en efectivo:
+     * antes, un método mal escrito por un fallo del front registraba la venta
+     * como efectivo en silencio y la caja aparecía descuadrada al cierre sin
+     * que nadie pudiera explicar por qué.
+     */
     private function metodoValido($m) {
-        return in_array($m, self::$metodosPago, true) ? $m : 'efectivo';
+        if ($m === null || $m === '') {
+            return 'efectivo';
+        }
+        if (!in_array($m, self::$metodosPago, true)) {
+            throw new Exception('Método de pago no válido: ' . htmlspecialchars((string) $m));
+        }
+        return $m;
     }
 
     public function getCategories() {
@@ -163,12 +177,14 @@ class SalesController {
                 throw new Exception('Mesa no encontrada');
             }
 
-            // Verificar que la mesa esté disponible
-            if (!empty($mesa['idVenta'])) {
-                throw new Exception('La mesa ya está ocupada');
-            }
-
-            // Crear o obtener venta para la mesa
+            // Si la mesa ya tiene una venta abierta, los productos se SUMAN a
+            // esa misma cuenta: es lo que ocurre en el salón cuando la mesa pide
+            // más durante el servicio. createPendingSale reutiliza la venta
+            // pendiente de la mesa en vez de abrir una segunda.
+            //
+            // (Aquí había una validación que rechazaba la mesa ocupada, pero
+            // nunca llegaba a ejecutarse porque Tables::getById no devuelve
+            // idVenta. Se retira para que el código diga lo que de verdad hace.)
             $idVenta = $this->salesModel->createPendingSale($idMesa, $idUsuario);
             
             // Actualizar estado de la mesa a ocupada
@@ -180,8 +196,19 @@ class SalesController {
             if ($tieneProductos) {
                 foreach ($productos as $producto) {
                     $idProducto = isset($producto['idProducto']) ? intval($producto['idProducto']) : null;
-                    $cantidad = intval($producto['cantidad']);
-                    $precioUnitario = floatval($producto['precioUnitario']);
+
+                    // floatval y no intval: un insumo por peso puede transferirse
+                    // en 0,5 kg, e intval lo convertía en 0.
+                    $cantidad = floatval($producto['cantidad'] ?? 0);
+
+                    // El front manda el precio bajo distintos nombres según la
+                    // pantalla; leerlo con ?? evita el warning "Undefined array
+                    // key precioUnitario" que ensuciaba el log en cada transferencia.
+                    // Para productos reales el precio se ignora: el modelo usa
+                    // el de la base de datos. Solo pesa en los montos manuales.
+                    $precioUnitario = floatval(
+                        $producto['precioUnitario'] ?? $producto['precioVenta'] ?? $producto['precio'] ?? 0
+                    );
 
                     // Validar que el producto exista (si no es NULL)
                     $productoData = null;
@@ -472,8 +499,13 @@ class SalesController {
             if (!empty($productos) && is_array($productos)) {
                 foreach ($productos as $producto) {
                     $idProducto = isset($producto['idProducto']) ? intval($producto['idProducto']) : null;
-                    $cantidad = intval($producto['cantidad'] ?? 1);
-                    $precioUnitario = floatval($producto['precioUnitario']);
+                    // floatval: los insumos por peso admiten fracciones (0,5 kg).
+                    $cantidad = floatval($producto['cantidad'] ?? 1);
+                    // El precio llega con distintos nombres según la pantalla.
+                    // Para productos reales manda el precio de la base de datos.
+                    $precioUnitario = floatval(
+                        $producto['precioUnitario'] ?? $producto['precioVenta'] ?? $producto['precio'] ?? 0
+                    );
 
                     // Validar producto solo si no es NULL (monto manual)
                     if ($idProducto !== null) {
