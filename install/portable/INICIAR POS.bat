@@ -241,12 +241,21 @@ color 0C
 echo.
 echo   [ERROR] El servidor web no arranco.
 echo.
-echo   Casi siempre es porque otro programa usa el puerto 80
-echo   (Skype, IIS u otro XAMPP ya instalado).
+echo   Mira el mensaje que aparece ARRIBA de este recuadro:
 echo.
-echo   Solucion: abre  xampp\apache\conf\httpd.conf  y cambia
-echo   "Listen 80" por "Listen 8080". Luego, en este archivo,
-echo   cambia localhost por localhost:8080 en la linea URL.
+echo   1) Si dice "Syntax error" o "path is invalid":
+echo      Es un problema de rutas, NO del puerto.
+echo      Borra los archivos .original de xampp\apache\conf
+echo      y vuelve a abrir: las rutas se recalculan solas.
+echo.
+echo   2) Si dice "Address already in use" o "make_sock":
+echo      Otro programa ocupa el puerto 80 (Skype, IIS u otro
+echo      XAMPP). Abre xampp\apache\conf\httpd.conf, cambia
+echo      "Listen 80" por "Listen 8080", y en ESTE archivo
+echo      pon localhost:8080 en la linea que define URL.
+echo.
+echo   Detalle completo del error:
+echo      %XAMPP%\apache\logs\error.log
 echo.
 pause
 exit /b 1
