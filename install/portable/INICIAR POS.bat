@@ -95,15 +95,29 @@ echo         Base de datos lista.
 
 REM ---------- 2. Crear la base la primera vez ----------
 echo   [3/5] Verificando los datos...
-"%MYSQL%\mysql.exe" -u root -e "USE cafeteria_software;" >nul 2>&1
+REM  Se comprueba una TABLA, no solo la base. Si un intento anterior dejo la
+REM  base creada pero vacia, "USE cafeteria_software" tiene exito igual y el
+REM  sistema arrancaba sin tablas, fallando al entrar con:
+REM     Table 'cafeteria_software.usuarios' doesn't exist
+"%MYSQL%\mysql.exe" -u root -e "SELECT 1 FROM cafeteria_software.usuarios LIMIT 1;" >nul 2>&1
 if not errorlevel 1 goto DATOS_OK
 
-echo         Primera vez: preparando el sistema...
-"%MYSQL%\mysql.exe" -u root -e "CREATE DATABASE IF NOT EXISTS cafeteria_software CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;" >nul 2>&1
+echo         Preparando la base de datos por primera vez...
 if not exist "%PROYECTO%\install\schema.sql" goto FALTA_SCHEMA
-"%MYSQL%\mysql.exe" -u root cafeteria_software < "%PROYECTO%\install\schema.sql"
-if exist "%PROYECTO%\install\seed.sql" "%MYSQL%\mysql.exe" -u root cafeteria_software < "%PROYECTO%\install\seed.sql"
-echo         Sistema preparado.  Usuario: admin   PIN: 1234
+
+"%MYSQL%\mysql.exe" -u root -e "CREATE DATABASE IF NOT EXISTS cafeteria_software CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;" >nul 2>&1
+
+REM  Los errores del volcado se guardan para poder mostrarlos si algo falla,
+REM  en vez de continuar como si nada.
+"%MYSQL%\mysql.exe" -u root cafeteria_software < "%PROYECTO%\install\schema.sql" 2> "%TEMP%\pos_sql_error.txt"
+if exist "%PROYECTO%\install\seed.sql" "%MYSQL%\mysql.exe" -u root cafeteria_software < "%PROYECTO%\install\seed.sql" 2>> "%TEMP%\pos_sql_error.txt"
+
+REM  Verificar que la estructura quedo realmente creada
+"%MYSQL%\mysql.exe" -u root -e "SELECT 1 FROM cafeteria_software.usuarios LIMIT 1;" >nul 2>&1
+if errorlevel 1 goto ERROR_BASE
+
+del "%TEMP%\pos_sql_error.txt" >nul 2>&1
+echo         Base de datos creada.  Usuario: admin   PIN: 1234
 goto DATOS_OK
 
 :DATOS_OK
@@ -217,6 +231,31 @@ echo   Se busco en:  %PROYECTO%\Public\Index.php
 echo.
 echo   La carpeta "Cafeteria-software" debe estar dentro de
 echo   xampp\htdocs\ y contener la carpeta Public.
+echo.
+pause
+exit /b 1
+
+:ERROR_BASE
+color 0C
+echo.
+echo   [ERROR] La base de datos no se creo correctamente.
+echo.
+echo   Se ejecuto el archivo:
+echo      %PROYECTO%\install\schema.sql
+echo   pero la tabla de usuarios no quedo creada.
+echo.
+if exist "%TEMP%\pos_sql_error.txt" (
+    echo   MySQL informo lo siguiente:
+    echo   --------------------------------------------
+    type "%TEMP%\pos_sql_error.txt"
+    echo   --------------------------------------------
+    echo.
+)
+echo   Que hacer:
+echo     1^) Comprueba que install\schema.sql este completo
+echo        ^(debe pesar unos 40 KB^).
+echo     2^) Si la base quedo a medias, borrala y vuelve a abrir:
+echo        xampp\mysql\bin\mysql.exe -u root -e "DROP DATABASE cafeteria_software;"
 echo.
 pause
 exit /b 1

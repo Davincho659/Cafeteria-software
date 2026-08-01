@@ -58,6 +58,32 @@ if exist "%PROYECTO%\install\schema.sql" (echo   [OK]    install\schema.sql) els
 
 echo.
 echo   --------------------------------------------
+echo    BASE DE DATOS
+echo   --------------------------------------------
+tasklist /FI "IMAGENAME eq mysqld.exe" 2>nul | find /I "mysqld.exe" >nul
+if errorlevel 1 (
+    echo      ^(la base esta apagada: abre INICIAR POS para revisarla^)
+) else (
+    "%XAMPP%\mysql\bin\mysql.exe" -u root -e "USE cafeteria_software;" >nul 2>&1
+    if errorlevel 1 (
+        echo      [FALTA] La base cafeteria_software no existe
+        echo              ^(se crea sola al abrir INICIAR POS^)
+    ) else (
+        "%XAMPP%\mysql\bin\mysql.exe" -u root -e "SELECT 1 FROM cafeteria_software.usuarios LIMIT 1;" >nul 2>&1
+        if errorlevel 1 (
+            echo      [PROBLEMA] La base existe pero esta VACIA, sin tablas.
+            echo                 Por eso no deja iniciar sesion.
+            echo                 Solucion: cierra todo, borra la base con
+            echo                 BORRAR BASE DE DATOS.bat y vuelve a abrir.
+            set /a FALLOS+=1
+        ) else (
+            echo      [OK]    Base de datos con sus tablas
+        )
+    )
+)
+
+echo.
+echo   --------------------------------------------
 echo    QUE HAY REALMENTE EN htdocs
 echo   --------------------------------------------
 if exist "%XAMPP%\htdocs\" (
