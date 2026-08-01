@@ -68,8 +68,21 @@ Sigue este orden. Es importante:
    RESPALDO - LO MAS IMPORTANTE DE TODO
 ===========================================================
 
-El sistema guarda una copia de seguridad SOLO, cada vez que
-lo abres y cada vez que lo cierras. No tienes que hacer nada.
+QUE ES:
+  Una copia de TODO lo que hay en el sistema: los productos
+  que cargaste, el inventario, las ventas, las compras y la
+  configuracion. Es un archivo que se guarda en la carpeta
+  RESPALDOS.
+
+PARA QUE SIRVE:
+  - Si el computador se dana o se lo roban, con ese archivo
+    se recupera todo en otro computador.
+  - Si alguien borra algo por error, se puede volver atras.
+  - Es el archivo que se usara el dia que el sistema pase a
+    internet, para no tener que cargar los productos de nuevo.
+
+El sistema la guarda SOLO, cada vez que lo abres y cada vez
+que lo cierras. No tienes que hacer nada.
 
 PERO, una vez por semana:
 

@@ -134,15 +134,44 @@ REM ---------- Abrir como aplicacion ----------
 echo.
 echo   Abriendo el sistema...
 
-set "NAVEGADOR="
-if exist "%ProgramFiles%\Google\Chrome\Application\chrome.exe" set "NAVEGADOR=%ProgramFiles%\Google\Chrome\Application\chrome.exe"
-if exist "%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe" set "NAVEGADOR=%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"
-if exist "%LocalAppData%\Google\Chrome\Application\chrome.exe" set "NAVEGADOR=%LocalAppData%\Google\Chrome\Application\chrome.exe"
-if not defined NAVEGADOR if exist "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" set "NAVEGADOR=%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"
-if not defined NAVEGADOR if exist "%ProgramFiles%\Microsoft\Edge\Application\msedge.exe" set "NAVEGADOR=%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"
+REM  El puerto se lee de la configuracion de Apache. Si alguien lo cambio a
+REM  8080 (porque el 80 estaba ocupado), la direccion se arma sola con el
+REM  puerto correcto; antes quedaba fija en el 80 y el navegador abria una
+REM  pagina en blanco aunque el servidor estuviera funcionando.
+set "PUERTO=80"
+for /f "usebackq delims=" %%P in (`powershell -NoProfile -Command "$m=Select-String -Path '%XAMPP%\apache\conf\httpd.conf' -Pattern '^\s*Listen\s+(?:[\d\.]+:)?(\d+)' | Select-Object -First 1; if($m){$m.Matches[0].Groups[1].Value}else{'80'}" 2^>nul`) do set "PUERTO=%%P"
 
-if defined NAVEGADOR start "" "!NAVEGADOR!" --app="%URL%" --start-maximized
-if not defined NAVEGADOR start "" "%URL%"
+set "HOST=localhost"
+if not "!PUERTO!"=="80" set "HOST=localhost:!PUERTO!"
+set "URL=http://!HOST!/Cafeteria-software/Public/Index.php?pg=login"
+
+REM  Se comprueba que el sistema responda antes de abrir el navegador, para no
+REM  dejar al usuario mirando una pagina en blanco sin saber por que.
+set "RESPONDE=no"
+for /f "usebackq delims=" %%R in (`powershell -NoProfile -Command "try{(Invoke-WebRequest -Uri 'http://!HOST!/Cafeteria-software/Public/Index.php?pg=login' -UseBasicParsing -TimeoutSec 8).StatusCode}catch{'0'}" 2^>nul`) do set "RESPONDE=%%R"
+if "!RESPONDE!"=="200" goto ABRIR
+if "!RESPONDE!"=="302" goto ABRIR
+goto ERROR_NO_RESPONDE
+
+:ABRIR
+REM  %ProgramFiles(x86)% lleva parentesis y rompe la sintaxis de los IF en
+REM  algunos equipos: se copia antes a una variable normal.
+set "PF=%ProgramFiles%"
+set "PF86=%ProgramFiles(x86)%"
+if not defined PF86 set "PF86=%ProgramFiles%"
+
+set "NAVEGADOR="
+if exist "!PF!\Google\Chrome\Application\chrome.exe" set "NAVEGADOR=!PF!\Google\Chrome\Application\chrome.exe"
+if not defined NAVEGADOR if exist "!PF86!\Google\Chrome\Application\chrome.exe" set "NAVEGADOR=!PF86!\Google\Chrome\Application\chrome.exe"
+if not defined NAVEGADOR if exist "%LocalAppData%\Google\Chrome\Application\chrome.exe" set "NAVEGADOR=%LocalAppData%\Google\Chrome\Application\chrome.exe"
+if not defined NAVEGADOR if exist "!PF86!\Microsoft\Edge\Application\msedge.exe" set "NAVEGADOR=!PF86!\Microsoft\Edge\Application\msedge.exe"
+if not defined NAVEGADOR if exist "!PF!\Microsoft\Edge\Application\msedge.exe" set "NAVEGADOR=!PF!\Microsoft\Edge\Application\msedge.exe"
+
+if defined NAVEGADOR (
+    start "" "!NAVEGADOR!" --app="!URL!" --start-maximized
+) else (
+    start "" "!URL!"
+)
 
 color 0A
 echo.
@@ -232,6 +261,31 @@ echo     - Falta la carpeta xampp\mysql\data
 echo.
 echo   Para ver el detalle del error, abre este archivo:
 echo      %XAMPP%\mysql\data\mysql_error.log
+echo.
+pause
+exit /b 1
+
+:ERROR_NO_RESPONDE
+color 0C
+echo.
+echo   [ERROR] El servidor esta encendido pero el sistema no responde.
+echo.
+echo   Se intento abrir:  !URL!
+echo   Puerto detectado:  !PUERTO!
+echo.
+echo   Comprueba lo siguiente:
+echo.
+echo   1) Que la carpeta del sistema se llame exactamente
+echo      "Cafeteria-software" y este dentro de xampp\htdocs
+echo      Ruta esperada: %PROYECTO%
+echo.
+echo   2) Si cambiaste el puerto en httpd.conf, revisa que el
+echo      cambio este bien escrito ^(por ejemplo "Listen 8080"^).
+echo.
+echo   3) Abre esta direccion a mano en el navegador:
+echo      !URL!
+echo.
+echo   Detalle del error:  %XAMPP%\apache\logs\error.log
 echo.
 pause
 exit /b 1
