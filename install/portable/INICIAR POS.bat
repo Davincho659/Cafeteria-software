@@ -43,7 +43,17 @@ echo         Ya estaba encendida.
 goto MYSQL_LISTO
 
 :ARRANCAR_MYSQL
-start "" /B "%MYSQL%\mysqld.exe" --defaults-file="%XAMPP%\mysql\my.ini" --standalone
+REM  La configuracion de MySQL no siempre esta en el mismo sitio: en XAMPP vive
+REM  en mysql\bin\my.ini, pero otras versiones la ponen en mysql\my.ini. Se
+REM  busca en ambas antes de arrancar; sin el archivo correcto mysqld aborta
+REM  con "Fatal error in defaults handling".
+set "MYINI="
+if exist "%XAMPP%\mysql\bin\my.ini" set "MYINI=%XAMPP%\mysql\bin\my.ini"
+if not defined MYINI if exist "%XAMPP%\mysql\my.ini" set "MYINI=%XAMPP%\mysql\my.ini"
+if not defined MYINI if exist "%XAMPP%\mysql\my.cnf" set "MYINI=%XAMPP%\mysql\my.cnf"
+if not defined MYINI goto ERROR_MYINI
+
+start "" /B "%MYSQL%\mysqld.exe" --defaults-file="!MYINI!" --standalone
 set INTENTOS=0
 
 :ESPERA_MYSQL
@@ -167,16 +177,35 @@ echo.
 pause
 exit /b 1
 
+:ERROR_MYINI
+color 0C
+echo.
+echo   [ERROR] No se encuentra la configuracion de MySQL.
+echo.
+echo   Se busco el archivo my.ini en:
+echo      %XAMPP%\mysql\bin\my.ini
+echo      %XAMPP%\mysql\my.ini
+echo.
+echo   Suele pasar cuando el ZIP de XAMPP se descomprimio a medias.
+echo   Vuelve a descomprimirlo completo y reemplaza la carpeta xampp.
+echo.
+pause
+exit /b 1
+
 :ERROR_MYSQL
 color 0C
 echo.
 echo   [ERROR] La base de datos no arranco.
 echo.
+echo   Configuracion usada: !MYINI!
+echo.
 echo   Causas frecuentes:
 echo     - Ya hay otro MySQL usando el puerto 3306
 echo     - La carpeta esta en OneDrive o en una ruta muy larga
+echo     - Falta la carpeta xampp\mysql\data
 echo.
-echo   Prueba: reinicia el computador y vuelve a intentarlo.
+echo   Para ver el detalle del error, abre este archivo:
+echo      %XAMPP%\mysql\data\mysql_error.log
 echo.
 pause
 exit /b 1

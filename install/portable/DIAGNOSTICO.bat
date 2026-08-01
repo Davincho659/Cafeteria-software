@@ -35,6 +35,14 @@ if exist "%XAMPP%\mysql\bin\mysqld.exe" (echo   [OK]    Base de datos ^(mysql^))
 if exist "%XAMPP%\mysql\bin\mysqldump.exe" (echo   [OK]    Herramienta de respaldos) else (echo   [FALTA] xampp\mysql\bin\mysqldump.exe & set /a FALLOS+=1)
 if exist "%XAMPP%\php\php.exe" (echo   [OK]    PHP) else (echo   [FALTA] xampp\php\php.exe & set /a FALLOS+=1)
 if exist "%XAMPP%\htdocs\" (echo   [OK]    Carpeta htdocs) else (echo   [FALTA] xampp\htdocs & set /a FALLOS+=1)
+if exist "%XAMPP%\mysql\data\" (echo   [OK]    Datos de MySQL) else (echo   [FALTA] xampp\mysql\data & set /a FALLOS+=1)
+
+REM Sin my.ini, mysqld aborta con "Fatal error in defaults handling".
+set "MYINI="
+if exist "%XAMPP%\mysql\bin\my.ini" set "MYINI=%XAMPP%\mysql\bin\my.ini"
+if not defined MYINI if exist "%XAMPP%\mysql\my.ini" set "MYINI=%XAMPP%\mysql\my.ini"
+if not defined MYINI if exist "%XAMPP%\mysql\my.cnf" set "MYINI=%XAMPP%\mysql\my.cnf"
+if defined MYINI (echo   [OK]    Configuracion MySQL: !MYINI!) else (echo   [FALTA] my.ini de MySQL & set /a FALLOS+=1)
 
 echo.
 echo   --------------------------------------------
