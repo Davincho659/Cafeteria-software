@@ -35,8 +35,27 @@ if not exist "%APACHE%\httpd.exe" goto FALTA_XAMPP
 if not exist "%MYSQL%\mysqld.exe" goto FALTA_XAMPP
 if not exist "%PROYECTO%\Public\Index.php" goto FALTA_PROYECTO
 
+REM ---------- 0. Ajustar rutas si el paquete cambio de sitio ----------
+REM  XAMPP guarda rutas absolutas en sus configuraciones. Si la carpeta se
+REM  copia a otro computador o a otra unidad, MySQL falla con
+REM  "Can't change dir to ...\mysql\data" y Apache ni siquiera arranca.
+REM  Esto lo detecta y reescribe las rutas antes de encender nada.
+echo   [1/5] Revisando la instalacion...
+if exist "%RAIZ%ajustar-rutas.ps1" (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%RAIZ%ajustar-rutas.ps1" -Xampp "%XAMPP%" > "%TEMP%\pos_rutas.txt" 2>&1
+    find /I "AJUSTANDO" "%TEMP%\pos_rutas.txt" >nul 2>&1
+    if not errorlevel 1 (
+        echo         Se movio de carpeta: rutas corregidas.
+    ) else (
+        echo         Instalacion correcta.
+    )
+    del "%TEMP%\pos_rutas.txt" >nul 2>&1
+) else (
+    echo         ^(sin ajustador de rutas^)
+)
+
 REM ---------- 1. Base de datos ----------
-echo   [1/4] Iniciando la base de datos...
+echo   [2/5] Iniciando la base de datos...
 tasklist /FI "IMAGENAME eq mysqld.exe" 2>nul | find /I "mysqld.exe" >nul
 if errorlevel 1 goto ARRANCAR_MYSQL
 echo         Ya estaba encendida.
@@ -53,7 +72,14 @@ if not defined MYINI if exist "%XAMPP%\mysql\my.ini" set "MYINI=%XAMPP%\mysql\my
 if not defined MYINI if exist "%XAMPP%\mysql\my.cnf" set "MYINI=%XAMPP%\mysql\my.cnf"
 if not defined MYINI goto ERROR_MYINI
 
-start "" /B "%MYSQL%\mysqld.exe" --defaults-file="!MYINI!" --standalone
+REM  MySQL necesita una carpeta temporal para trabajar. Si no existe, InnoDB
+REM  aborta con "Unable to create temporary file" y la base no levanta.
+REM  Suele faltar cuando el ZIP se descomprime sin las carpetas vacias.
+if not exist "%XAMPP%\tmp" mkdir "%XAMPP%\tmp" >nul 2>&1
+
+REM  Las rutas se pasan tambien por linea de comandos (tienen prioridad sobre el
+REM  archivo): asi la base arranca aunque el my.ini hubiera quedado desfasado.
+start "" /B "%MYSQL%\mysqld.exe" --defaults-file="!MYINI!" --basedir="%XAMPP%\mysql" --datadir="%XAMPP%\mysql\data" --plugin-dir="%XAMPP%\mysql\lib\plugin" --tmpdir="%XAMPP%\tmp" --standalone
 set INTENTOS=0
 
 :ESPERA_MYSQL
@@ -68,7 +94,7 @@ goto ERROR_MYSQL
 echo         Base de datos lista.
 
 REM ---------- 2. Crear la base la primera vez ----------
-echo   [2/4] Verificando los datos...
+echo   [3/5] Verificando los datos...
 "%MYSQL%\mysql.exe" -u root -e "USE cafeteria_software;" >nul 2>&1
 if not errorlevel 1 goto DATOS_OK
 
@@ -84,7 +110,7 @@ goto DATOS_OK
 echo         Datos verificados.
 
 REM ---------- 3. Servidor web ----------
-echo   [3/4] Iniciando el servidor...
+echo   [4/5] Iniciando el servidor...
 tasklist /FI "IMAGENAME eq httpd.exe" 2>nul | find /I "httpd.exe" >nul
 if errorlevel 1 goto ARRANCAR_APACHE
 echo         Ya estaba encendido.
@@ -100,7 +126,7 @@ if errorlevel 1 goto ERROR_APACHE
 echo         Servidor listo.
 
 REM ---------- 4. Respaldo de seguridad ----------
-echo   [4/4] Guardando copia de seguridad...
+echo   [5/5] Guardando copia de seguridad...
 if exist "%RAIZ%RESPALDAR AHORA.bat" call "%RAIZ%RESPALDAR AHORA.bat" silencioso
 echo         Copia guardada.
 

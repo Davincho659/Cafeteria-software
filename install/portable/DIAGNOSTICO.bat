@@ -36,6 +36,8 @@ if exist "%XAMPP%\mysql\bin\mysqldump.exe" (echo   [OK]    Herramienta de respal
 if exist "%XAMPP%\php\php.exe" (echo   [OK]    PHP) else (echo   [FALTA] xampp\php\php.exe & set /a FALLOS+=1)
 if exist "%XAMPP%\htdocs\" (echo   [OK]    Carpeta htdocs) else (echo   [FALTA] xampp\htdocs & set /a FALLOS+=1)
 if exist "%XAMPP%\mysql\data\" (echo   [OK]    Datos de MySQL) else (echo   [FALTA] xampp\mysql\data & set /a FALLOS+=1)
+REM Sin la carpeta temporal, InnoDB aborta y MySQL no arranca.
+if exist "%XAMPP%\tmp\" (echo   [OK]    Carpeta temporal) else (echo   [AVISO] falta xampp\tmp ^(se crea sola al iniciar^))
 
 REM Sin my.ini, mysqld aborta con "Fatal error in defaults handling".
 set "MYINI="

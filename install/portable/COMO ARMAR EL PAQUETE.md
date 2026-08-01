@@ -29,8 +29,24 @@ POS-LaCasaDelPastel\
 └── LEEME PRIMERO.txt
 ```
 
-Los cuatro `.bat` van en la **raíz**, al lado de la carpeta `xampp` (no dentro).
-Cópialos desde `install/portable/`.
+Los `.bat` **y el `ajustar-rutas.ps1`** van en la **raíz**, al lado de la carpeta
+`xampp` (no dentro). Cópialos todos desde `install/portable/`:
+
+```
+INICIAR POS.bat
+APAGAR POS.bat
+RESPALDAR AHORA.bat
+EXPORTAR PARA SERVIDOR.bat
+DIAGNOSTICO.bat
+ajustar-rutas.ps1     ← imprescindible: sin este, XAMPP no arranca en otra carpeta
+LEEME PRIMERO.txt
+```
+
+> **Por qué hace falta `ajustar-rutas.ps1`:** XAMPP guarda rutas absolutas
+> (`datadir="C:/xampp/mysql/data"`) dentro de sus configuraciones. Al copiar el
+> paquete a otro computador o a otra unidad, esas rutas dejan de existir y
+> MySQL falla con *"Can't change dir to ...\mysql\data"*. Este archivo detecta
+> el cambio de carpeta y reescribe las rutas solo, la primera vez que se abre.
 
 ### Antes de copiar tu proyecto, límpialo:
 - Borra el contenido de `storage/sessions/` y `storage/logs/`.
