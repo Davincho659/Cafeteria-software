@@ -54,7 +54,17 @@ echo   --------------------------------------------
 if exist "%PROYECTO%\" (echo   [OK]    Carpeta Cafeteria-software) else (echo   [FALTA] xampp\htdocs\Cafeteria-software & set /a FALLOS+=1)
 if exist "%PROYECTO%\Public\Index.php" (echo   [OK]    Public\Index.php) else (echo   [FALTA] Cafeteria-software\Public\Index.php & set /a FALLOS+=1)
 if exist "%PROYECTO%\App\Core\Init.php" (echo   [OK]    App\Core) else (echo   [FALTA] Cafeteria-software\App\Core & set /a FALLOS+=1)
-if exist "%PROYECTO%\install\schema.sql" (echo   [OK]    install\schema.sql) else (echo   [FALTA] Cafeteria-software\install\schema.sql & set /a FALLOS+=1)
+REM Los archivos que crean la base van en el paquete, no dentro del proyecto.
+if exist "%RAIZ%base-inicial\schema.sql" (
+    echo   [OK]    base-inicial\schema.sql
+) else (
+    if exist "%PROYECTO%\install\schema.sql" (
+        echo   [OK]    schema.sql ^(en la ubicacion antigua^)
+    ) else (
+        echo   [FALTA] base-inicial\schema.sql
+        set /a FALLOS+=1
+    )
+)
 
 echo.
 echo   --------------------------------------------
@@ -73,8 +83,7 @@ if errorlevel 1 (
         if errorlevel 1 (
             echo      [PROBLEMA] La base existe pero esta VACIA, sin tablas.
             echo                 Por eso no deja iniciar sesion.
-            echo                 Solucion: cierra todo, borra la base con
-            echo                 BORRAR BASE DE DATOS.bat y vuelve a abrir.
+            echo                 Al abrir INICIAR POS se completara sola.
             set /a FALLOS+=1
         ) else (
             echo      [OK]    Base de datos con sus tablas

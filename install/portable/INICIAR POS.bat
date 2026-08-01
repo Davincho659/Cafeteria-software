@@ -103,14 +103,23 @@ REM     Table 'cafeteria_software.usuarios' doesn't exist
 if not errorlevel 1 goto DATOS_OK
 
 echo         Preparando la base de datos por primera vez...
-if not exist "%PROYECTO%\install\schema.sql" goto FALTA_SCHEMA
+
+REM  Los archivos que crean la base viven FUERA del proyecto, en la carpeta
+REM  "base-inicial" del paquete: son parte de la instalacion, no del sistema.
+REM  Se acepta tambien la ubicacion antigua dentro del proyecto por si el
+REM  paquete se armo con la version anterior.
+set "SCHEMA=%RAIZ%base-inicial\schema.sql"
+set "SEED=%RAIZ%base-inicial\seed.sql"
+if not exist "!SCHEMA!" set "SCHEMA=%PROYECTO%\install\schema.sql"
+if not exist "!SEED!"   set "SEED=%PROYECTO%\install\seed.sql"
+if not exist "!SCHEMA!" goto FALTA_SCHEMA
 
 "%MYSQL%\mysql.exe" -u root -e "CREATE DATABASE IF NOT EXISTS cafeteria_software CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;" >nul 2>&1
 
 REM  Los errores del volcado se guardan para poder mostrarlos si algo falla,
 REM  en vez de continuar como si nada.
-"%MYSQL%\mysql.exe" -u root cafeteria_software < "%PROYECTO%\install\schema.sql" 2> "%TEMP%\pos_sql_error.txt"
-if exist "%PROYECTO%\install\seed.sql" "%MYSQL%\mysql.exe" -u root cafeteria_software < "%PROYECTO%\install\seed.sql" 2>> "%TEMP%\pos_sql_error.txt"
+"%MYSQL%\mysql.exe" -u root cafeteria_software < "!SCHEMA!" 2> "%TEMP%\pos_sql_error.txt"
+if exist "!SEED!" "%MYSQL%\mysql.exe" -u root cafeteria_software < "!SEED!" 2>> "%TEMP%\pos_sql_error.txt"
 
 REM  Verificar que la estructura quedo realmente creada
 "%MYSQL%\mysql.exe" -u root -e "SELECT 1 FROM cafeteria_software.usuarios LIMIT 1;" >nul 2>&1
@@ -262,11 +271,18 @@ exit /b 1
 
 :FALTA_SCHEMA
 color 0C
-echo   [ERROR] Falta el archivo de la base de datos.
+echo   [ERROR] Falta el archivo que crea la base de datos.
 echo.
-echo   Se busco en:  %PROYECTO%\install\schema.sql
+echo   Se busco en:
+echo      %RAIZ%base-inicial\schema.sql
 echo.
-echo   Copia la carpeta "install" completa dentro del proyecto.
+echo   Copia la carpeta "base-inicial" a la raiz del paquete,
+echo   al lado de este archivo:
+echo.
+echo      POS-LaCasaDelPastel\
+echo         xampp\
+echo         base-inicial\        ^<-- schema.sql y seed.sql
+echo         INICIAR POS.bat
 echo.
 pause
 exit /b 1

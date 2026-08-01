@@ -1,17 +1,41 @@
 # 📦 Cómo armar el paquete portable (para ti)
 
 El objetivo: entregar **una sola carpeta** que el dueño copia a su computador y usa
-con **doble click**, sin instalar nada, sin permisos de administrador y sin pagar nada.
+con **doble click**, sin instalar nada y sin permisos de administrador.
+
+---
+
+## ⚠️ Lo más importante: tus datos de prueba NO deben viajar
+
+Tus productos y ventas de prueba **no están en el código**. Viven en la carpeta
+`xampp\mysql\data\cafeteria_software` de **tu** XAMPP (unos 2 MB).
+
+Por eso la regla es una sola:
+
+> ### Usa un XAMPP **recién descargado**. Nunca copies el tuyo.
+
+Si descargas el ZIP oficial, viene sin la base `cafeteria_software`, y el sistema la
+crea **vacía** la primera vez que se abre. Los únicos datos que se instalan son:
+
+| | |
+|---|---|
+| `schema.sql` | Las tablas vacías (**0 registros**) |
+| `seed.sql` | Usuario `admin`, unidades de medida y configuración por defecto |
+
+Nada más. Sin productos, sin ventas, sin inventario.
+
+Si en cambio copiaras tu carpeta `xampp` completa, te llevarías tu base de prueba
+dentro — y ahí sí habría que borrar cosas. **Con XAMPP limpio ese problema no existe.**
 
 ---
 
 ## 1. Descarga XAMPP **portable** (versión ZIP, no el instalador)
 
-Ve a <https://www.apachefriends.org/download.html> y baja la opción **ZIP** (no el .exe).
-Descomprímela: obtienes una carpeta `xampp`.
+Ve a <https://www.apachefriends.org/download.html> y baja la opción **ZIP**
+(no el `.exe`). Descomprímela: obtienes una carpeta `xampp` limpia.
 
-> ⚠️ Importante: la versión **ZIP** no toca el registro de Windows ni pide administrador.
-> Es lo que permite que todo sea portable y no rompa nada en el PC del dueño.
+> La versión ZIP no toca el registro de Windows ni pide administrador.
+> Es lo que permite que todo sea portable.
 
 ---
 
@@ -19,103 +43,87 @@ Descomprímela: obtienes una carpeta `xampp`.
 
 ```
 POS-LaCasaDelPastel\
-├── xampp\                       ← la carpeta descomprimida
+├── xampp\                       ← el ZIP recién descomprimido (limpio)
 │   └── htdocs\
-│       └── Cafeteria-software\  ← TODO tu proyecto va aquí
+│       └── Cafeteria-software\  ← SOLO el código del sistema
+├── base-inicial\                ← los archivos que crean la base vacía
+│   ├── schema.sql
+│   └── seed.sql
 ├── INICIAR POS.bat
 ├── APAGAR POS.bat
 ├── RESPALDAR AHORA.bat
 ├── EXPORTAR PARA SERVIDOR.bat
+├── DIAGNOSTICO.bat
+├── ajustar-rutas.ps1            ← sin esto XAMPP no arranca en otra carpeta
 └── LEEME PRIMERO.txt
 ```
 
-Los `.bat` **y el `ajustar-rutas.ps1`** van en la **raíz**, al lado de la carpeta
-`xampp` (no dentro). Cópialos todos desde `install/portable/`:
+**Dos cosas van fuera del proyecto, a propósito:**
 
-```
-INICIAR POS.bat
-APAGAR POS.bat
-RESPALDAR AHORA.bat
-EXPORTAR PARA SERVIDOR.bat
-DIAGNOSTICO.bat
-ajustar-rutas.ps1     ← imprescindible: sin este, XAMPP no arranca en otra carpeta
-LEEME PRIMERO.txt
-```
+- **`base-inicial\`** — son archivos de *instalación*, no del sistema. El proyecto en
+  `htdocs` queda solo con el código, que es lo que se sube a un servidor el día de
+  la migración.
+- **`ajustar-rutas.ps1`** — XAMPP guarda rutas absolutas dentro de sus
+  configuraciones (`datadir="C:/xampp/mysql/data"`). Al copiar el paquete a otra
+  carpeta esas rutas dejan de existir y MySQL falla con *"Can't change dir"*. Este
+  archivo lo detecta y las reescribe solo, la primera vez que se abre.
 
-> **Por qué hace falta `ajustar-rutas.ps1`:** XAMPP guarda rutas absolutas
-> (`datadir="C:/xampp/mysql/data"`) dentro de sus configuraciones. Al copiar el
-> paquete a otro computador o a otra unidad, esas rutas dejan de existir y
-> MySQL falla con *"Can't change dir to ...\mysql\data"*. Este archivo detecta
-> el cambio de carpeta y reescribe las rutas solo, la primera vez que se abre.
-
-### Antes de copiar tu proyecto, límpialo:
-- Borra el contenido de `storage/sessions/` y `storage/logs/`.
-- **Deja** las carpetas vacías (se recrean solas, pero es más limpio).
+### Al copiar tu proyecto, limpia esto:
+- El contenido de `storage/sessions/` y `storage/logs/`
+- La carpeta `.git` (no hace falta en el negocio)
 
 ---
 
-## 3. Deja la base de datos vacía
+## 3. Pruébalo ANTES de llevarlo
 
-El dueño debe empezar sin tus datos de prueba. Con el paquete armado:
+**En otro computador**, no en el tuyo (el tuyo ya tiene XAMPP y puede confundir el
+resultado).
 
-1. Arranca el MySQL portable.
-2. Borra la base si existe y déjala sin crear: `INICIAR POS.bat` la crea sola
-   la primera vez, usando `install/schema.sql` + `install/seed.sql`
-   (queda solo el usuario `admin` / PIN `1234`, sin productos ni ventas).
-
-Para verificar que quedó limpia, entra y confirma que **no hay productos**.
-
----
-
-## 4. Pruébalo ANTES de llevarlo
-
-**En otro computador**, no en el tuyo. Es la única forma de saber que funciona fuera
-de tu máquina (tu pregunta era exactamente esa).
-
+- [ ] `DIAGNOSTICO.bat` muestra todo en verde
 - [ ] `INICIAR POS.bat` abre el sistema a pantalla completa
 - [ ] Entra con `admin` / `1234`
+- [ ] **Verifica que no haya ni un producto ni una venta** ← lo que te preocupa
 - [ ] Crea una categoría y un producto de prueba
 - [ ] `RESPALDAR AHORA.bat` genera un archivo en `RESPALDOS`
 - [ ] `APAGAR POS.bat` cierra todo
-- [ ] Vuelve a abrir: **el producto de prueba sigue ahí**
-- [ ] Borra el producto de prueba antes de entregar
-
-> Si el puerto 80 está ocupado en ese PC (Skype, IIS), Apache no arranca. Solución:
-> edita `xampp\apache\conf\httpd.conf`, cambia `Listen 80` por `Listen 8080` y
-> `ServerName localhost:80` por `:8080`. Luego en los `.bat` cambia la URL a
-> `http://localhost:8080/...`
+- [ ] Vuelve a abrir: el producto de prueba sigue ahí
+- [ ] Bórralo antes de entregar
 
 ---
 
-## 5. Cómo se lo entregas
+## 4. Cómo se lo entregas
 
-Copia la carpeta completa a `C:\POS-LaCasaDelPastel` en el PC del dueño
-(en la raíz de `C:`, no en Escritorio ni Documentos: rutas más cortas, menos problemas).
+Copia la carpeta completa a `C:\POS-LaCasaDelPastel` (en la raíz de `C:`, no en
+Escritorio ni Documentos: rutas más cortas, menos problemas).
 
-Crea accesos directos en el Escritorio de:
-- **INICIAR POS.bat** → renómbralo "**ABRIR POS**", ponle un ícono bonito
+Crea accesos directos en el Escritorio:
+- **INICIAR POS.bat** → renómbralo "**ABRIR POS**", ponle un ícono
 - **APAGAR POS.bat** → "**CERRAR POS**"
 
 Y entrégale impreso el `LEEME PRIMERO.txt`.
 
 ---
 
-## 6. El día de migrar al servidor
+## 5. El día de migrar al servidor
 
 1. En el PC del dueño: doble click en **EXPORTAR PARA SERVIDOR.bat**
 2. Se genera `PARA-EL-SERVIDOR\migracion_FECHA.sql` y te dice cuántos productos lleva
 3. Ese archivo se importa en el servidor → **todo queda idéntico**
 4. No borres nada de su PC hasta confirmar que el servidor funciona
 
-Ya probé este proceso completo: exporté, restauré en una base nueva y verifiqué que
-las 8 tablas coinciden exactamente, incluida la columna generada `subTotal`.
+Ya probé este proceso: exporté, restauré en una base nueva y verifiqué que las
+8 tablas coinciden exactamente, incluida la columna generada `subTotal`.
 
 ---
 
-## Detalles que ya están resueltos
+## Si algo falla
 
-- **Respaldo automático**: se hace solo al iniciar y al apagar. Guarda los últimos 30.
-- **Hora de Colombia**: forzada en la conexión, sin importar la config del PC.
-- **Modo aplicación**: los `.bat` abren Chrome (o Edge) con `--app`, sin barra de
-  direcciones. Se ve como un programa normal.
-- **Si no hay Chrome ni Edge**: abre el navegador por defecto. Funciona igual.
+Corre **`DIAGNOSTICO.bat`**: revisa archivos de XAMPP, del proyecto, la base de
+datos, procesos y puertos, y dice exactamente qué falta.
+
+| Problema | Causa |
+|---|---|
+| `Can't change dir to mysql/data` | Falta `ajustar-rutas.ps1` en la raíz |
+| `Table 'usuarios' doesn't exist` | La base quedó a medias; al reabrir se completa sola |
+| `path is invalid` en Apache | Rutas mal ajustadas: borra los `.original` y reabre |
+| Abre pero en blanco | Puerto distinto; el script lo detecta solo, revisa el mensaje |
