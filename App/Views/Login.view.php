@@ -75,11 +75,19 @@
                             <small class="form-text text-muted">Formato: 1.000.000</small>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" id="btnCancelarCaja">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" id="btnAbrirCaja">
-                            <i class="fa-solid fa-lock-open"></i> Abrir Caja
+                    <div class="modal-footer d-flex justify-content-between">
+                        <!-- Se puede entrar sin abrir caja: hay tareas que no
+                             implican cobrar (cargar productos, ver reportes).
+                             La caja se abre despues desde el menu principal. -->
+                        <button type="button" class="btn btn-link text-secondary text-decoration-none px-0" id="btnEntrarSinCaja">
+                            Entrar sin abrir caja
                         </button>
+                        <div>
+                            <button type="button" class="btn btn-secondary" id="btnCancelarCaja">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" id="btnAbrirCaja">
+                                <i class="fa-solid fa-lock-open"></i> Abrir Caja
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -277,6 +285,14 @@
             document.getElementById('loginForm').reset();
             document.getElementById('btnLogin').disabled = false;
             document.getElementById('btnLogin').innerHTML = 'Ingresar';
+        });
+
+        // Entrar al sistema sin abrir la caja. La sesion ya esta iniciada en este
+        // punto, asi que basta con seguir al menu principal; alli aparece el
+        // boton para abrirla cuando haga falta cobrar.
+        document.getElementById('btnEntrarSinCaja').addEventListener('click', function() {
+            cerrarModalCaja();
+            window.location.href = '?pg=home';
         });
     </script>
 </body>

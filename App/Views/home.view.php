@@ -5,10 +5,29 @@
 <div class="container-fluid min-vh-100 p-4">
     <div class="container-fluid min-vh-100 mt-4">
         <div class="col-lg-12 col-md-8 mx-auto mb-4">
+            <!-- El botón cambia según haya caja abierta o no: se puede entrar al
+                 sistema sin abrirla y abrirla después desde aquí. -->
             <div class="position-relative mb-4" id="cajaStatusContainer" style="display: none;">
                 <h1 class="mb-0 text-center">Menú Principal</h1>
-                <button class="btn btn-danger btn-sm position-absolute top-0 end-0 p-2" onclick="abrirModalCerrarCaja()" id="btnCerrarCaja">
+                <button class="btn btn-danger btn-sm position-absolute top-0 end-0 p-2" onclick="abrirModalCerrarCaja()" id="btnCerrarCaja" style="display:none;">
                     <i class="fa-solid fa-lock"></i> Cerrar Caja
+                </button>
+                <button class="btn btn-success btn-sm position-absolute top-0 end-0 p-2" onclick="abrirModalAbrirCaja()" id="btnAbrirCaja" style="display:none;">
+                    <i class="fa-solid fa-lock-open"></i> Abrir Caja
+                </button>
+            </div>
+
+            <!-- Aviso cuando se está trabajando sin caja abierta -->
+            <!-- Sin la clase d-flex a propósito: lleva !important y le ganaría al
+                 display que fija el JS, dejando el aviso siempre visible. -->
+            <div class="alert alert-warning align-items-center justify-content-between py-2 px-3 mb-3" id="avisoSinCaja" style="display:none;">
+                <span>
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <strong>No hay caja abierta.</strong>
+                    Puedes consultar el sistema, pero para cobrar debes abrirla.
+                </span>
+                <button class="btn btn-success btn-sm" onclick="abrirModalAbrirCaja()">
+                    <i class="fa-solid fa-lock-open"></i> Abrir caja
                 </button>
             </div>
         </div>
@@ -99,6 +118,42 @@
                 </a>
             </div>
         <?php endif; ?>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL ABRIR CAJA (el mismo que aparece al iniciar sesión) -->
+<div class="modal fade" id="modalAbrirCaja" tabindex="-1" aria-labelledby="modalAbrirCajaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalAbrirCajaLabel">
+                    <i class="fa-solid fa-cash-register"></i> Apertura de Caja
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="formAbrirCajaHome">
+                <div class="modal-body">
+                    <p class="text-muted mb-3">
+                        Ingresa el monto inicial de la caja para poder empezar a cobrar.
+                    </p>
+                    <div class="mb-3">
+                        <label for="montoInicialHome" class="form-label">Monto Inicial</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="text" class="form-control" id="montoInicialHome"
+                                   name="montoInicial" placeholder="0" required>
+                        </div>
+                        <small class="form-text text-muted">Formato: 1.000.000</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btnConfirmarAbrirCaja">
+                        <i class="fa-solid fa-lock-open"></i> Abrir Caja
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

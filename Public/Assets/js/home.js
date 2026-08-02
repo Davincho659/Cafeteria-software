@@ -12,6 +12,18 @@ let resumenCajaActual = null;
 
 document.addEventListener('DOMContentLoaded', async function() {
     await verificarEstadoCaja();
+
+    // Apertura de caja desde el menú principal.
+    // Los listeners se registran con guarda: si un elemento no existiera, un
+    // error aquí dejaría sin registrar todos los siguientes.
+    const formAbrir = document.getElementById('formAbrirCajaHome');
+    if (formAbrir) formAbrir.addEventListener('submit', enviarAperturaCaja);
+
+    const inputMonto = document.getElementById('montoInicialHome');
+    if (inputMonto) {
+        inputMonto.addEventListener('input', function () { formatearMontoCaja(this); });
+    }
+
     console.log('[HOME] init done');
 });
 
@@ -37,26 +49,111 @@ async function verificarEstadoCaja() {
     }
 }
 
+/**
+ * Muestra la cabecera segun haya caja abierta o no.
+ *
+ * Con caja abierta se ofrece cerrarla; sin caja abierta se ofrece abrirla y se
+ * avisa que no se puede cobrar todavia. Antes la cabecera simplemente se
+ * ocultaba y no habia forma de abrir la caja sin volver a iniciar sesion.
+ */
 function mostrarEstadoCaja() {
     const container = document.getElementById('cajaStatusContainer');
-    if (container && cajaActiva) {
-        // Calcular saldo actual aproximado
+    const btnCerrar = document.getElementById('btnCerrarCaja');
+    const btnAbrir = document.getElementById('btnAbrirCaja');
+    const aviso = document.getElementById('avisoSinCaja');
+    if (!container) return;
+
+    container.style.display = 'block';
+
+    if (cajaActiva) {
         const saldoInicial = parseFloat(cajaActiva.saldoInicial) || 0;
         const saldoEl = document.getElementById('saldoCajaActual');
-        if (saldoEl) {
-            saldoEl.textContent = formatCurrency(saldoInicial);
-        }
-        container.style.display = 'block';
-        console.log('[HOME] mostrando franja de caja');
+        if (saldoEl) saldoEl.textContent = formatCurrency(saldoInicial);
+
+        if (btnCerrar) btnCerrar.style.display = '';
+        if (btnAbrir) btnAbrir.style.display = 'none';
+        if (aviso) aviso.style.display = 'none';
     } else {
-        console.warn('[HOME] No se encontró contenedor o cajaActiva', { containerExists: !!container, cajaActiva });
+        if (btnCerrar) btnCerrar.style.display = 'none';
+        if (btnAbrir) btnAbrir.style.display = '';
+        if (aviso) aviso.style.display = 'flex';
     }
 }
 
 function ocultarEstadoCaja() {
-    const container = document.getElementById('cajaStatusContainer');
-    if (container) {
-        container.style.display = 'none';
+    // Sin caja activa la cabecera sigue visible: es donde esta el boton de abrirla.
+    cajaActiva = null;
+    mostrarEstadoCaja();
+}
+
+// ============================================================================
+// ABRIR CAJA DESDE EL MENU PRINCIPAL
+// ============================================================================
+// Se puede entrar al sistema sin abrir caja (para cargar productos o revisar
+// reportes) y abrirla despues, sin tener que cerrar sesion y volver a entrar.
+
+function abrirModalAbrirCaja() {
+    const input = document.getElementById('montoInicialHome');
+    if (input) input.value = '';
+    const modalEl = document.getElementById('modalAbrirCaja');
+    if (!modalEl) return;
+    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+    modal.show();
+    setTimeout(() => input && input.focus(), 400);
+}
+
+/** Da formato de miles mientras se escribe: 50000 -> 50.000 */
+function formatearMontoCaja(input) {
+    let valor = input.value.replace(/\D/g, '');
+    if (valor.length > 9) valor = valor.slice(0, 9);
+    input.value = valor ? Number(valor).toLocaleString('es-CO') : '';
+}
+
+async function enviarAperturaCaja(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById('btnConfirmarAbrirCaja');
+    const input = document.getElementById('montoInicialHome');
+    const textoOriginal = btn.innerHTML;
+
+    // El campo trae los puntos de miles: se quitan antes de enviar.
+    const monto = (input.value || '').trim().replace(/\./g, '');
+
+    if (monto === '' || isNaN(monto) || parseFloat(monto) < 0) {
+        showNotification('Ingresa un monto válido', 'warning');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Abriendo...';
+
+    try {
+        const response = await fetch('?pg=cash&action=open', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                saldoInicial: parseFloat(monto),
+                notas: 'Apertura de caja desde el menú principal'
+            })
+        });
+        const data = await response.json();
+
+        if (!data.success) {
+            showNotification(data.error || 'No se pudo abrir la caja', 'error');
+            return;
+        }
+
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalAbrirCaja')).hide();
+        showNotification('Caja abierta correctamente', 'success');
+
+        // Releer el estado para que el boton pase a "Cerrar Caja"
+        await verificarEstadoCaja();
+    } catch (error) {
+        console.error('[HOME] Error abriendo caja:', error);
+        showNotification('Error de conexión al abrir la caja', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = textoOriginal;
     }
 }
 

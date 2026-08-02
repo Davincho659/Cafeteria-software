@@ -114,7 +114,7 @@ function showProducts(products) {
   }
 
   container.innerHTML = `
-      <div class="producto-card manual-card p-3" id="prod-qty-0" onclick="event.stopPropagation(); changeQuantity(0)" role="button" style="width:200px;height:300px">  
+      <div class="producto-card manual-card p-3" id="prod-qty-0" onclick="event.stopPropagation(); changeQuantity(0)" role="button">
         <div class="manual-icon"><i class="fa-solid fa-plus"></i></div>
         <div class="d-flex flex-column align-items-center justify-content-center">
           <div class="producto-nombre" style="font-size:18px"><b>Agregar monto manual</b></div>
@@ -129,7 +129,10 @@ function showProducts(products) {
 
     const btn = document.createElement("button")
     btn.className = "producto-card p-2"
-    btn.style.cssText = "width:200px;height:300px"
+    // Sin ancho fijo: la tarjeta se adapta a la columna del grid. Al fijarlo en
+    // 200px por estilo en linea se imponia sobre el width:100% del CSS y, en
+    // pantallas donde la columna quedaba mas angosta, las tarjetas se montaban
+    // unas sobre otras.
     btn.type = "button"
     btn.innerHTML = `
       <div class="producto-img-container">

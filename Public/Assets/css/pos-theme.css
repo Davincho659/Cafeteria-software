@@ -924,16 +924,94 @@ a:hover {
 }
 
 /* ============================================================================
+   BARRA SUPERIOR QUE SIEMPRE CABE
+   ============================================================================
+   El menú tiene 13 entradas y en pantallas de 1366 px se salía por la derecha:
+   el nombre del usuario y el botón de cerrar sesión quedaban fuera de la
+   pantalla, sin forma de llegar a ellos.
+
+   Se compactan las entradas y, si aun así no caben, el menú se desplaza en
+   horizontal en vez de empujar al usuario fuera de la vista.
+   ============================================================================ */
+@media (min-width: 992px) {
+    .app-navbar .container-fluid {
+        flex-wrap: nowrap;
+    }
+
+    .app-navbar .navbar-collapse {
+        min-width: 0; /* permite que el menú se encoja en lugar de desbordar */
+    }
+
+    /* Menú principal: no parte los elementos y se desplaza si hace falta */
+    .app-navbar .navbar-nav.me-auto {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;          /* Firefox */
+        -ms-overflow-style: none;       /* Edge antiguo */
+    }
+    .app-navbar .navbar-nav.me-auto::-webkit-scrollbar {
+        height: 0;
+    }
+
+    .app-navbar .nav-link {
+        white-space: nowrap;
+        padding-left: 0.6rem;
+        padding-right: 0.6rem;
+    }
+
+    /* El bloque del usuario nunca se encoge ni se desplaza: es la única salida
+       para cerrar sesión. */
+    .app-navbar > .container-fluid > .navbar-collapse > .navbar-nav:last-child {
+        flex-shrink: 0;
+    }
+
+    .app-navbar .navbar-brand {
+        flex-shrink: 0;
+        margin-right: 0.5rem;
+    }
+}
+
+/* En pantallas medianas se aprieta antes de recurrir al desplazamiento */
+@media (min-width: 992px) and (max-width: 1500px) {
+    .app-navbar .nav-link {
+        padding-left: 0.3rem;
+        padding-right: 0.3rem;
+        font-size: 0.9rem;
+    }
+    .app-navbar .navbar-brand {
+        font-size: 0.95rem;
+    }
+    /* El icono pega más al texto para recuperar unos píxeles por entrada */
+    .app-navbar .nav-link i {
+        margin-right: 0.15rem;
+    }
+    .app-navbar .cafe-logo {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+/* ============================================================================
    RESPONSIVE
    ============================================================================ */
-/* La escala sube en pantallas chicas para que siga siendo legible y "tocable".
-   Al estar centralizada en --app-zoom, todo el layout se reajusta solo. */
+/* La escala baja en pantallas chicas para que quepa toda la interfaz.
+   Al estar centralizada en --app-zoom, todo el layout se reajusta solo.
+
+   OJO con el orden: en CSS gana la ultima regla que coincide, asi que los
+   breakpoints van de mayor a menor ancho. Antes estaban al reves y una pantalla
+   de 1366 px terminaba con 0.75 mientras que una de 1000 px usaba 0.85: la
+   pantalla mas grande se veia mas apretada que la chica. */
+@media (max-width: 1600px) {
+    :root { --app-zoom: 0.85; }
+}
+
 @media (max-width: 1400px) {
-    :root { --app-zoom: 0.75; }
+    :root { --app-zoom: 0.8; }
 }
 
 @media (max-width: 1100px) {
-    :root { --app-zoom: 0.85; }
+    :root { --app-zoom: 0.75; }
 }
 
 @media (max-width: 768px) {
