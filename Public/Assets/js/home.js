@@ -60,7 +60,6 @@ function mostrarEstadoCaja() {
     const container = document.getElementById('cajaStatusContainer');
     const btnCerrar = document.getElementById('btnCerrarCaja');
     const btnAbrir = document.getElementById('btnAbrirCaja');
-    const aviso = document.getElementById('avisoSinCaja');
     if (!container) return;
 
     container.style.display = 'block';
@@ -72,11 +71,9 @@ function mostrarEstadoCaja() {
 
         if (btnCerrar) btnCerrar.style.display = '';
         if (btnAbrir) btnAbrir.style.display = 'none';
-        if (aviso) aviso.style.display = 'none';
     } else {
         if (btnCerrar) btnCerrar.style.display = 'none';
         if (btnAbrir) btnAbrir.style.display = '';
-        if (aviso) aviso.style.display = 'flex';
     }
 }
 

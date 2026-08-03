@@ -215,3 +215,107 @@ form .field select option {
     background: #4158d0;
     color: #fff;
 }
+
+/* ============================================================================
+   TECLADO NUMÉRICO PARA EL PIN (pantalla táctil)
+   ============================================================================
+   La caja no tiene teclado físico. El teclado táctil de Windows tapa media
+   pantalla y muestra en grande cada tecla al pulsarla, así que quien esté
+   enfrente ve el PIN. Este teclado va dentro de la página: teclas grandes para
+   el dedo y sin delatar lo que se marca.
+   ============================================================================ */
+
+/* Puntos de progreso: cuántos dígitos van, nunca cuáles */
+.pin-dots {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 6px 0 14px;
+    min-height: 16px;
+}
+
+.pin-dots span {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.45);
+    transition: background-color .12s ease;
+}
+
+.pin-dots span.lleno {
+    background: #fff;
+    border-color: #fff;
+}
+
+.pin-pad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-width: 300px;
+    margin: 0 auto 12px;
+}
+
+.pin-key {
+    height: 58px;
+    font-size: 22px;
+    font-weight: 600;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 12px;
+    cursor: pointer;
+    /* Sin resaltados del navegador: en táctil delatan la tecla pulsada */
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    touch-action: manipulation;
+    transition: background-color .1s ease;
+}
+
+.pin-key:hover {
+    background: rgba(255, 255, 255, 0.24);
+}
+
+/* Realimentación mínima: se nota de cerca, no desde atrás del mostrador */
+.pin-key:active {
+    background: rgba(255, 255, 255, 0.34);
+}
+
+.pin-key-accion {
+    font-size: 18px;
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.pin-opciones {
+    text-align: center;
+    margin-bottom: 4px;
+}
+
+.pin-mezclar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.75);
+    cursor: pointer;
+}
+
+.pin-mezclar input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* El campo del PIN se ve, pero no se escribe a mano */
+#pin {
+    letter-spacing: 8px;
+    text-align: center;
+    cursor: default;
+}
+
+/* Monitores de poca altura: el teclado se compacta para que quepa todo */
+@media (max-height: 700px) {
+    .pin-key { height: 46px; font-size: 19px; }
+    .pin-pad { gap: 8px; max-width: 270px; }
+    .pin-dots { margin: 4px 0 10px; }
+}

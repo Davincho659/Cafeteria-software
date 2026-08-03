@@ -804,7 +804,7 @@ async function saleProcess(cartId, userId, paymentMethod = "efectivo", yaSeInten
           return saleProcess(cartId, userId, paymentMethod, true)
         }
       }
-      throw new Error("No se pudo completar la venta: " + completeResponse.error)
+      throw new Error( completeResponse.error)
     }
 
     console.log("[CART] ✅ Venta completada exitosamente")
@@ -840,7 +840,7 @@ async function saleProcess(cartId, userId, paymentMethod = "efectivo", yaSeInten
 
   } catch (error) {
     console.error("[CART] Error en saleProcess:", error)
-    alert("Error al procesar la venta: " + error.message)
+    alert(error.message)
   }
 }
 

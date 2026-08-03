@@ -32,12 +32,47 @@
                 <input type="text" required name="nombre" id="nombre">
                 <label>Nombre de usuario</label>
             </div>
+            <!-- PIN con teclado propio.
+                 readonly + inputmode="none" impiden que Windows abra su teclado
+                 táctil: además de tapar media pantalla, muestra en grande la
+                 tecla pulsada, y el PIN es personal de cada empleado.
+                 El valor lo escribe el teclado de abajo. -->
             <div class="field">
-                <input type="password" required name="pin" id="pin" maxlength="6">
+                <input type="password" required name="pin" id="pin" maxlength="6"
+                       readonly inputmode="none" autocomplete="off"
+                       aria-label="PIN de acceso">
                 <label>Pin</label>
-                <small class="text-muted">Solo números (4-6 dígitos)</small>
             </div>
-            <br><br>
+
+            <!-- Puntos: indican cuántos dígitos van, nunca cuáles -->
+            <div class="pin-dots" id="pinDots" aria-hidden="true">
+                <span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+
+            <div class="pin-pad" id="pinPad">
+                <button type="button" class="pin-key" data-num="1">1</button>
+                <button type="button" class="pin-key" data-num="2">2</button>
+                <button type="button" class="pin-key" data-num="3">3</button>
+                <button type="button" class="pin-key" data-num="4">4</button>
+                <button type="button" class="pin-key" data-num="5">5</button>
+                <button type="button" class="pin-key" data-num="6">6</button>
+                <button type="button" class="pin-key" data-num="7">7</button>
+                <button type="button" class="pin-key" data-num="8">8</button>
+                <button type="button" class="pin-key" data-num="9">9</button>
+                <button type="button" class="pin-key pin-key-accion" id="pinBorrarTodo" title="Borrar todo">C</button>
+                <button type="button" class="pin-key" data-num="0">0</button>
+                <button type="button" class="pin-key pin-key-accion" id="pinBorrar" title="Borrar un dígito">
+                    <i class="fa-solid fa-delete-left"></i>
+                </button>
+            </div>
+
+            <div class="pin-opciones">
+                <label class="pin-mezclar">
+                    <input type="checkbox" id="pinMezclar">
+                    <span>Mezclar teclas (más discreto)</span>
+                </label>
+            </div>
+            <br>
             <div class="field">
                 <input type="submit" value="Ingresar" id="btnLogin">
             </div>
@@ -103,6 +138,106 @@
         // Variables globales
         let modalCaja = null;
 
+        // ====================================================================
+        // TECLADO NUMERICO DEL PIN
+        // ====================================================================
+        // En la caja no hay teclado fisico. El de Windows tapa media pantalla y
+        // muestra en grande la tecla que se pulsa, asi que cualquiera que este
+        // enfrente ve el PIN. Este teclado vive dentro de la pagina: teclas
+        // grandes para el dedo y sin delatar lo que se marca.
+        (function () {
+            const campoPin  = document.getElementById('pin');
+            const pad       = document.getElementById('pinPad');
+            const dots      = document.getElementById('pinDots');
+            const mezclar   = document.getElementById('pinMezclar');
+            if (!campoPin || !pad) return;
+
+            const MAX = 6;
+
+            /** Un punto por digito: dice cuantos van, no cuales. */
+            function pintarPuntos() {
+                if (!dots) return;
+                const n = campoPin.value.length;
+                [...dots.children].forEach((p, i) => p.classList.toggle('lleno', i < n));
+            }
+
+            function agregarDigito(d) {
+                if (campoPin.value.length >= MAX) return;
+                campoPin.value += d;
+                pintarPuntos();
+            }
+
+            function borrarUno() {
+                campoPin.value = campoPin.value.slice(0, -1);
+                pintarPuntos();
+            }
+
+            function borrarTodo() {
+                campoPin.value = '';
+                pintarPuntos();
+            }
+            window.limpiarPin = borrarTodo;
+
+            pad.addEventListener('click', function (e) {
+                const tecla = e.target.closest('.pin-key');
+                if (!tecla) return;
+
+                if (tecla.id === 'pinBorrar')     { borrarUno();  return; }
+                if (tecla.id === 'pinBorrarTodo') { borrarTodo(); return; }
+
+                const d = tecla.getAttribute('data-num');
+                if (d !== null) {
+                    agregarDigito(d);
+                    // Con la mezcla activa las teclas cambian de sitio en cada
+                    // golpe: seguir el movimiento de los dedos deja de servir.
+                    if (mezclar && mezclar.checked) reordenarTeclas();
+                }
+            });
+
+            /** Reparte los digitos 0-9 en posiciones al azar. */
+            function reordenarTeclas() {
+                const teclas = [...pad.querySelectorAll('.pin-key[data-num]')];
+                const numeros = teclas.map(t => t.getAttribute('data-num'));
+                for (let i = numeros.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [numeros[i], numeros[j]] = [numeros[j], numeros[i]];
+                }
+                teclas.forEach((t, i) => {
+                    t.setAttribute('data-num', numeros[i]);
+                    t.textContent = numeros[i];
+                });
+            }
+
+            /** Vuelve al orden natural 1..9, 0. */
+            function ordenarTeclas() {
+                const teclas = [...pad.querySelectorAll('.pin-key[data-num]')];
+                const orden = ['1','2','3','4','5','6','7','8','9','0'];
+                teclas.forEach((t, i) => {
+                    t.setAttribute('data-num', orden[i]);
+                    t.textContent = orden[i];
+                });
+            }
+
+            if (mezclar) {
+                mezclar.addEventListener('change', function () {
+                    if (this.checked) reordenarTeclas(); else ordenarTeclas();
+                });
+            }
+
+            // Si el equipo tiene teclado fisico, tambien sirve.
+            document.addEventListener('keydown', function (e) {
+                if (document.querySelector('.modal.show')) return; // no estorbar a los modales
+                if (document.activeElement === document.getElementById('nombre')) return;
+                if (e.key >= '0' && e.key <= '9') { agregarDigito(e.key); }
+                else if (e.key === 'Backspace')   { borrarUno(); e.preventDefault(); }
+            });
+
+            // Tocar el campo no debe abrir el teclado del sistema.
+            campoPin.addEventListener('focus', function () { this.blur(); });
+
+            pintarPuntos();
+        })();
+
         // ============ LOGIN FORM ============
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -151,14 +286,16 @@
                         }, 1000);
                     }
                 } else {
-                    // Error
+                    // Error: se borra el PIN para poder reintentar de una vez
                     showAlert(data.error || 'Error al iniciar sesión', 'danger');
+                    if (typeof limpiarPin === 'function') limpiarPin();
                     btnLogin.disabled = false;
                     btnLogin.innerHTML = originalText;
                 }
             } catch (error) {
                 console.error('Error:', error);
                 showAlert('Error de conexión. Intenta nuevamente.', 'danger');
+                if (typeof limpiarPin === 'function') limpiarPin();
                 btnLogin.disabled = false;
                 btnLogin.innerHTML = originalText;
             }

@@ -16,20 +16,6 @@
                     <i class="fa-solid fa-lock-open"></i> Abrir Caja
                 </button>
             </div>
-
-            <!-- Aviso cuando se está trabajando sin caja abierta -->
-            <!-- Sin la clase d-flex a propósito: lleva !important y le ganaría al
-                 display que fija el JS, dejando el aviso siempre visible. -->
-            <div class="alert alert-warning align-items-center justify-content-between py-2 px-3 mb-3" id="avisoSinCaja" style="display:none;">
-                <span>
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <strong>No hay caja abierta.</strong>
-                    Puedes consultar el sistema, pero para cobrar debes abrirla.
-                </span>
-                <button class="btn btn-success btn-sm" onclick="abrirModalAbrirCaja()">
-                    <i class="fa-solid fa-lock-open"></i> Abrir caja
-                </button>
-            </div>
         </div>
         <?php $esAdmin = (($_SESSION['usuario_rol'] ?? '') === 'admin'); ?>
 
