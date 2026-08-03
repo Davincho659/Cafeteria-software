@@ -15,6 +15,14 @@
                     </p>
                 </div>
                 <div class="d-flex gap-2">
+                    <?php if (($_SESSION['usuario_rol'] ?? '') === 'admin'): ?>
+                    <!-- Deja las fotos con permisos normales para que se puedan
+                         copiar en los respaldos y al migrar al servidor. -->
+                    <button class="btn btn-outline-secondary btn-lg" onclick="repararImagenes()"
+                            title="Prepara las fotos para poder respaldarlas y migrarlas">
+                        <i class="fa-solid fa-images"></i> Revisar fotos
+                    </button>
+                    <?php endif; ?>
                     <button class="btn btn-success btn-lg" onclick="openCategoryModal()">
                         <i class="fa-solid fa-plus"></i> Agregar Categoría
                     </button>

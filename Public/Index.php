@@ -288,7 +288,8 @@ switch ($pg) {
                 'createCategory',
                 'updateCategory',
                 'deleteCategory',
-                'getUnits'
+                'getUnits',
+                'repararImagenes'
             ];
             
             if (in_array($action, $validActions) && method_exists($controller, $action)) {

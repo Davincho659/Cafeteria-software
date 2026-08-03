@@ -455,3 +455,55 @@ function filterProductsBySearch(query) {
         row.style.display = matches ? '' : 'none';
     });
 }
+// ============================================================================
+// REVISAR FOTOS
+// ============================================================================
+// Deja las imágenes con los permisos normales de su carpeta. Una foto guardada
+// por el servidor puede quedar accesible solo para su propia cuenta: se ve bien
+// en el sistema, pero Windows no la deja copiar y al respaldar o migrar ese
+// producto se queda sin imagen. Conviene ejecutarlo antes de migrar.
+async function repararImagenes() {
+    const confirmar = await Swal.fire({
+        icon: 'question',
+        title: 'Revisar las fotos',
+        html: 'Se revisarán todas las fotos de productos y categorías para dejarlas listas ' +
+              'para los respaldos y la migración al servidor.<br><br>' +
+              '<small class="text-muted">No se modifica ninguna imagen, solo se corrigen sus permisos.</small>',
+        showCancelButton: true,
+        confirmButtonText: 'Revisar ahora',
+        cancelButtonText: 'Cancelar'
+    });
+    if (!confirmar.isConfirmed) return;
+
+    Swal.fire({ title: 'Revisando fotos...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    try {
+        const respuesta = await fetch('?pg=product&action=repararImagenes', { method: 'POST' });
+        const datos = await respuesta.json();
+
+        if (!datos.success) {
+            Swal.fire('Error', datos.error || 'No se pudieron revisar las fotos', 'error');
+            return;
+        }
+
+        const problemas = datos.ilegibles || [];
+        if (problemas.length) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Revisión terminada',
+                html: `Se revisaron <b>${datos.revisadas}</b> fotos y se corrigieron <b>${datos.reparadas}</b>.<br><br>` +
+                      `Estas no se pudieron leer y habrá que volver a subirlas:<br>` +
+                      `<small>${problemas.join('<br>')}</small>`
+            });
+        } else {
+            Swal.fire({
+                icon: 'success',
+                title: 'Fotos listas',
+                text: `Se revisaron ${datos.revisadas} fotos. Todas quedaron listas para respaldar y migrar.`
+            });
+        }
+    } catch (error) {
+        console.error('[PRODUCTOS] Error revisando fotos:', error);
+        Swal.fire('Error', 'No se pudo conectar con el servidor', 'error');
+    }
+}

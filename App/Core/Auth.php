@@ -34,6 +34,7 @@ class Auth {
     private static $adminOnlyActions = [
         'purchases.getPurchases',     // listado/historial de compras
         'purchases.getPurchase',      // detalle de una compra del historial
+        'product.repararImagenes',    // mantenimiento: reescribe los archivos de imagen
     ];
 
     /** Páginas públicas: no requieren sesión. */

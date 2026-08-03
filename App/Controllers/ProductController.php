@@ -302,6 +302,65 @@ class ProductController {
         }
     }
 
+    /**
+     * Repara los permisos de las imágenes de productos y categorías.
+     *
+     * Una imagen guardada por el servidor puede quedar accesible solo para su
+     * propia cuenta: la aplicación la muestra bien, pero Windows no la deja
+     * copiar, y al respaldar o migrar esos productos se quedan sin foto.
+     *
+     * Aquí se reescribe cada imagen desde el propio servidor —la única cuenta
+     * que puede leerlas— para que queden con los permisos normales de su
+     * carpeta. Conviene ejecutarlo antes de migrar al servidor.
+     */
+    public function repararImagenes() {
+        header('Content-Type: application/json; charset=utf-8');
+
+        try {
+            $base = (defined('PUBLIC_PATH') ? PUBLIC_PATH : dirname(dirname(__DIR__)) . '/Public')
+                  . DIRECTORY_SEPARATOR . 'Assets' . DIRECTORY_SEPARATOR . 'img';
+
+            $carpetas = ['products', 'categories'];
+            $reparadas = 0;
+            $ilegibles = [];
+            $revisadas = 0;
+
+            foreach ($carpetas as $carpeta) {
+                $ruta = $base . DIRECTORY_SEPARATOR . $carpeta;
+                if (!is_dir($ruta)) {
+                    continue;
+                }
+
+                foreach (scandir($ruta) ?: [] as $archivo) {
+                    if ($archivo === '.' || $archivo === '..') {
+                        continue;
+                    }
+                    $completa = $ruta . DIRECTORY_SEPARATOR . $archivo;
+                    if (!is_file($completa)) {
+                        continue;
+                    }
+
+                    $revisadas++;
+                    if (normalizarPermisosImagen($completa)) {
+                        $reparadas++;
+                    } else {
+                        $ilegibles[] = $carpeta . '/' . $archivo;
+                    }
+                }
+            }
+
+            echo json_encode([
+                'success'   => true,
+                'revisadas' => $revisadas,
+                'reparadas' => $reparadas,
+                'ilegibles' => $ilegibles,
+                'message'   => "Se revisaron {$revisadas} imágenes y se normalizaron {$reparadas}.",
+            ]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
     public function getUnits() {
         header('Content-Type: application/json; charset=utf-8');
         try {

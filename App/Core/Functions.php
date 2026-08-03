@@ -114,6 +114,42 @@ function loadJs($script) {
     throw new RuntimeException("Script no encontrado: assets/js/{$script}.js");
 }
 
+    /**
+     * Deja la imagen guardada con los permisos normales de su carpeta.
+     *
+     * Los archivos que llegan por subida o descarga conservan los permisos del
+     * archivo temporal del que provienen. En Windows eso puede dejarlos
+     * accesibles solo para la cuenta del servidor web: la aplicación los sigue
+     * mostrando sin problema, pero al copiarlos para un respaldo o para migrar
+     * al servidor, Windows los rechaza y esos productos terminan sin foto.
+     *
+     * Al reescribir el contenido en un archivo creado desde cero, el nuevo
+     * hereda los permisos de la carpeta y deja de ser un caso especial.
+     */
+    function normalizarPermisosImagen(string $ruta): bool {
+        if (!is_file($ruta)) {
+            return false;
+        }
+
+        $datos = @file_get_contents($ruta);
+        if ($datos === false || $datos === '') {
+            return false;
+        }
+
+        $temporal = $ruta . '.tmp' . bin2hex(random_bytes(4));
+        if (@file_put_contents($temporal, $datos) === false) {
+            return false;
+        }
+
+        if (!@unlink($ruta) || !@rename($temporal, $ruta)) {
+            @unlink($temporal);
+            return false;
+        }
+
+        @chmod($ruta, 0664);
+        return true;
+    }
+
     function saveUploadedImage(array $file, string $destFolder, ?string $oldFilename = null): array {
         // $file => $_FILES['image']
         // $destFolder => absolute or relative to project webroot "Public/Assets/img/products"
@@ -166,6 +202,8 @@ function loadJs($script) {
         if (!move_uploaded_file($file['tmp_name'], $destination)) {
             return ['success' => false, 'error' => 'move_failed'];
         }
+
+        normalizarPermisosImagen($destination);
 
         // borrar archivo antiguo si se pasó
         if ($oldFilename) {
@@ -278,6 +316,9 @@ function loadJs($script) {
             }
             @unlink($tmp);
         }
+
+        // El archivo viene del temporal del sistema y arrastra sus permisos.
+        normalizarPermisosImagen($dest);
 
         // Borrar imagen anterior si era distinta (evita acumular archivos)
         if ($oldFilename && basename($oldFilename) !== $filename && $oldFilename !== 'default.png') {

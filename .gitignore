@@ -22,14 +22,6 @@
 .env.*
 !.env.example
 
-# Imágenes con los permisos de Windows corruptos: el sistema operativo niega su
-# lectura incluso al dueño del archivo, así que git no puede indexarlas. Se
-# excluyen para no bloquear los commits; hay que volver a subirlas desde la app.
-/Public/Assets/img/categories/20.jpg
-/Public/Assets/img/products/18.jpg
-/Public/Assets/img/products/21.jpg
-/Public/Assets/img/products/27.webp
-
 # Sistema operativo
 Thumbs.db
 desktop.ini
