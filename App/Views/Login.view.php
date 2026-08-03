@@ -44,35 +44,7 @@
                 <label>Pin</label>
             </div>
 
-            <!-- Puntos: indican cuántos dígitos van, nunca cuáles -->
-            <div class="pin-dots" id="pinDots" aria-hidden="true">
-                <span></span><span></span><span></span><span></span><span></span><span></span>
-            </div>
-
-            <div class="pin-pad" id="pinPad">
-                <button type="button" class="pin-key" data-num="1">1</button>
-                <button type="button" class="pin-key" data-num="2">2</button>
-                <button type="button" class="pin-key" data-num="3">3</button>
-                <button type="button" class="pin-key" data-num="4">4</button>
-                <button type="button" class="pin-key" data-num="5">5</button>
-                <button type="button" class="pin-key" data-num="6">6</button>
-                <button type="button" class="pin-key" data-num="7">7</button>
-                <button type="button" class="pin-key" data-num="8">8</button>
-                <button type="button" class="pin-key" data-num="9">9</button>
-                <button type="button" class="pin-key pin-key-accion" id="pinBorrarTodo" title="Borrar todo">C</button>
-                <button type="button" class="pin-key" data-num="0">0</button>
-                <button type="button" class="pin-key pin-key-accion" id="pinBorrar" title="Borrar un dígito">
-                    <i class="fa-solid fa-delete-left"></i>
-                </button>
-            </div>
-
-            <div class="pin-opciones">
-                <label class="pin-mezclar">
-                    <input type="checkbox" id="pinMezclar">
-                    <span>Mezclar teclas (más discreto)</span>
-                </label>
-            </div>
-            <br>
+            <br><br>
             <div class="field">
                 <input type="submit" value="Ingresar" id="btnLogin">
             </div>
@@ -83,6 +55,58 @@
                 </small>
             </div>
         </form>
+    </div>
+
+    <!-- ================================================================
+         TECLADO DEL PIN
+         ================================================================
+         Se abre al tocar el campo del PIN. Va en un modal y no bajo el
+         campo para que el PIN se marque sobre un fondo neutro, lejos del
+         resto del formulario, y se pueda cerrar al terminar.
+         ================================================================ -->
+    <div class="modal fade" id="modalPin" tabindex="-1" aria-labelledby="modalPinLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content pin-modal">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalPinLabel">
+                        <i class="fa-solid fa-lock"></i> Ingresa tu PIN
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Puntos: dicen cuántos dígitos van, nunca cuáles -->
+                    <div class="pin-dots" id="pinDots" aria-hidden="true">
+                        <span></span><span></span><span></span><span></span><span></span><span></span>
+                    </div>
+
+                    <div class="pin-pad" id="pinPad">
+                        <button type="button" class="pin-key" data-num="1">1</button>
+                        <button type="button" class="pin-key" data-num="2">2</button>
+                        <button type="button" class="pin-key" data-num="3">3</button>
+                        <button type="button" class="pin-key" data-num="4">4</button>
+                        <button type="button" class="pin-key" data-num="5">5</button>
+                        <button type="button" class="pin-key" data-num="6">6</button>
+                        <button type="button" class="pin-key" data-num="7">7</button>
+                        <button type="button" class="pin-key" data-num="8">8</button>
+                        <button type="button" class="pin-key" data-num="9">9</button>
+                        <button type="button" class="pin-key pin-key-accion" id="pinBorrarTodo" title="Borrar todo">C</button>
+                        <button type="button" class="pin-key" data-num="0">0</button>
+                        <button type="button" class="pin-key pin-key-accion" id="pinBorrar" title="Borrar un dígito">
+                            <i class="fa-solid fa-delete-left"></i>
+                        </button>
+                    </div>
+
+                    <button type="button" class="btn pin-listo w-100" id="pinListo">
+                        <i class="fa-solid fa-check"></i> Listo
+                    </button>
+
+                    <label class="pin-mezclar">
+                        <input type="checkbox" id="pinMezclar">
+                        <span>Mezclar teclas (más discreto)</span>
+                    </label>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Modal para abrir caja -->
@@ -224,16 +248,42 @@
                 });
             }
 
-            // Si el equipo tiene teclado fisico, tambien sirve.
+            // ---- Apertura del teclado ----
+            const modalEl = document.getElementById('modalPin');
+            const modalPin = modalEl ? new bootstrap.Modal(modalEl) : null;
+
+            function abrirTeclado() {
+                if (!modalPin) return;
+                // Se parte de cero cada vez: no quedan digitos de un intento previo.
+                borrarTodo();
+                if (mezclar && mezclar.checked) reordenarTeclas();
+                modalPin.show();
+            }
+            window.abrirTecladoPin = abrirTeclado;
+
+            // Tocar el campo abre el teclado propio, nunca el del sistema.
+            campoPin.addEventListener('focus', function () { this.blur(); abrirTeclado(); });
+            campoPin.addEventListener('click', abrirTeclado);
+
+            const btnListo = document.getElementById('pinListo');
+            if (btnListo) {
+                btnListo.addEventListener('click', function () {
+                    modalPin.hide();
+                    // Si ya hay usuario escrito, se entra directo.
+                    const nombre = document.getElementById('nombre');
+                    if (nombre && nombre.value.trim() && campoPin.value.length >= 4) {
+                        document.getElementById('loginForm').requestSubmit();
+                    }
+                });
+            }
+
+            // Con el teclado abierto, las teclas fisicas escriben en el PIN.
             document.addEventListener('keydown', function (e) {
-                if (document.querySelector('.modal.show')) return; // no estorbar a los modales
-                if (document.activeElement === document.getElementById('nombre')) return;
+                if (!modalEl || !modalEl.classList.contains('show')) return;
                 if (e.key >= '0' && e.key <= '9') { agregarDigito(e.key); }
                 else if (e.key === 'Backspace')   { borrarUno(); e.preventDefault(); }
+                else if (e.key === 'Enter')       { e.preventDefault(); btnListo && btnListo.click(); }
             });
-
-            // Tocar el campo no debe abrir el teclado del sistema.
-            campoPin.addEventListener('focus', function () { this.blur(); });
 
             pintarPuntos();
         })();
