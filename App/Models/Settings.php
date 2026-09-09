@@ -30,6 +30,12 @@ class Settings {
         'direccion'        => '',
         'telefono'         => '',
         'mensaje_pie'      => 'Vuelva pronto',
+        // Ancho util del tiquete, en milimetros. No es el ancho del rollo: las
+        // impresoras termicas reservan unos milimetros a cada lado que no
+        // pueden imprimir, y ese margen cambia de un modelo a otro. Se deja
+        // configurable para poder ajustarlo mirando una impresion real, sin
+        // tener que tocar el codigo.
+        'ticket_ancho_mm'  => '72',
     ];
 
     public function __construct() {

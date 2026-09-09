@@ -15,7 +15,13 @@
                     </p>
                 </div>
                 <div class="d-flex gap-2">
-                    <?php if (($_SESSION['usuario_rol'] ?? '') === 'admin'): ?>
+                    <?php
+                    // Solo en Windows: el problema que corrige (imágenes que el
+                    // sistema operativo deja ilegibles para copiar) es propio de
+                    // Windows. En el servidor Linux no ocurre, así que allí el
+                    // botón sobra y solo confundiría.
+                    $esWindows = stripos(PHP_OS_FAMILY, 'Windows') !== false;
+                    if ($esWindows && ($_SESSION['usuario_rol'] ?? '') === 'admin'): ?>
                     <!-- Deja las fotos con permisos normales para que se puedan
                          copiar en los respaldos y al migrar al servidor. -->
                     <button class="btn btn-outline-secondary btn-lg" onclick="repararImagenes()"

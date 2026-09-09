@@ -56,7 +56,7 @@
         <div class="col-7 p-0 pos-col-products" id="productos">
             <div class="input-group mb-3 mt-3">
                 <h2 class="mt-2" id="prueba">Productos</h2>
-                <input type="text" class="form-control ms-4"  placeholder="Buscar" id="search" style="max-width: 700px;">
+                <input type="text" class="form-control ms-4"  placeholder="Buscar" id="search" style="max-width: 700px;" autocomplete="off">
                 <button class="btn btn-outline-secondary" type="submit" id="button-addon2">
                 <span class="input-group-text" id="basic-addon1"><i class="fa-solid fa-magnifying-glass"></i></span></button>
             </div>

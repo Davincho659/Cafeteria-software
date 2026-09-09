@@ -22,6 +22,8 @@ try {
     <!-- Token CSRF: el wrapper global de fetch (auth-helper.js) lo reenvía en cada POST -->
     <meta name="csrf-token" content="<?= htmlspecialchars(Csrf::token(), ENT_QUOTES) ?>">
     <title><?= esc($cfg['nombre_negocio']) ?></title>
+
+    <?php require __DIR__ . '/pwa.view.php'; ?>
     
     <!-- Preload recursos críticos para evitar layout shift -->
     <link rel="preload" href="<?= asset('assets/css/bootstrap.css') ?>" as="style">

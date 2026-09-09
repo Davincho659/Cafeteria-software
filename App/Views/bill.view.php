@@ -29,6 +29,11 @@ try {
 }
 $negocio  = $cfg['nombre_negocio']  ?? 'POS';
 $logo     = $cfg['logo']            ?? 'logo.jpg';
+
+// Ancho util del tiquete. Se limita a un rango con sentido para que un valor
+// mal escrito en Configuracion no deje la tirilla inservible.
+$anchoTicket = (float)($cfg['ticket_ancho_mm'] ?? 72);
+if ($anchoTicket < 40 || $anchoTicket > 80) { $anchoTicket = 72; }
 $nit      = trim((string)($cfg['nit']       ?? ''));
 $direccion= trim((string)($cfg['direccion'] ?? ''));
 $telefono = trim((string)($cfg['telefono']  ?? ''));
@@ -80,7 +85,11 @@ $autoPrint = isset($_GET['print']) && $_GET['print'] === '1';
            que era lo que empujaba el contenido y lo desalineaba al imprimir.
            ===================================================================== */
         @page {
-            size: 80mm auto;   /* rollo continuo: alto automático */
+            /* El tamaño de página se declara con el ancho útil, no con los 80mm
+               del rollo: si se declara más ancho de lo que la impresora puede
+               imprimir, el controlador reduce todo para que quepa y la tirilla
+               sale pequeña y pegada a un lado. */
+            size: <?= $anchoTicket ?>mm auto;
             margin: 0;
         }
 
@@ -94,9 +103,9 @@ $autoPrint = isset($_GET['print']) && $_GET['print'] === '1';
             line-height: 1.35;
             color: #000;
             background: #fff;
-            width: 72mm;
+            width: <?= $anchoTicket ?>mm;
             margin: 0 auto;
-            padding: 2mm;
+            padding: 0 1mm;
             -webkit-font-smoothing: none;
         }
 
@@ -178,8 +187,16 @@ $autoPrint = isset($_GET['print']) && $_GET['print'] === '1';
         .hint { text-align: center; font-size: 10px; color: #666; margin-top: 6px; }
 
         @media print {
-            html { background: #fff; padding: 0; }
-            body { box-shadow: none; padding: 0 2mm; }
+            html { background: #fff; padding: 0; margin: 0; width: 100%; }
+            /* Sin margen automático ni relleno lateral: cualquier milímetro que
+               se deje aquí es papel desaprovechado a la derecha. */
+            body {
+                box-shadow: none;
+                padding: 0;
+                margin: 0;
+                width: 100%;
+                max-width: <?= $anchoTicket ?>mm;
+            }
             .receipt-actions, .hint { display: none !important; }
             /* Corte limpio: evita que la última línea quede en otra tirilla */
             .cut-space { height: 10mm; }

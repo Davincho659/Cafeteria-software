@@ -507,7 +507,16 @@ class ReportsController {
             echo json_encode(['productos' => $topProducts]);
             exit;
         }
-        require_once __DIR__ . '/../Views/Reports/topProducts.report.php';
+        // Esta vista no existe: el reporte solo se usa por AJAX desde el panel.
+        // Sin esta comprobación, entrar a la URL directamente provocaba un error
+        // fatal y, en producción (con los errores ocultos), una página en blanco.
+        $vista = __DIR__ . '/../Views/Reports/topProducts.report.php';
+        if (is_file($vista)) {
+            require_once $vista;
+        } else {
+            header('Location: ?pg=reports&action=sales');
+            exit;
+        }
     }
 
     

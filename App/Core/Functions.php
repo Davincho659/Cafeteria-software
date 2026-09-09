@@ -92,15 +92,31 @@ function asset(string $relative): string {
     $publicBase = defined('PUBLIC_PATH') ? PUBLIC_PATH : dirname(dirname(__DIR__)) . '/Public';
 
     $path = $publicBase . '/' . $relative;
+    $urlRelativa = $relative;
+
     if (!is_file($path)) {
-        // En Linux la carpeta real es "Assets" y la URL "assets": resolver sin
-        // depender de mayúsculas/minúsculas.
+        // La carpeta en disco es "Assets" pero el código la pide como "assets".
+        // En Windows da igual; en Linux no, y sin esto la página saldría sin
+        // estilos ni imágenes. Se localiza el archivo real...
         $path = resolvePathCaseInsensitive($publicBase, $relative);
+
+        // ...y se devuelve la ruta TAL COMO está escrita en el disco. Antes se
+        // devolvía la versión en minúsculas y hacía falta una regla del
+        // .htaccess para corregirla: si el servidor no permite .htaccess o no
+        // tiene mod_rewrite, el sistema se veía sin formato. Así ya no depende
+        // de eso.
+        if ($path !== null) {
+            $real = str_replace(chr(92), '/', $path);
+            $base = str_replace(chr(92), '/', rtrim($publicBase, '/' . chr(92)));
+            if (strpos($real, $base) === 0) {
+                $urlRelativa = ltrim(substr($real, strlen($base)), '/');
+            }
+        }
     }
 
     $version = ($path !== null && is_file($path)) ? filemtime($path) : null;
 
-    return $version === null ? $relative : $relative . '?v=' . $version;
+    return $version === null ? $urlRelativa : $urlRelativa . '?v=' . $version;
 }
 
 function loadJs($script) {

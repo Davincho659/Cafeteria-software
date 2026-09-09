@@ -69,6 +69,17 @@ $s = (new Settings())->getAll();
                     <label class="form-label mt-3" for="mensaje_pie">Mensaje de despedida</label>
                     <input type="text" class="form-control" id="mensaje_pie" name="mensaje_pie"
                            maxlength="150" value="<?= esc($s['mensaje_pie'] ?? '') ?>" placeholder="Ej: Vuelva pronto">
+
+                    <label class="form-label mt-3" for="ticket_ancho_mm">Ancho del tiquete (mm)</label>
+                    <input type="number" class="form-control" id="ticket_ancho_mm" name="ticket_ancho_mm"
+                           min="40" max="80" step="1"
+                           value="<?= esc($s['ticket_ancho_mm'] ?? '72') ?>">
+                    <small class="form-text text-muted">
+                        Cuánto del papel se aprovecha al imprimir. El rollo mide 80&nbsp;mm, pero
+                        las impresoras reservan unos milímetros a cada lado que no pueden imprimir.
+                        Si al imprimir queda espacio en blanco a la derecha, <strong>sube</strong> este
+                        número de a 2&nbsp;mm (73, 74…). Si el texto sale cortado, <strong>bájalo</strong>.
+                    </small>
                 </div>
 
                 <!-- Columna: colores -->

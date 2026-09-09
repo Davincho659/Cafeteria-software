@@ -19,6 +19,8 @@
     <link rel="stylesheet" href="<?= asset('assets/css/Login.css') ?>">
     
     <title>Login - Sistema POS</title>
+
+    <?php require dirname(__DIR__) . '/Views/Layouts/pwa.view.php'; ?>
 </head>
 <body class="use-theme">
     <div class="wrapper">
@@ -76,7 +78,7 @@
                 <div class="modal-body">
                     <!-- Puntos: dicen cuántos dígitos van, nunca cuáles -->
                     <div class="pin-dots" id="pinDots" aria-hidden="true">
-                        <span></span><span></span><span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span></span><span></span>
                     </div>
 
                     <div class="pin-pad" id="pinPad">

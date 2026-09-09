@@ -127,6 +127,11 @@ function showProducts(products) {
       ? `assets/img/products/${product.imagen}`
       : "assets/img/products/default.png";
 
+    // Los importes de seis cifras o mas usan una letra algo menor para que
+    // quepan enteros en una sola linea, sin descuadrar la tarjeta.
+    const precioTexto = formatCurrency(product.precioVenta)
+    const claseImporte = String(precioTexto).replace(/\D/g, "").length >= 6 ? " precio-largo" : ""
+
     const btn = document.createElement("button")
     btn.className = "producto-card p-2"
     // Sin ancho fijo: la tarjeta se adapta a la columna del grid. Al fijarlo en
@@ -141,7 +146,7 @@ function showProducts(products) {
       <div class="d-flex flex-column align-items-left">
         <div class="producto-nombre"><b>${product.nombre}</b></div>
         <div class="producto-categoria">${product.categoria}</div>
-        <p class="producto-precio"><b>$ ${formatCurrency(product.precioVenta)}</b></p>
+        <p class="producto-precio${claseImporte}"><b>$ ${precioTexto}</b></p>
         <span class="btn cantidad-display" id="prod-qty-${product.idProducto}" 
               onclick="event.stopPropagation(); changeQuantity(${product.idProducto})" role="button"><strong style="font-size:25px;">+</strong></span>
       </div>`
@@ -291,33 +296,92 @@ function confirmQuantity() {
   if (qty < MIN) qty = MIN;
   if (qty > MAX) qty = MAX;
 
-  if (actualProduct !== null) {
-    const product = productosCache.find(p => parseInt(p.idProducto) === parseInt(actualProduct));
-    if (product) {
-      const cartObj = getCart();
-      const existingProduct = cartObj.products.find(p => parseInt(p.idProducto) === parseInt(actualProduct));
+  if (actualProduct === null) return;
 
-      if (existingProduct) {
-        existingProduct.cantidad = qty;
-        existingProduct.precioTotal = qty * existingProduct.precioVenta;
-      } else {
-        cartObj.products.push({
-          idProducto: product.idProducto,
-          nombre: product.nombre,
-          categoria: product.categoria,
-          imagen: product.imagen,
-          categoria_imagen: product.categoria_imagen,
-          precioVenta: parseFloat(product.precioVenta),
-          cantidad: qty,
-          precioTotal: qty * parseFloat(product.precioVenta),
-        });
-      }
+  const product = productosCache.find(p => parseInt(p.idProducto) === parseInt(actualProduct));
+  if (!product) { closeCalculator(); return; }
 
-      
+  // ------------------------------------------------------------------
+  // El destino manda: una MESA no se maneja igual que una venta suelta.
+  // ------------------------------------------------------------------
+  // En las mesas los productos viven en el servidor y la pantalla se
+  // repinta desde ahi. Tocar el arreglo en memoria, como se hacia antes,
+  // repintaba la mesa a partir de una lista vacia y borraba de la vista
+  // todo lo que ya se habia marcado.
+  const destino = getCurrentTabInfo();
 
-      updateCart();
-    }
+  if (destino.type === "table") {
     closeCalculator();
+    addProductToTableSale(destino.idMesa, product, qty);
+    return;
+  }
+
+  // Venta suelta: aqui si se trabaja sobre el arreglo en memoria.
+  const cartObj = getCart();
+  const existingProduct = cartObj.products.find(p => parseInt(p.idProducto) === parseInt(actualProduct));
+
+  if (existingProduct) {
+    existingProduct.cantidad = qty;
+    existingProduct.precioTotal = qty * existingProduct.precioVenta;
+    // El servidor tiene otra cantidad: se sincroniza para que el cobro
+    // coincida con lo que se ve en pantalla.
+    sincronizarCantidadEnServidor(cartObj, existingProduct, qty);
+  } else {
+    cartObj.products.push({
+      idProducto: product.idProducto,
+      nombre: product.nombre,
+      categoria: product.categoria,
+      imagen: product.imagen,
+      categoria_imagen: product.categoria_imagen,
+      precioVenta: parseFloat(product.precioVenta),
+      cantidad: qty,
+      precioTotal: qty * parseFloat(product.precioVenta),
+    });
+    agregarNuevoEnServidor(cartObj, product, qty);
+  }
+
+  updateCart();
+  closeCalculator();
+}
+
+/**
+ * Ajusta en el servidor la cantidad de un producto que ya estaba en el carrito.
+ * Sin esto, la pantalla mostraria una cantidad y se cobraria otra.
+ */
+async function sincronizarCantidadEnServidor(cartObj, producto, cantidad) {
+  if (!cartObj.idVenta || !producto.idDetalleVenta) return;
+  try {
+    await fetchJson("?pg=sales&action=updateProductQuantity", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idDetalleVenta: producto.idDetalleVenta, cantidad: cantidad }),
+    });
+  } catch (e) {
+    console.error("[CALC] No se pudo actualizar la cantidad:", e);
+  }
+}
+
+/** Registra en el servidor un producto marcado desde la calculadora. */
+async function agregarNuevoEnServidor(cartObj, product, cantidad) {
+  if (!cartObj.idVenta) return;
+  try {
+    const r = await fetchJson("?pg=sales&action=addProductToSale", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idVenta: cartObj.idVenta,
+        idProducto: product.idProducto,
+        cantidad: cantidad,
+        precioUnitario: product.precioVenta,
+      }),
+    });
+    // Se guarda el identificador del detalle para poder cambiarlo o quitarlo.
+    const enMemoria = cartObj.products.find(p => parseInt(p.idProducto) === parseInt(product.idProducto));
+    if (enMemoria && r && r.data && r.data.idDetalle) {
+      enMemoria.idDetalleVenta = r.data.idDetalle;
+    }
+  } catch (e) {
+    console.error("[CALC] No se pudo agregar el producto:", e);
   }
 }
 
@@ -422,19 +486,23 @@ function confirmManualAmount() {
     return;
   }
   
-  // Agregar como producto especial con idProducto = 0
-  let product = ({
-    idProducto: null,  
+  // Se agrega como producto especial sin idProducto
+  const product = {
+    idProducto: null,
     nombre: "PRODUCTO",
     imagen: null,
     categoria: null,
     precioVenta: amount,
     cantidad: 1,
     precioTotal: amount,
-    isManualAmount: true  // Flag para identificar en el carrito
-  });
-  addToCart(product);
+    isManualAmount: true  // Marca para reconocerlo en el carrito
+  };
 
-  updateCart();
+  // addToCart ya distingue entre mesa y venta suelta, y repinta lo que
+  // corresponda. Antes se llamaba ademas a updateCart(), que en una mesa
+  // repintaba desde el arreglo en memoria —vacio— y borraba de la vista los
+  // productos ya marcados. Tampoco se esperaba a que terminara, asi que el
+  // monto podia no alcanzar a registrarse.
   closeManualAmount();
+  addToCart(product);
 }

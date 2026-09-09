@@ -225,29 +225,62 @@ async function clearCart(cartId) {
   const targetCartId = cartId || currentCartId
   const cartObj = carts[targetCartId]
   if (!cartObj) return
-  // Ventas normales: eliminar detalles en BD y mantener el mismo idVenta
-  if (cartObj.idVenta) {
-    const productos = cartObj.products || []
-    for (const p of productos) {
-      if (!p.idDetalleVenta) continue
+
+  // ------------------------------------------------------------------
+  // De donde salen los productos a borrar depende del tipo de carrito.
+  // ------------------------------------------------------------------
+  // En una MESA el arreglo en memoria esta vacio a proposito: los
+  // productos viven en el servidor y se pintan desde ahi. Recorrer ese
+  // arreglo no borraba nada, la pantalla quedaba limpia un instante y al
+  // recargar la mesa volvian a aparecer todos.
+  // Por eso, en las mesas, los detalles se toman del propio listado.
+  const detalles = esCarritoDeMesa(targetCartId)
+    ? detallesDesdeLaPantalla(targetCartId)
+    : (cartObj.products || []).map(p => p.idDetalleVenta).filter(Boolean)
+
+  if (cartObj.idVenta || detalles.length) {
+    for (const idDetalle of detalles) {
       try {
         await fetchJson("?pg=sales&action=removeProductFromSale", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ idDetalleVenta: p.idDetalleVenta }),
+          body: JSON.stringify({ idDetalleVenta: idDetalle }),
         })
       } catch (error) {
-        console.warn("No se pudo eliminar producto", p.idDetalleVenta, error)
+        console.warn("No se pudo eliminar producto", idDetalle, error)
       }
     }
   }
-  if (cartObj.tableId) {
-      await reloadTableSale(cartObj.tableId)
-    }
-  // Limpiar productos en memoria
+
+  // Limpiar el arreglo en memoria antes de repintar, para que la mesa no
+  // se vuelva a llenar con datos viejos.
   cartObj.products = []
   cartObj.total = 0
-  updateCart(targetCartId)
+
+  if (cartObj.tableId) {
+    await reloadTableSale(cartObj.tableId)
+  } else {
+    updateCart(targetCartId)
+  }
+}
+
+/** ¿Este carrito corresponde a una mesa? */
+function esCarritoDeMesa(cartId) {
+  return typeof cartId === "string" && cartId.startsWith("mesa-")
+}
+
+/**
+ * Lee los identificadores de detalle de los productos que hay pintados.
+ *
+ * Es la fuente fiable para las mesas: loadTableProducts deja cada linea con
+ * su data-detalle-id, mientras que el arreglo en memoria queda vacio.
+ */
+function detallesDesdeLaPantalla(cartId) {
+  const contenedor = getById(`productos-carrito-${cartId}`)
+  if (!contenedor) return []
+  return [...contenedor.querySelectorAll("[data-detalle-id]")]
+    .map(el => el.getAttribute("data-detalle-id"))
+    .filter(Boolean)
 }
 
 /**
@@ -560,10 +593,18 @@ function computeChange() {
   if (changeContainer) {
     changeContainer.style.display = recibido > 0 ? "" : "none"; 
   }
-  const vuelto = recibido - total 
+  const vuelto = recibido - total
   const label = getById("cashChangeLabel")
-  if (label) label.textContent = vuelto > 0 ? "Devuelta" : "Faltante"
-  out.textContent = "$ " + formatCurrency(vuelto > 0 ? vuelto : vuelto)
+
+  // Se muestra siempre en positivo y con la palabra que corresponde. Antes, al
+  // faltar plata aparecia un numero negativo ("$ -3.400") y con el pago justo
+  // decia "Faltante $ 0", dos lecturas confusas en plena caja.
+  let texto = "Devuelta"
+  if (vuelto === 0) texto = "Pago exacto"
+  else if (vuelto < 0) texto = "Faltante"
+
+  if (label) label.textContent = texto
+  out.textContent = "$ " + formatCurrency(Math.abs(vuelto))
   out.classList.toggle("text-danger", recibido > 0 && recibido < total)
 }
 

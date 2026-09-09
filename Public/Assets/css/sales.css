@@ -109,13 +109,19 @@ html, body {
 }
 
 .producto-nombre {
-   font-size: 19px;
-  max-width: 180px;
+  font-size: 17px;
   width: 100%;
+  line-height: 1.25;
+  /* Altura fija de dos renglones: sin esto, un nombre largo empujaba el precio
+     y el boton hacia abajo y cada tarjeta los mostraba a distinta altura. Lo
+     que no cabe se corta con puntos suspensivos. */
+  height: 2.5em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   word-break: break-word;
-  word-wrap: break-word;
   overflow-wrap: break-word;
-  white-space: normal;
 }
 
 .producto-categoria {
@@ -369,9 +375,27 @@ html, body {
   display: flex;
   flex-direction: column;
   min-height: 260px;
+  /* Llena la celda de la rejilla para que todas queden del mismo alto */
+  height: 100%;
   padding: 10px;
   width: 100%;
   max-width: 200px;
+}
+
+/* El bloque de texto ocupa el espacio sobrante y empuja el precio y el boton
+   al fondo, de modo que queden alineados en todas las tarjetas. */
+.producto-card > .d-flex.flex-column {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.producto-card .producto-precio {
+  margin-top: auto;
+}
+
+.producto-card .cantidad-display {
+  margin-top: 6px;
 }
 
 .manual-card {
@@ -437,7 +461,19 @@ html, body {
 }
 
 .producto-precio {
-  font-size: 20px;
+  font-size: 19px;
+  margin: 4px 0 6px;
+  /* En una sola linea: un precio de seis cifras se partia y bajaba de renglon,
+     descuadrando la tarjeta frente a las demas. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Con seis cifras o mas (100.000 en adelante) la letra cede un poco para que
+   el importe siga cabiendo entero en tarjetas angostas. */
+.producto-precio.precio-largo {
+  font-size: 16px;
 }
 
 .quantity-control {

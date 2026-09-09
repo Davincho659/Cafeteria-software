@@ -56,6 +56,15 @@ class SettingsController {
                 }
             }
 
+            // Ancho útil del tiquete. Se acota entre 40 y 80 mm: fuera de ese
+            // rango la tirilla saldría inservible, y un valor en blanco o con
+            // letras dejaría la impresión rota sin que nadie sepa por qué.
+            if (isset($_POST['ticket_ancho_mm'])) {
+                $ancho = (int) $_POST['ticket_ancho_mm'];
+                if ($ancho < 40 || $ancho > 80) { $ancho = 72; }
+                $valores['ticket_ancho_mm'] = (string) $ancho;
+            }
+
             // Colores: se validan como hex #RRGGBB para no inyectar CSS.
             foreach (Settings::colorKeys() as $clave) {
                 if (isset($_POST[$clave])) {

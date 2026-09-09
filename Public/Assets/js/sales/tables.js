@@ -287,12 +287,12 @@ function createTableTab(idMesa, numeroMesa, idVenta, switchTo = true, etiqueta =
       </div>
       <div id="productos-carrito-${tabId}" class="cart-scroll"></div>
       <div class="cart-footer">
-        <div id="total-carrito-${tabId}"><h4>Total: $<span id="total-${tabId}">0.00</span></h4></div>
+        <div id="total-carrito-${tabId}"><center><h1>Total: <strong>$<span id="total-${tabId}">0.00</span></strong></h1></center></div>
         <button class="btn btn-primary btn-lg w-100 mb-2" onclick="saleConfirmationModal('${tabId}', ${idMesa})">
           Facturar <i class="fa-solid fa-receipt"></i>
         </button>
         <button class="btn btn-outline-danger btn-lg w-100" onclick="clearCart('${tabId}')">
-          Limpiar carrito <i class="fa-solid fa-trash-can"></i>
+          Limpiar Mesa <i class="fa-solid fa-trash-can"></i>
         </button>
       </div>
     </div>`
@@ -392,7 +392,7 @@ function loadTableProducts(tabId, productos) {
 /**
  * Añade un producto a una venta de mesa
  */
-async function addProductToTableSale(idMesa, product) {
+async function addProductToTableSale(idMesa, product, cantidad = 1) {
   try {
     const tableInfo = activeTables[idMesa]
     if (!tableInfo) {
@@ -400,6 +400,9 @@ async function addProductToTableSale(idMesa, product) {
       alert("Mesa no inicializada correctamente")
       return
     }
+
+    // La cantidad puede venir de la calculadora; nunca menos de 1.
+    cantidad = Math.max(1, parseInt(cantidad, 10) || 1)
 
     const userId = await getUserId()
 
@@ -415,7 +418,7 @@ async function addProductToTableSale(idMesa, product) {
       body: JSON.stringify({
         idVenta: tableInfo.idVenta,
         idProducto: product.idProducto,
-        cantidad: 1,
+        cantidad: cantidad,
         precioUnitario: product.precioVenta,
         idUsuario: userId,
       }),
