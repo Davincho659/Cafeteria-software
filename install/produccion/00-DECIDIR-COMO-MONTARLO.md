@@ -1,102 +1,100 @@
-# 🧭 Lo primero: ¿en la nube o en el local? (léelo antes que nada)
-
-Esta decisión cambia todo lo demás. Tómala antes de pagar nada.
+# 🧭 Cómo queda montado el sistema
 
 ---
 
-## Tu pregunta: ¿qué pasa si se va el internet?
-
-Depende de dónde esté el sistema. Hay dos formas de montarlo:
-
-### Opción A — Todo en un servidor de internet (VPS)
+## La arquitectura: servidor en internet + la caja que aguanta sin él
 
 ```
-   Internet
-      │
-   [ VPS ]  ← aquí vive el sistema y la base de datos
-      │
-      ├── Pantalla de la caja  (por internet)
-      ├── Celulares meseros    (por internet)
-      └── El dueño desde casa  (por internet)
+                    [ VPS con dominio y HTTPS ]
+                    Base de datos y sistema
+                              │
+                    ┌─────────┴─────────┐
+                    │     internet      │
+        ┌───────────┼───────────┬───────┴──────────┐
+        │           │           │                  │
+   Pantalla     Celular     Celular          El dueño
+   de la caja   mesero 1    mesero 2         desde su casa
+   (Windows)     (PWA)       (PWA)
 ```
 
-| | |
+**Todos apuntan al mismo servidor**, así que lo que hace uno lo ven los demás:
+si un mesero toma un pedido en la mesa 4, aparece en la caja sin que nadie
+recargue nada.
+
+### ¿Y si se cae el internet?
+
+**La caja sigue cobrando.** Guarda las ventas en el propio equipo y, cuando
+vuelve la señal, las envía al servidor sola. El cajero no hace nada distinto.
+
+| Situación | Qué pasa |
 |---|---|
-| ✅ | Se entra desde cualquier lugar del mundo |
-| ✅ | Los datos están fuera del negocio; si se roban el PC no se pierde nada |
-| ❌ | **Si se cae el internet, la caja deja de cobrar** |
-| ❌ | Si se cae el internet del proveedor, tampoco |
-| 💵 | ~$16.000–25.000 COP/mes |
+| Con internet | Todo en vivo: caja y celulares se ven entre sí al instante |
+| Sin internet | La caja cobra e imprime igual, guardando las ventas localmente |
+| Vuelve el internet | Las ventas guardadas suben solas al servidor |
 
-### Opción B — El sistema vive en el PC de la caja ⭐
+> Los celulares sí necesitan conexión para tomar pedidos: son el pedido que
+> entra, no el cobro. Lo que no puede detenerse nunca es la caja, y esa es la
+> que trabaja sin conexión.
 
-```
-   [ PC de la caja ]  ← aquí vive el sistema y la base de datos
-      │  (WiFi del local, NO necesita internet)
-      ├── Pantalla de la caja   (es el mismo equipo)
-      └── Celulares meseros     (por el WiFi del local)
+---
 
-   Internet: solo para respaldos y para que el dueño mire desde afuera
-```
+## Estado real: qué falta para llegar ahí
 
-| | |
+Esto es lo que hay hoy, verificado en el código:
+
+| Pieza | Estado |
 |---|---|
-| ✅ | **Sin internet sigue funcionando igual**: cobra, imprime, toma pedidos |
-| ✅ | Más rápido: todo viaja por la red del local |
-| ✅ | Sin pago mensual |
-| ❌ | Si el PC se daña, hay que restaurar el respaldo en otro equipo |
-| ❌ | Para ver las ventas desde fuera hace falta un paso extra |
-| 💵 | $0/mes |
+| Sistema completo (ventas, mesas, inventario, reportes) | ✅ Listo |
+| Aplicación instalable en celulares (PWA) | ✅ Listo |
+| Preparado para servidor Linux | ✅ Listo |
+| **Tiempo real (el pedido del celular aparece en la caja)** | ✅ **Listo** — se actualiza sola en ~4 s |
+| **Trabajar sin internet y sincronizar después** | ❌ **Falta** |
+
+La que falta estaba en el plan desde el principio (punto 6 del roadmap) y
+**hay que hacerla antes de que el negocio dependa del sistema**: sin ella, si se
+cae el internet la caja se queda sin poder cobrar.
 
 ---
 
-## 🎯 Recomendación: **Opción B**
+## Orden de trabajo
 
-Para una cafetería, la razón es simple:
+| # | Qué | Por qué en ese orden |
+|---|---|---|
+| 1 | ~~Tiempo real~~ | ✅ Hecho: la caja ve los pedidos del celular en unos 4 s |
+| 2 | **Modo sin conexión** en la caja | Lo único que falta. Lo más complejo del proyecto |
+| 3 | Montar el VPS con dominio y HTTPS | Ver `02-MONTAR-EN-VPS.md` |
+| 4 | Migrar los datos del dueño | Datos **y** fotos |
+| 5 | Configurar la pantalla y los celulares | Ver `03-CONFIGURAR-LA-CAJA.md` |
 
-> **Una caja registradora no puede depender del internet.**
-> Si se va la señal a las 12 del día, con la Opción A no puedes cobrar. Con la
-> Opción B ni te enteras: el WiFi del local sigue funcionando aunque el
-> internet no.
-
-El WiFi del router funciona **aunque no haya internet**. Los celulares de los
-meseros se conectan a ese WiFi, no a internet, así que todo sigue igual.
-
-Y el equipo que compraron (N5095, 8 GB de RAM) es de sobra para ser servidor de
-un negocio de este tamaño: el sistema pesa poco y son pocos usuarios a la vez.
-
-### Lo que se pierde y cómo se resuelve
-
-| Preocupación | Solución |
-|---|---|
-| "¿Y si se daña el PC?" | Respaldo automático diario a Google Drive. Se restaura en otro equipo en 30 minutos. |
-| "¿Y si el dueño quiere ver las ventas desde su casa?" | Se agrega después con un túnel gratuito (Cloudflare Tunnel), sin mover el sistema |
-| "¿Y si abren otro local?" | Ahí sí conviene el VPS. Se migra cuando llegue el momento. |
+> **No montes el negocio en producción sin el punto 2.** Un día sin internet
+> con la caja parada cuesta más que el tiempo de hacerlo bien.
 
 ---
 
-## Entonces, ¿el VPS no sirve?
+## Sobre Windows y Linux (que conviven)
 
-Sirve, pero **más adelante**. El orden sensato es:
+Son dos equipos distintos y cada uno con lo suyo:
 
-1. **Ahora**: Opción B. Que el negocio empiece a operar, estable y sin costo.
-2. **Cuando funcione bien** (2–3 meses): si quieren acceso desde afuera, se
-   agrega el túnel gratis.
-3. **Si abren otro local**: ahí sí VPS, porque hay que compartir datos entre
-   sedes.
+| Equipo | Sistema | Qué corre |
+|---|---|---|
+| **VPS** | Linux (Ubuntu) | El servidor: la base de datos y el sistema |
+| **PC de la caja** | **Windows 11** | Solo Chrome, mostrando el sistema |
+| **Celulares** | Android / iPhone | Solo el navegador con la app instalada |
 
-Migrar de la Opción B al VPS es el mismo trabajo hoy que dentro de seis meses.
-No pierdes nada por esperar, y ganas estabilidad desde el primer día.
+Por eso hubo que ajustar cosas de Linux: **el servidor** es Linux. La caja sigue
+siendo Windows 11 y ahí no cambia nada — se configura como se explica en la
+guía de la caja.
 
 ---
 
-## Si aun así prefieres el VPS
+## ¿Y montar todo en el PC de la caja, sin VPS?
 
-Es una decisión válida si el internet del local es muy bueno y quieren acceso
-remoto desde ya. En ese caso:
+Se puede, pero **pierdes lo que pediste desde el principio**:
 
-- **Contrata internet de respaldo** (un plan de datos con router 4G). Sin eso,
-  una caída de la señal para el negocio.
-- Sigue la guía `02-MONTAR-EN-VPS.md`.
+- Que se vea desde cualquier dispositivo y desde cualquier parte
+- Que el dueño revise las ventas sin estar en el negocio
+- Que los datos estén a salvo si le pasa algo al equipo
 
-> El sistema ya está preparado para ambas: no hay que cambiar el código.
+Con el modo sin conexión bien hecho, el VPS deja de tener la desventaja que
+preocupaba: **la caja no se detiene aunque se caiga el internet**. Por eso el
+plan sigue siendo el VPS.

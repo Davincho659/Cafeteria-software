@@ -288,6 +288,8 @@
     <script src="<?= asset('assets/js/sales/tabs.js') ?>" defer></script>
     <script src="<?= asset('assets/js/sales/tables.js') ?>" defer></script>
     <script src="<?= asset('assets/js/sales/Sales.js') ?>" defer></script>
+    <!-- Mantiene la caja al día con lo que los meseros marcan desde el celular -->
+    <script src="<?= asset('assets/js/sales/tiempo-real.js') ?>" defer></script>
     <script src="<?= asset('assets/js/sales/barcode.js') ?>" defer></script>
     <script src="<?= asset('assets/js/tables-board.js') ?>" defer></script>
 
