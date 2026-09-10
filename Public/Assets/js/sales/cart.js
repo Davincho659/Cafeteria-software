@@ -93,7 +93,15 @@ async function addToCart(product, reintento = false) {
   // Si es venta en memoria (carrito normal)
   const cartId = currentTab.cartId
   const cartObj = getCart(cartId)
-  
+
+  // Sin internet el producto se marca solo en el carrito de este equipo. No se
+  // intenta hablar con el servidor: la venta entera se le envía al cobrar.
+  if (typeof SinConexion !== "undefined" && !SinConexion.hayConexion()) {
+    agregarEnMemoria(cartObj, product)
+    updateCart(cartId)
+    return
+  }
+
   // Sin venta asociada: en vez de bloquear la caja, se crea una venta pendiente
   // al vuelo y se sigue trabajando con normalidad.
   if (!cartObj.idVenta) {
@@ -197,6 +205,36 @@ async function addToCart(product, reintento = false) {
 
     alert("Error al agregar producto: " + error.message)
   }
+}
+
+/**
+ * Suma un producto al carrito de este equipo, sin tocar el servidor.
+ *
+ * Se usa mientras no hay internet. Los montos manuales no se agrupan: cada uno
+ * es un cobro aparte y debe verse por separado en el comprobante.
+ */
+function agregarEnMemoria(cartObj, product) {
+  const esManual = product.idProducto === null || product.idProducto === undefined
+  const existente = esManual
+    ? null
+    : cartObj.products.find((p) => toInt(p.idProducto) === toInt(product.idProducto))
+
+  if (existente) {
+    existente.cantidad += (product.cantidad || 1)
+    existente.precioTotal = existente.cantidad * existente.precioVenta
+    return
+  }
+
+  cartObj.products.push({
+    idProducto: product.idProducto ?? null,
+    nombre: product.nombre,
+    imagen: product.imagen,
+    precioVenta: toFloat(product.precioVenta),
+    cantidad: product.cantidad || 1,
+    precioTotal: toFloat(product.precioVenta) * (product.cantidad || 1),
+    isManualAmount: esManual,
+    manualId: esManual ? `manual-${Date.now()}-${Math.random().toString(16).slice(2, 8)}` : null,
+  })
 }
 
   /**
@@ -771,6 +809,14 @@ async function saleProcess(cartId, userId, paymentMethod = "efectivo", yaSeInten
     return
   }
 
+  // Sin internet: la venta se cobra igual y se guarda en el equipo. Se
+  // comprueba ANTES de tocar el servidor, para no hacer esperar al cajero por
+  // una petición que se sabe que va a fallar.
+  const esMesa = esCarritoDeMesa(cartId)
+  if (!esMesa && typeof SinConexion !== "undefined" && !SinConexion.hayConexion()) {
+    return cobrarSinConexion(cartId, paymentMethod)
+  }
+
   // Sin venta asociada (pestaña zombie): se recrea con lo que hay en pantalla
   // en vez de dejar al cajero bloqueado.
   if (!cartObj.idVenta) {
@@ -881,8 +927,112 @@ async function saleProcess(cartId, userId, paymentMethod = "efectivo", yaSeInten
 
   } catch (error) {
     console.error("[CART] Error en saleProcess:", error)
+
+    // Si lo que falló fue la conexión, la venta no se pierde: se guarda en el
+    // equipo y se registra sola al volver la señal. Cobrar y que el sistema
+    // "pierda" la venta sería lo peor que puede pasar en una caja.
+    if (esFalloDeConexion(error) && !esCarritoDeMesa(cartId)) {
+      if (typeof SinConexion !== "undefined") await SinConexion.comprobarServidor()
+      return cobrarSinConexion(cartId, paymentMethod)
+    }
+
     alert(error.message)
   }
+}
+
+/** ¿El error viene de que no hay conexión con el servidor? */
+function esFalloDeConexion(error) {
+  const t = String(error && error.message || error || "").toLowerCase()
+  return t.includes("failed to fetch")
+      || t.includes("networkerror")
+      || t.includes("network request failed")
+      || t.includes("load failed")
+      || !navigator.onLine
+}
+
+/**
+ * Cobra una venta de mostrador sin conexión.
+ *
+ * Se apunta en el equipo y se entrega el comprobante de una vez: el cliente ya
+ * pagó y no puede quedarse esperando a que vuelva el internet. La venta se
+ * registra en el servidor sola cuando haya señal.
+ */
+async function cobrarSinConexion(cartId, paymentMethod) {
+  const cartObj = getCart(cartId)
+
+  if (typeof SinConexion === "undefined") {
+    alert("No hay conexión con el servidor y este equipo no puede cobrar sin ella.")
+    return
+  }
+
+  try {
+    const venta = await SinConexion.guardarVenta(cartObj.products, paymentMethod)
+
+    if (typeof Swal !== "undefined") {
+      Swal.fire({
+        icon: "success",
+        title: "Venta cobrada sin conexión",
+        html: `Total: <b>$${formatCurrency(venta.total)}</b><br><br>` +
+              `<small>Queda guardada en este equipo y se registrará sola ` +
+              `cuando vuelva el internet.</small>`,
+        timer: 3200,
+        showConfirmButton: false,
+      })
+    }
+
+    // Comprobante con lo que hay: sin servidor no existe aún número de factura.
+    imprimirComprobanteSinConexion(venta)
+
+    cartObj.products = []
+    cartObj.total = 0
+    cartObj.idVenta = null
+    updateCart(cartId)
+
+    if (cartId === "venta1") {
+      // No se puede crear la venta siguiente en el servidor: se deja el carrito
+      // limpio y listo para seguir marcando.
+      const link = document.querySelector('#ventasTabs a[href="#venta1"]')
+      if (link) link.setAttribute("id", "")
+    } else {
+      dropTab(cartId)
+    }
+  } catch (e) {
+    console.error("[CART] No se pudo guardar la venta sin conexión:", e)
+    alert("No se pudo guardar la venta. Anótala en papel antes de continuar.")
+  }
+}
+
+/** Comprobante de una venta cobrada sin conexión. */
+function imprimirComprobanteSinConexion(venta) {
+  const filas = venta.productos.map((p) =>
+    `<tr><td>${p.nombre || "Producto"}</td><td style="text-align:center">${p.cantidad}</td>` +
+    `<td style="text-align:right">$${formatCurrency(p.cantidad * p.precioUnitario)}</td></tr>`
+  ).join("")
+
+  const w = window.open("", "comprobante", "width=350,height=600")
+  if (!w) return
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8">
+    <title>Comprobante</title>
+    <style>
+      body{font-family:'Courier New',monospace;font-size:12px;width:72mm;margin:0 auto;padding:4mm}
+      table{width:100%;border-collapse:collapse} td{padding:2px 0}
+      .c{text-align:center} .tot{border-top:2px dashed #000;margin-top:6px;padding-top:6px;font-size:15px;font-weight:bold}
+      .nota{border:1px dashed #000;padding:4px;margin-top:8px;font-size:10px;text-align:center}
+      @media print{.no{display:none}}
+    </style></head><body>
+    <div class="c"><b>COMPROBANTE DE VENTA</b><br>
+      ${new Date(venta.fecha).toLocaleString("es-CO")}</div>
+    <hr>
+    <table>${filas}</table>
+    <div class="tot c">TOTAL: $${formatCurrency(venta.total)}</div>
+    <div class="c" style="margin-top:4px">Pago: ${venta.metodoPago}</div>
+    <div class="nota">Cobrado sin conexión.<br>Se registrará al volver el internet.</div>
+    <div class="no" style="margin-top:10px">
+      <button onclick="window.print()" style="width:100%;padding:10px">Imprimir</button>
+    </div>
+    <script>window.print()<\/script>
+    </body></html>`)
+  w.document.close()
 }
 
 /**

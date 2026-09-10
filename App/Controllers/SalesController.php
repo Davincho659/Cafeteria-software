@@ -24,6 +24,102 @@ class SalesController {
     }
 
     /**
+     * Recibe las ventas que la caja cobró mientras no había internet.
+     *
+     * Llegan varias juntas cuando vuelve la señal. Cada una se procesa por
+     * separado: si una falla, las demás igual entran, y la que falló se queda
+     * en la caja para reintentarla. Perder una venta por culpa de otra sería
+     * perder dinero del negocio.
+     */
+    public function sincronizarVentasSinConexion() {
+        header('Content-Type: application/json; charset=utf-8');
+
+        try {
+            $data = json_decode(file_get_contents('php://input'), true);
+            $ventas = $data['ventas'] ?? null;
+
+            if (!is_array($ventas) || empty($ventas)) {
+                echo json_encode(['success' => false, 'error' => 'No se recibió ninguna venta']);
+                return;
+            }
+
+            $idUsuario = $_SESSION['usuario_id'] ?? null;
+            $resultados = [];
+
+            foreach ($ventas as $venta) {
+                $uuid = $venta['uuid'] ?? '';
+                try {
+                    $metodo = $this->metodoValido($venta['metodoPago'] ?? 'efectivo');
+                    $r = $this->salesModel->registrarVentaSinConexion(
+                        $uuid,
+                        $venta['productos'] ?? [],
+                        $metodo,
+                        $idUsuario,
+                        $venta['fecha'] ?? null
+                    );
+                    $resultados[] = [
+                        'uuid'      => $uuid,
+                        'ok'        => true,
+                        'idVenta'   => $r['idVenta'],
+                        'yaExistia' => $r['yaExistia'],
+                    ];
+                } catch (Exception $e) {
+                    $resultados[] = [
+                        'uuid'  => $uuid,
+                        'ok'    => false,
+                        'error' => $e->getMessage(),
+                    ];
+                }
+            }
+
+            $sincronizadas = 0;
+            foreach ($resultados as $r) { if ($r['ok']) { $sincronizadas++; } }
+
+            echo json_encode([
+                'success'       => true,
+                'sincronizadas' => $sincronizadas,
+                'total'         => count($ventas),
+                'resultados'    => $resultados,
+            ]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Catálogo que la caja guarda en el equipo para poder vender sin conexión.
+     *
+     * Solo lo indispensable para cobrar: qué se vende y a cuánto. El stock no
+     * viaja a propósito, porque sin conexión no hay forma de mantenerlo al día
+     * entre varios equipos.
+     */
+    public function catalogoParaSinConexion() {
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            $productos = $this->productModel->getAll(['estado' => 1, 'tipo' => 'venta']);
+            $limpio = [];
+            foreach ($productos as $p) {
+                $limpio[] = [
+                    'idProducto'  => $p['idProducto'],
+                    'nombre'      => $p['nombre'],
+                    'precioVenta' => $p['precioVenta'],
+                    'imagen'      => $p['imagen'],
+                    'categoria'   => $p['categoria'] ?? '',
+                    'idCategoria' => $p['idCategoria'] ?? null,
+                ];
+            }
+
+            echo json_encode([
+                'success'     => true,
+                'actualizado' => date('c'),
+                'data'        => $limpio,
+            ]);
+        } catch (Exception $e) {
+            echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+        }
+    }
+
+    /**
      * Valida el método de pago recibido.
      *
      * Si no se envía ninguno se asume efectivo (venta rápida de mostrador),

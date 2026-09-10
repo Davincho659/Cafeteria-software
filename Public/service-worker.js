@@ -67,6 +67,37 @@ self.addEventListener('fetch', (evento) => {
     // Index.php atiende tanto las pantallas como las consultas de datos
     // (?pg=sales&action=...). Servir cualquiera de esas desde la cache
     // mostraria precios, stock o ventas de hace horas.
+    // ------------------------------------------------------------------
+    // La pantalla de ventas sí se guarda: es la que debe abrir sin internet
+    // ------------------------------------------------------------------
+    // Sin esto, un corte de señal dejaba al cajero sin poder ni entrar a la
+    // caja. Se guarda la última versión que se cargó y se sirve cuando el
+    // servidor no responde; los datos que muestra vienen del catálogo que la
+    // propia caja tiene guardado, no de esta copia.
+    const esPantallaDeVentas = url.search.includes('pg=sales') && !url.search.includes('action=');
+
+    if (esPantallaDeVentas) {
+        evento.respondWith(
+            fetch(peticion)
+                .then((respuesta) => {
+                    if (respuesta && respuesta.ok) {
+                        const copia = respuesta.clone();
+                        caches.open(ARCHIVOS_BASE).then((c) => c.put(peticion, copia));
+                    }
+                    return respuesta;
+                })
+                .catch(() => caches.match(peticion).then((guardada) => guardada || new Response(
+                    '<!doctype html><meta charset="utf-8">' +
+                    '<div style="font-family:system-ui;padding:2rem;text-align:center">' +
+                    '<h2>Sin conexion</h2>' +
+                    '<p>Abre la caja al menos una vez con internet<br>' +
+                    'para poder usarla sin conexion.</p></div>',
+                    { headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+                )))
+        );
+        return;
+    }
+
     const esDatosOPantalla = url.pathname.endsWith('Index.php')
         || url.search.includes('pg=')
         || url.pathname.endsWith('manifest.php');

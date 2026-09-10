@@ -12,6 +12,31 @@ class Sales {
         $this->db = Database::getConnection();
         $this->inventoryModel = new Inventory();
         $this->cashRegister = new CashRegister();
+        $this->asegurarColumnaOffline();
+    }
+
+    /**
+     * Columna que identifica una venta hecha sin conexion.
+     *
+     * Cuando la caja cobra sin internet, la venta se guarda en el equipo y se
+     * envia al servidor cuando vuelve la senal. Ese envio puede repetirse: el
+     * navegador reintenta, el cajero recarga, se corta a mitad de camino. Sin
+     * una marca propia de cada venta, el mismo cobro entraria dos veces y los
+     * reportes mostrarian dinero que nunca existio.
+     *
+     * El indice UNIQUE es lo que garantiza que no ocurra: la base rechaza el
+     * duplicado aunque lleguen dos envios a la vez.
+     */
+    private function asegurarColumnaOffline() {
+        try {
+            if (!$this->db->query("SHOW COLUMNS FROM ventas LIKE 'uuidOffline'")->fetch()) {
+                $this->db->exec("ALTER TABLE ventas
+                    ADD COLUMN uuidOffline VARCHAR(40) NULL DEFAULT NULL,
+                    ADD UNIQUE KEY uk_uuid_offline (uuidOffline)");
+            }
+        } catch (Exception $e) {
+            // Si falla (permisos), el resto del sistema sigue funcionando.
+        }
     }
 
     // ELIMINADO: createSaleWithDetails - Reemplazado por flujo: createPendingSale() + addOrUpdateProductToSale() + completeSale()
@@ -458,6 +483,129 @@ class Sales {
      * Completar una venta pendiente (GENÉRICO para mesas y mostrador)
      * Valida stock, actualiza inventario, registra en caja, marca como completada
      */
+    /**
+     * Registra una venta que se cobro sin conexion.
+     *
+     * La caja puede seguir vendiendo aunque se caiga el internet: la venta se
+     * guarda en el equipo y llega aqui cuando vuelve la senal. Se crea completa
+     * de una vez (no pendiente), porque ya se cobro y ya se entrego el producto.
+     *
+     * Dos cuidados que importan al dinero:
+     *
+     * 1. NO se duplica. Cada venta trae una marca propia generada en la caja.
+     *    Si el envio se repite -por un reintento, una recarga o un corte a mitad
+     *    de camino- se devuelve la venta que ya existe en lugar de crear otra.
+     *
+     * 2. El precio lo pone el servidor, no la caja. Aunque el equipo llevara un
+     *    precio viejo en su copia local, aqui se cobra el que figura en la base.
+     *    Asi un cambio de precios durante el corte no se cuela en las cuentas.
+     *
+     * @return array ['idVenta' => int, 'yaExistia' => bool]
+     */
+    public function registrarVentaSinConexion($uuid, array $productos, $metodoPago, $idUsuario, $fechaVenta = null) {
+        $uuid = trim((string) $uuid);
+        if ($uuid === '') {
+            throw new Exception('La venta sin conexión necesita su identificador');
+        }
+        if (empty($productos)) {
+            throw new Exception('La venta no tiene productos');
+        }
+
+        // ¿Ya se habia registrado? Se responde con la misma venta y se termina.
+        $stmt = $this->db->prepare("SELECT idVenta FROM ventas WHERE uuidOffline = ? LIMIT 1");
+        $stmt->execute([$uuid]);
+        $existente = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($existente) {
+            return ['idVenta' => (int) $existente['idVenta'], 'yaExistia' => true];
+        }
+
+        $cajaActiva = $this->cashRegister->getCajaActiva();
+        if (!$cajaActiva) {
+            throw new Exception('No hay una caja abierta para registrar la venta');
+        }
+
+        // La hora es la del cobro real, no la de la sincronizacion: si no, todas
+        // las ventas del corte apareceria a la misma hora en los reportes.
+        $fecha = $fechaVenta ? date('Y-m-d H:i:s', strtotime($fechaVenta)) : date('Y-m-d H:i:s');
+
+        try {
+            $this->db->beginTransaction();
+
+            $stmt = $this->db->prepare(
+                "INSERT INTO ventas (estado, metodoPago, total, idUsuario, idCaja, tipoVenta,
+                                     fechaVenta, uuidOffline, fechaCreacion, fechaActualizacion)
+                 VALUES ('completada', ?, 0, ?, ?, 'venta', ?, ?, NOW(), NOW())"
+            );
+            $stmt->execute([$metodoPago, $idUsuario, $cajaActiva['idCaja'], $fecha, $uuid]);
+            $idVenta = (int) $this->db->lastInsertId();
+
+            $total = 0;
+            foreach ($productos as $item) {
+                $idProducto = isset($item['idProducto']) && $item['idProducto'] !== '' && $item['idProducto'] !== null
+                    ? (int) $item['idProducto'] : null;
+                $cantidad = Validator::cantidad($item['cantidad'] ?? 0, false, 'La cantidad');
+
+                if ($idProducto !== null) {
+                    // Precio de la base: manda el servidor.
+                    $p = $this->db->prepare("SELECT precioVenta FROM productos WHERE idProducto = ?");
+                    $p->execute([$idProducto]);
+                    $fila = $p->fetch(PDO::FETCH_ASSOC);
+                    if (!$fila) {
+                        throw new Exception("Producto no encontrado: ID {$idProducto}");
+                    }
+                    $precio = (float) $fila['precioVenta'];
+                } else {
+                    // Monto manual: el valor lo puso el cajero.
+                    $precio = Validator::precio($item['precioUnitario'] ?? 0, 0.01, 'El monto manual');
+                }
+
+                $d = $this->db->prepare(
+                    "INSERT INTO detalle_venta (idVenta, idProducto, cantidad, precioUnitario)
+                     VALUES (?, ?, ?, ?)"
+                );
+                $d->execute([$idVenta, $idProducto, $cantidad, $precio]);
+                $total += $cantidad * $precio;
+
+                // Descontar del inventario, igual que en una venta normal.
+                if ($idProducto !== null) {
+                    $ms = $this->db->prepare("SELECT manejaStock FROM productos WHERE idProducto = ?");
+                    $ms->execute([$idProducto]);
+                    if ((int) $ms->fetchColumn() === 1) {
+                        $this->inventoryModel->registrarMovimiento(
+                            $idProducto, 'salida', $cantidad, (string) $idVenta, 'venta',
+                            'Venta #' . $idVenta . ' (sin conexión)', $idUsuario, false
+                        );
+                    }
+                }
+            }
+
+            $this->db->prepare("UPDATE ventas SET total = ? WHERE idVenta = ?")
+                     ->execute([$total, $idVenta]);
+
+            $this->cashRegister->registrarIngresoVenta($idVenta, $total, $idUsuario, $metodoPago);
+
+            $this->db->commit();
+            return ['idVenta' => $idVenta, 'yaExistia' => false];
+
+        } catch (Exception $e) {
+            if ($this->db->inTransaction()) {
+                $this->db->rollBack();
+            }
+            // Si dos envios coincidieron, la base rechaza el duplicado por el
+            // indice unico: se devuelve la venta que quedo registrada.
+            if (strpos($e->getMessage(), 'uk_uuid_offline') !== false
+                || strpos($e->getMessage(), '1062') !== false) {
+                $stmt = $this->db->prepare("SELECT idVenta FROM ventas WHERE uuidOffline = ? LIMIT 1");
+                $stmt->execute([$uuid]);
+                $fila = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($fila) {
+                    return ['idVenta' => (int) $fila['idVenta'], 'yaExistia' => true];
+                }
+            }
+            throw $e;
+        }
+    }
+
     public function completeSale($idVenta, $metodoPago = 'efectivo') {
         try {
             $this->db->beginTransaction();

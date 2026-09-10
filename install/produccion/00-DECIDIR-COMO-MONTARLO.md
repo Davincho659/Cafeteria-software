@@ -48,11 +48,10 @@ Esto es lo que hay hoy, verificado en el código:
 | Aplicación instalable en celulares (PWA) | ✅ Listo |
 | Preparado para servidor Linux | ✅ Listo |
 | **Tiempo real (el pedido del celular aparece en la caja)** | ✅ **Listo** — se actualiza sola en ~4 s |
-| **Trabajar sin internet y sincronizar después** | ❌ **Falta** |
+| **Trabajar sin internet y sincronizar después** | ✅ **Listo** — la caja cobra y se registra sola al volver |
 
-La que falta estaba en el plan desde el principio (punto 6 del roadmap) y
-**hay que hacerla antes de que el negocio dependa del sistema**: sin ella, si se
-cae el internet la caja se queda sin poder cobrar.
+**Ya está todo el plan cubierto.** Lo siguiente es montar el servidor y
+conectar los equipos.
 
 ---
 
@@ -61,13 +60,12 @@ cae el internet la caja se queda sin poder cobrar.
 | # | Qué | Por qué en ese orden |
 |---|---|---|
 | 1 | ~~Tiempo real~~ | ✅ Hecho: la caja ve los pedidos del celular en unos 4 s |
-| 2 | **Modo sin conexión** en la caja | Lo único que falta. Lo más complejo del proyecto |
+| 2 | ~~Modo sin conexión~~ | ✅ Hecho: la caja cobra sin internet y sincroniza sola |
 | 3 | Montar el VPS con dominio y HTTPS | Ver `02-MONTAR-EN-VPS.md` |
 | 4 | Migrar los datos del dueño | Datos **y** fotos |
 | 5 | Configurar la pantalla y los celulares | Ver `03-CONFIGURAR-LA-CAJA.md` |
 
-> **No montes el negocio en producción sin el punto 2.** Un día sin internet
-> con la caja parada cuesta más que el tiempo de hacerlo bien.
+> Los puntos 1 y 2 ya están. Queda montar el servidor y conectar los equipos.
 
 ---
 

@@ -290,6 +290,8 @@
     <script src="<?= asset('assets/js/sales/Sales.js') ?>" defer></script>
     <!-- Mantiene la caja al día con lo que los meseros marcan desde el celular -->
     <script src="<?= asset('assets/js/sales/tiempo-real.js') ?>" defer></script>
+    <!-- Permite seguir cobrando cuando se cae el internet -->
+    <script src="<?= asset('assets/js/sales/sin-conexion.js') ?>" defer></script>
     <script src="<?= asset('assets/js/sales/barcode.js') ?>" defer></script>
     <script src="<?= asset('assets/js/tables-board.js') ?>" defer></script>
 

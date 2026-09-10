@@ -86,6 +86,22 @@ async function loadProducts(idCategoria = null) {
   let url = "?pg=sales&action=getProducts"
   if (idCategoria) url += `&idCategory=${idCategoria}`
 
+  // Sin internet se muestran los productos guardados en el equipo. Es la copia
+  // que se refresca cada vez que hay conexión.
+  if (typeof SinConexion !== "undefined" && !SinConexion.hayConexion()) {
+    try {
+      let guardados = await SinConexion.leerCatalogo()
+      if (idCategoria) {
+        guardados = guardados.filter(p => String(p.idCategoria) === String(idCategoria))
+      }
+      productosCache = guardados
+      showProducts(guardados)
+      return
+    } catch (e) {
+      console.warn("[PRODUCTS] No hay catálogo guardado en el equipo:", e)
+    }
+  }
+
   try {
     const data = await fetchJson(url)
     if (data.success) {

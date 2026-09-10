@@ -255,6 +255,9 @@ switch ($pg) {
                 'completeTableSale',
                 'cancelTableSale',
                 'addProductToSale',
+                // Modo sin conexión: catálogo local y envío de lo cobrado
+                'catalogoParaSinConexion',
+                'sincronizarVentasSinConexion',
                 
             ];
             
